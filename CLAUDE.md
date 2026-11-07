@@ -27,10 +27,17 @@ There are no tests, linter or package manager. Check changes by running `server.
 the pages in a browser.
 
 - Rebuild `app/vendor/tailwind.css` whenever you use a Tailwind class that isn't already in it.
-  The content globs are `index.html`, `app/*.html` and `app/js/**/*.js`. Theme tokens ("Aegis
-  Command" dark palette, font roles such as `label-md`, `headline-sm`) live in
-  `tools/tailwind/tailwind.config.js`.
-- Script tags carry a cache-buster (`?v=7`). Bump it on every page when you change JS.
+  The content globs are `index.html`, `app/*.html` and `app/js/**/*.js`. Theme "Papan Petunjuk":
+  colour values are CSS variables in `app/css/tokens.css` (dark and light), mapped to Tailwind
+  colour names in `tools/tailwind/tailwind.config.js` along with the font roles (`label-md`,
+  `headline-sm`; Barlow / Barlow Condensed). Tailwind's status palettes (rose, amber, emerald,
+  sky, ...) are mirrored in light mode, so `text-rose-300` stays readable in both modes. Never
+  hard-code hex colours in views; inside SVG use `style="fill:rgb(var(--on-surface))"` because
+  presentation attributes don't resolve `var()`.
+- `app/js/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
+  with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
+- UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
+- Script tags carry a cache-buster (`?v=10`). Bump it on every page when you change JS or CSS.
 
 ## Architecture
 
