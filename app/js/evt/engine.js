@@ -270,7 +270,7 @@
       // kalah balapan: ambil state terbaru, jalankan ulang aturan di atasnya
       adopt(r); if (opts && opts.onConflict) opts.onConflict(i + 1);
     }
-    fail('Server sedang sibuk, silakan coba lagi.');
+    fail('Server sedang sibuk. Coba lagi sebentar lagi.');
   }
 
   // State kosong (pertama kali / di-reset dari perangkat lain) -> buat data contoh; bila perangkat lain lebih dulu, pakai miliknya
@@ -329,7 +329,7 @@
     const file = location.protocol === 'file:';
     return `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-mode-banner>
       <span class="material-symbols-outlined text-amber-300 text-[20px]">wifi_off</span>
-      <span class="flex-1 min-w-[220px]"><b class="text-amber-300">${serverHint ? 'Server LAN sudah tersedia.' : 'Mode lokal: data hanya di browser ini.'}</b> ${serverHint ? 'Muat ulang agar tersinkron dengan semua perangkat.' : file ? 'Halaman dibuka langsung dari file. Jalankan <code>python3 server.py</code> lalu buka <code>http://localhost:8765/</code> agar pengunjung, pengelola & Command Center tersinkron real-time di semua perangkat.' : 'server.py tidak terdeteksi. Jalankan <code>python3 server.py</code> agar data tersinkron ke semua perangkat.'}</span>
+      <span class="flex-1 min-w-[220px]"><b class="text-amber-300">${serverHint ? 'Server LAN sudah tersedia.' : 'Mode lokal: data hanya di browser ini.'}</b> ${serverHint ? 'Muat ulang agar tersinkron dengan semua perangkat.' : file ? 'Halaman dibuka langsung dari file. Jalankan <code>python3 server.py</code> lalu buka <code>http://localhost:8765/</code> agar pengunjung, pengelola & Command Center tersinkron di semua perangkat.' : 'server.py tidak terdeteksi. Jalankan <code>python3 server.py</code> agar data tersinkron ke semua perangkat.'}</span>
       ${serverHint ? '<button class="btn-ghost !py-1" onclick="location.reload()">Muat ulang</button>' : ''}</div>`;
   }
 
@@ -338,7 +338,7 @@
     holdSeat(evId, seat, cart) {
       return tx((d, t) => {
         const e = d.events[evId];
-        if (!saleState(e, t).open) fail('Penjualan tiket belum/tidak dibuka.');
+        if (!saleState(e, t).open) fail('Penjualan tiket belum dibuka atau sudah ditutup.');
         const ty = typeById(e, seatType(e, seat));
         if (!ty.onSale || e.blocked.includes(seat)) fail('Kursi ' + seat + ' tidak dijual.');
         const x = d.seats[evId][seat];
@@ -357,7 +357,7 @@
     setQty(evId, typeId, qty, cart) {
       return tx((d, t) => {
         const e = d.events[evId];
-        if (!saleState(e, t).open) fail('Penjualan tiket belum/tidak dibuka.');
+        if (!saleState(e, t).open) fail('Penjualan tiket belum dibuka atau sudah ditutup.');
         const ty = typeById(e, typeId);
         const others = d.qholds[evId].filter((h) => h.type === typeId && h.cart !== cart && h.until > t).reduce((a, h) => a + h.qty, 0)
           + d.qholds[evId].filter((h) => h.type === typeId && h.cart === cart && h.order).reduce((a, h) => a + h.qty, 0);
@@ -380,7 +380,7 @@
         const e = d.events[evId];
         const seats = Object.entries(d.seats[evId]).filter(([, x]) => x.st === 'HELD' && x.cart === cart && !x.order);
         const q = d.qholds[evId].filter((h) => h.cart === cart && !h.order);
-        if (!seats.length && !q.length) fail('Waktu hold kursi habis. Silakan pilih kursi kembali.');
+        if (!seats.length && !q.length) fail('Waktu hold kursi habis. Pilih kursi lagi.');
         const items = seats.map(([sid]) => ({ type: seatType(e, sid), seat: sid })).concat(...q.map((h) => Array.from({ length: h.qty }, () => ({ type: h.type, seat: null }))));
         (info.holders || []).forEach((h, i) => { if (items[i] && h) items[i].holder = h; });
         const p = price(e, items);
@@ -399,7 +399,7 @@
         const o = d.orders[orderId];
         if (!o) fail('Pesanan tidak ditemukan.');
         if (o.status === 'PAID') return 'ALREADY'; // callback idempoten: tidak menerbitkan tiket dua kali
-        if (o.status !== 'PENDING') fail(o.status === 'EXPIRED' ? 'Batas waktu pembayaran habis, kursi sudah dilepas. Silakan pesan ulang.' : 'Pesanan berstatus ' + o.status + '.');
+        if (o.status !== 'PENDING') fail(o.status === 'EXPIRED' ? 'Batas waktu pembayaran habis dan kursi sudah dilepas. Buat pesanan baru.' : 'Pesanan berstatus ' + o.status + '.');
         const bad = o.items.filter((it) => it.seat && !(d.seats[o.ev][it.seat] && d.seats[o.ev][it.seat].order === o.id));
         if (bad.length) fail('Hold kursi ' + bad.map((b) => b.seat).join(', ') + ' tidak valid lagi.');
         if (!success) { o.log.push({ ts: t, text: 'Pembayaran ' + method + ' ditolak (simulasi sandbox)' }); return 'FAILED'; }
@@ -520,8 +520,8 @@
       const [rA, rB] = await Promise.all([backend().commit(base, dA), backend().commit(base, dB)]);
       const win = rA.ok ? 'A' : 'B', lose = rA.ok ? 'B' : 'A';
       const rW = rA.ok ? rA : rB, rL = rA.ok ? rB : rA;
-      log.push(`Commit pembeli ${win} (base v${base}) DITERIMA -> versi ${rW.version}. Kursi ${seat} di-hold untuk ${win}.`);
-      log.push(`Commit pembeli ${lose} (base v${base}) DITOLAK: versi sudah berubah (409 / konflik).`);
+      log.push(`Commit pembeli ${win} (base v${base}) diterima -> versi ${rW.version}. Kursi ${seat} di-hold untuk ${win}.`);
+      log.push(`Commit pembeli ${lose} (base v${base}) ditolak: versi sudah berubah (409 / konflik).`);
       adopt(rL.ok ? Object.assign({}, rL, { state: rA.ok ? dA : dB }) : rL);
       if (!rL.ok) { const x = state.seats[evId][seat]; log.push(`Pembeli ${lose} membaca ulang state v${version}: kursi ${seat} berstatus ${x ? 'HELD oleh ' + x.cart : '?'} -> sistem menolak: "Kursi sedang dipesan pengunjung lain".`); }
       log.push('Hasil: hanya 1 hold yang sah, tidak ada double-booking. Hold demo dilepas otomatis setelah ' + e.holdMin + ' menit.');

@@ -1,12 +1,42 @@
-// Build Tailwind statis (offline) — tema "Aegis Command" dari desain Stitch.
+// Build Tailwind statis (offline). Tema "Papan Petunjuk": warna diambil dari CSS variable di
+// app/css/tokens.css sehingga mode gelap/terang cukup mengganti atribut data-theme di <html>.
 // Jalankan dari root proyek:
 //   npx tailwindcss@3 -c tools/tailwind/tailwind.config.js -i tools/tailwind/input.css -o app/vendor/tailwind.css --minify
+const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+const scale = (fam) => Object.fromEntries([50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((s) => [s, v(`${fam}-${s}`)]));
+const tokens = ['surface-container-highest', 'surface-bright', 'on-background', 'tertiary-container', 'secondary', 'on-primary',
+  'primary-container', 'outline', 'surface-variant', 'on-primary-container', 'surface-container-low', 'on-surface-variant',
+  'surface-dim', 'primary', 'surface', 'on-surface', 'tertiary', 'secondary-container', 'surface-container-high',
+  'surface-container-lowest', 'error', 'outline-variant', 'error-container', 'surface-container', 'background'];
+const SANS = ['Barlow', 'system-ui', 'sans-serif'];
+const COND = ['"Barlow Condensed"', 'Barlow', 'system-ui', 'sans-serif'];
+
 module.exports = {
-  darkMode: 'class',
   content: ['./index.html', './app/*.html', './app/js/**/*.js'],
   theme: { extend: {
-    colors: { 'surface-container-highest': '#2c344d', 'surface-bright': '#313852', 'on-background': '#dbe1ff', 'tertiary-container': '#ff929a', secondary: '#4edea3', 'on-primary': '#00354a', 'primary-container': '#38bdf8', outline: '#87929a', 'surface-variant': '#2c344d', 'on-primary-container': '#004965', 'surface-container-low': '#131a33', 'on-surface-variant': '#bdc8d1', 'surface-dim': '#0a122a', primary: '#8ed5ff', surface: '#0a122a', 'on-surface': '#dbe1ff', tertiary: '#ffbcbf', 'secondary-container': '#00a572', 'surface-container-high': '#212942', 'surface-container-lowest': '#050d25', error: '#ffb4ab', 'outline-variant': '#3e484f', 'error-container': '#93000a', 'surface-container': '#171e37', background: '#0a122a' },
-    fontFamily: { 'label-md': ['JetBrains Mono'], 'body-md': ['Inter'], 'body-sm': ['Inter'], 'display-lg': ['Plus Jakarta Sans'], 'label-lg': ['JetBrains Mono'], 'body-lg': ['Inter'], 'headline-sm': ['Plus Jakarta Sans'], 'headline-md': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'label-sm': ['JetBrains Mono'] },
-    fontSize: { 'label-md': ['11px', { lineHeight: '16px', letterSpacing: '0.04em', fontWeight: '500' }], 'body-md': ['14px', { lineHeight: '20px' }], 'body-sm': ['12px', { lineHeight: '18px' }], 'display-lg': ['34px', { lineHeight: '42px', letterSpacing: '-0.02em', fontWeight: '700' }], 'label-lg': ['13px', { lineHeight: '18px', letterSpacing: '0.02em', fontWeight: '500' }], 'body-lg': ['16px', { lineHeight: '24px' }], 'headline-sm': ['16px', { lineHeight: '24px', fontWeight: '600' }], 'headline-md': ['20px', { lineHeight: '28px', letterSpacing: '-0.01em', fontWeight: '600' }], 'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.015em', fontWeight: '600' }], 'label-sm': ['10px', { lineHeight: '14px', letterSpacing: '0.06em', fontWeight: '600' }] },
+    colors: {
+      ...Object.fromEntries(tokens.map((t) => [t, v(t)])),
+      white: v('white'), black: v('black'),
+      slate: scale('slate'), rose: scale('rose'), orange: scale('orange'), amber: scale('amber'),
+      emerald: scale('emerald'), sky: scale('sky'), indigo: scale('indigo'), violet: scale('violet'),
+    },
+    fontFamily: {
+      sans: SANS, mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+      'body-sm': SANS, 'body-md': SANS, 'body-lg': SANS,
+      'label-sm': SANS, 'label-md': SANS, 'label-lg': SANS,
+      'headline-sm': COND, 'headline-md': COND, 'headline-lg': COND, 'display-lg': COND,
+    },
+    fontSize: {
+      'label-sm': ['12px', { lineHeight: '16px', fontWeight: '600' }],
+      'label-md': ['13px', { lineHeight: '18px', fontWeight: '500' }],
+      'label-lg': ['14px', { lineHeight: '20px', fontWeight: '500' }],
+      'body-sm': ['13px', { lineHeight: '19px' }],
+      'body-md': ['15px', { lineHeight: '22px' }],
+      'body-lg': ['17px', { lineHeight: '26px' }],
+      'headline-sm': ['19px', { lineHeight: '24px', fontWeight: '600' }],
+      'headline-md': ['23px', { lineHeight: '28px', fontWeight: '600' }],
+      'headline-lg': ['31px', { lineHeight: '36px', fontWeight: '600' }],
+      'display-lg': ['42px', { lineHeight: '44px', fontWeight: '700' }],
+    },
   } },
 };

@@ -52,7 +52,7 @@
     if (!sim || !sim.running) return;
     const uc = REF.usecases.find((u) => u.id === sim.ucId);
     const step = uc.steps[sim.idx];
-    if (!step) { sim.running = false; sim.doneAt = Date.now(); Store.setSim(sim); UI.toast(uc.id + ' selesai — ' + uc.steps.length + ' langkah lintas dashboard', 'P4', 'Cek KPI di Analytics & tiket ' + (sim.ticketId || '')); return; }
+    if (!step) { sim.running = false; sim.doneAt = Date.now(); Store.setSim(sim); UI.toast(uc.id + ' selesai: ' + uc.steps.length + ' langkah lintas dashboard', 'P4', 'Cek KPI di Analitik & Laporan dan tiket ' + (sim.ticketId || '')); return; }
     apply(uc, step, sim);
     UI.toast(`<b>${uc.id} #${sim.idx + 1}</b> ${step.frm}${step.frm !== step.to ? ' → ' + step.to : ''}: ${esc(step.action)}`, uc.priority.startsWith('P') ? uc.priority : 'P3', step.event + ' · ' + step.actor + ' · ' + step.t);
     if (Store.s.settings.follow) { const r = routeFor(step.to, sim, uc); if (location.hash !== r) location.hash = r; }
@@ -69,13 +69,13 @@
     const uc = REF.usecases.find((u) => u.id === sim.ucId);
     const pct = (sim.idx / uc.steps.length) * 100;
     root.innerHTML = `<div class="fixed bottom-6 left-[19.5rem] z-[70] w-[400px] card-elev">
-      <div class="flex items-center gap-2 px-4 py-3 border-b border-white/10">${icon('account_tree', 'text-primary text-[20px]')}<div class="flex-1 min-w-0"><div class="font-label-sm text-label-sm text-outline">SIMULASI ${sim.running ? 'BERJALAN' : 'SELESAI'} · ${sim.idx}/${uc.steps.length}</div><div class="font-headline-sm text-headline-sm truncate">${uc.id} ${esc(uc.name)}</div></div>
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-white/10">${icon('account_tree', 'text-primary text-[20px]')}<div class="flex-1 min-w-0"><div class="font-label-sm text-label-sm text-outline">Simulasi ${sim.running ? 'berjalan' : 'selesai'} (${sim.idx}/${uc.steps.length})</div><div class="font-headline-sm text-headline-sm truncate">${uc.id} ${esc(uc.name)}</div></div>
         ${sim.running ? `<button class="btn-ghost !px-2" id="sim-stop" title="Hentikan">${icon('stop')}</button>` : `<button class="btn-ghost !px-2" id="sim-close" title="Tutup">${icon('close')}</button>`}<button class="btn-ghost !px-2" id="sim-min">${icon(sim.min ? 'expand_less' : 'expand_more')}</button></div>
       <div class="px-4 pt-3">${UI.bar(pct, sim.running ? 'bg-primary-container' : 'bg-secondary')}</div>
       ${sim.min ? '<div class="h-3"></div>' : `<div class="p-3 flex flex-col gap-1 max-h-[300px] overflow-y-auto">${uc.steps.map((s, i) => `<a href="${routeFor(s.to, sim, uc)}" class="flex items-start gap-2 rounded-lg px-2 py-1.5 ${i === sim.idx - 1 ? 'bg-sky-500/10' : ''} hover:bg-white/5">
         <span class="mt-0.5">${i < sim.idx ? icon('check_circle', 'text-[16px] text-secondary') : icon('radio_button_unchecked', 'text-[16px] text-outline')}</span>
         <div class="min-w-0"><div class="font-label-sm text-label-sm ${i < sim.idx ? 'text-primary' : 'text-outline'}">${s.frm}${s.frm !== s.to ? ' → ' + s.to : ''} · ${s.event}</div><div class="font-body-sm text-body-sm ${i < sim.idx ? 'text-on-surface' : 'text-on-surface-variant'} truncate">${esc(s.action)}</div></div></a>`).join('')}</div>
-        <div class="flex gap-2 px-3 pb-3">${sim.ticketId ? `<a class="btn-ghost flex-1 justify-center" href="#/ticketing?id=${sim.ticketId}">${icon('confirmation_number', 'text-[16px]')} ${sim.ticketId}</a>` : ''}<a class="btn-ghost flex-1 justify-center" href="#/usecase?uc=${uc.id}">${icon('account_tree', 'text-[16px]')} Detail UC</a></div>`}</div>`;
+        <div class="flex gap-2 px-3 pb-3">${sim.ticketId ? `<a class="btn-ghost flex-1 justify-center" href="#/ticketing?id=${sim.ticketId}">${icon('confirmation_number', 'text-[16px]')} ${sim.ticketId}</a>` : ''}<a class="btn-ghost flex-1 justify-center" href="#/usecase?uc=${uc.id}">${icon('account_tree', 'text-[16px]')} Detail use case</a></div>`}</div>`;
     const b = (id, fn) => { const el = document.getElementById(id); el && el.addEventListener('click', fn); };
     b('sim-stop', () => Sim.stop());
     b('sim-close', () => { Store.setSim(null); render(); });

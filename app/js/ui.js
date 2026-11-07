@@ -5,10 +5,10 @@
   REF.dashboards.forEach((d) => (DBMAP[d.code] = d));
   const ICON = { TIC: 'confirmation_number', BMS: 'hvac', TEN: 'storefront', CCTV: 'videocam', ENE: 'bolt', ANL: 'analytics', PARK: 'local_parking', O360: 'apartment', EVT: 'local_activity' };
   const PRIO = {
-    P1: { label: 'KRITIS', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/40', dot: 'bg-rose-500', hex: '#f43f5e' },
-    P2: { label: 'TINGGI', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/40', dot: 'bg-orange-400', hex: '#fb923c' },
-    P3: { label: 'SEDANG', cls: 'bg-amber-400/15 text-amber-300 border-amber-400/40', dot: 'bg-amber-400', hex: '#f59e0b' },
-    P4: { label: 'RENDAH', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', dot: 'bg-emerald-400', hex: '#10b981' },
+    P1: { label: 'Kritis', cls: 'bg-rose-500/15 text-rose-300 border-rose-500/40', dot: 'bg-rose-500', hex: '#f43f5e' },
+    P2: { label: 'Tinggi', cls: 'bg-orange-500/15 text-orange-300 border-orange-500/40', dot: 'bg-orange-400', hex: '#fb923c' },
+    P3: { label: 'Sedang', cls: 'bg-amber-400/15 text-amber-300 border-amber-400/40', dot: 'bg-amber-400', hex: '#f59e0b' },
+    P4: { label: 'Rendah', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40', dot: 'bg-emerald-400', hex: '#10b981' },
   };
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const pad = (n) => String(n).padStart(2, '0');
@@ -33,8 +33,8 @@
       const ok = ['RUNNING', 'NORMAL', 'AVAILABLE', 'CHARGING', 'OPEN', 'BOOST'];
       const warn = ['WARN', 'STANDBY'];
       const c = ok.includes(st) ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30' : warn.includes(st) ? 'text-amber-300 bg-amber-500/10 border-amber-500/30' : 'text-rose-300 bg-rose-500/15 border-rose-500/40';
-      const lbl = { RUNNING: 'Running', NORMAL: 'Normal', STANDBY: 'Standby', WARN: 'Siaga/Perhatian', TRIP: 'TRIP / E-STOP', FAULT: 'Fault', LEAK: 'Bocor', OFF: 'OFF (Interlock)', OPEN: 'Terbuka', BOOST: 'Boost +25%', AVAILABLE: 'Tersedia', CHARGING: 'Charging' }[st] || st;
-      return `<span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-label-sm text-label-sm ${c}"><span class="w-1.5 h-1.5 rounded-full ${ok.includes(st) ? 'bg-emerald-400' : warn.includes(st) ? 'bg-amber-400' : 'bg-rose-500 animate-pulse'}"></span>${lbl}</span>`;
+      const lbl = { RUNNING: 'Berjalan', NORMAL: 'Normal', STANDBY: 'Standby', WARN: 'Perlu perhatian', TRIP: 'TRIP (stop darurat)', FAULT: 'Gangguan', LEAK: 'Bocor', OFF: 'Mati (interlock)', OPEN: 'Terbuka', BOOST: 'Boost +25%', AVAILABLE: 'Tersedia', CHARGING: 'Mengisi daya' }[st] || st;
+      return `<span class="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-label-sm text-label-sm ${c}"><span class="w-1.5 h-1.5 rounded-md ${ok.includes(st) ? 'bg-emerald-400' : warn.includes(st) ? 'bg-amber-400' : 'bg-rose-500 animate-pulse'}"></span>${lbl}</span>`;
     },
     chip(text, cls) { return `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-label-sm text-label-sm ${cls || 'bg-surface-container-high text-on-surface-variant'}">${text}</span>`; },
     card(inner, cls) { return `<section class="card ${cls || ''}">${inner}</section>`; },
@@ -43,12 +43,12 @@
     },
     kpi(o) {
       return `<div class="card p-4 flex flex-col gap-2 ${o.cls || ''}">
-        <div class="flex items-start justify-between"><span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">${o.label}</span>${o.icon ? `<span class="text-primary">${icon(o.icon, 'text-[20px]')}</span>` : ''}</div>
+        <div class="flex items-start justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">${o.label}</span>${o.icon ? `<span class="text-primary">${icon(o.icon, 'text-[20px]')}</span>` : ''}</div>
         <div class="flex items-end gap-2"><span class="font-display-lg ${String(o.value).length > 7 ? 'text-[26px] leading-[34px] font-bold' : 'text-display-lg'} whitespace-nowrap ${o.vcls || 'text-on-surface'}">${o.value}</span>${o.unit ? `<span class="font-label-md text-label-md text-on-surface-variant pb-2">${o.unit}</span>` : ''}${o.delta ? `<span class="ml-auto font-label-sm text-label-sm px-2 py-0.5 rounded ${o.dcls || 'bg-secondary/15 text-secondary'}">${o.delta}</span>` : ''}</div>
-        ${o.bar != null ? `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-full ${o.barcls || 'bg-secondary'}" style="width:${Math.max(2, Math.min(100, o.bar))}%"></div></div>` : ''}
+        ${o.bar != null ? `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-md ${o.barcls || 'bg-secondary'}" style="width:${Math.max(2, Math.min(100, o.bar))}%"></div></div>` : ''}
         ${o.foot ? `<div class="font-label-sm text-label-sm text-on-surface-variant">${o.foot}</div>` : ''}</div>`;
     },
-    bar(pct, cls) { return `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-full ${cls || 'bg-primary-container'}" style="width:${Math.max(1, Math.min(100, pct))}%"></div></div>`; },
+    bar(pct, cls) { return `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-md ${cls || 'bg-primary-container'}" style="width:${Math.max(1, Math.min(100, pct))}%"></div></div>`; },
     link(route, label, cls) { return `<a href="#/${route}" class="${cls || 'text-primary hover:underline'}">${label}</a>`; },
     dbLink(code, params, label) {
       const d = DBMAP[code];
@@ -67,7 +67,7 @@
       let g = '';
       for (let k = 0; k <= 4; k++) {
         const v = min + ((max - min) * k) / 4;
-        g += `<line x1="${o.pad}" x2="${o.w - o.pad / 2}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.06)"/><text x="${o.pad - 6}" y="${Y(v) + 3}" text-anchor="end" class="ctext">${num(v, max - min < 10 ? 1 : 0)}</text>`;
+        g += `<line x1="${o.pad}" x2="${o.w - o.pad / 2}" y1="${Y(v)}" y2="${Y(v)}" style="stroke:rgb(var(--on-surface) / .08)"/><text x="${o.pad - 6}" y="${Y(v) + 3}" text-anchor="end" class="ctext">${num(v, max - min < 10 ? 1 : 0)}</text>`;
       }
       if (o.band) g += `<rect x="${X(o.band[0])}" y="${o.pad / 2}" width="${X(o.band[1]) - X(o.band[0])}" height="${o.h - o.pad * 1.2}" fill="rgba(244,63,94,.12)" stroke="rgba(244,63,94,.35)" stroke-dasharray="3 3"/><text x="${(X(o.band[0]) + X(o.band[1])) / 2}" y="${o.pad / 2 + 10}" text-anchor="middle" class="ctext" fill="#fb7185">${o.bandLabel || ''}</text>`;
       if (o.refLine != null) g += `<line x1="${o.pad}" x2="${o.w - o.pad / 2}" y1="${Y(o.refLine)}" y2="${Y(o.refLine)}" stroke="#fb7185" stroke-dasharray="5 4"/><text x="${o.w - o.pad / 2}" y="${Y(o.refLine) - 4}" text-anchor="end" class="ctext" fill="#fb7185">${o.refLabel || ''}</text>`;
@@ -76,7 +76,7 @@
         const pts = s.data.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
         if (o.area && si === 0) g += `<defs><linearGradient id="ga${si}${o.w}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${s.color}" stop-opacity=".35"/><stop offset="1" stop-color="${s.color}" stop-opacity="0"/></linearGradient></defs><polygon points="${X(0)},${Y(min)} ${pts} ${X(n - 1)},${Y(min)}" fill="url(#ga${si}${o.w})"/>`;
         g += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
-        if (s.dot != null) g += `<circle cx="${X(s.dot)}" cy="${Y(s.data[s.dot])}" r="5" fill="${s.color}" stroke="#0a122a" stroke-width="2"/>`;
+        if (s.dot != null) g += `<circle cx="${X(s.dot)}" cy="${Y(s.data[s.dot])}" r="5" fill="${s.color}" style="stroke:rgb(var(--surface-container))" stroke-width="2"/>`;
       });
       return `<svg viewBox="0 0 ${o.w} ${o.h}" class="w-full h-auto">${g}</svg>`;
     },
@@ -84,10 +84,10 @@
       o = Object.assign({ size: 150, stroke: 18, center: '', sub: '' }, o || {});
       const r = (o.size - o.stroke) / 2, c = 2 * Math.PI * r, tot = segs.reduce((a, s) => a + s.v, 0) || 1;
       let off = 0, g = '';
-      segs.forEach((s) => { const l = (s.v / tot) * c; g += `<circle r="${r}" cx="${o.size / 2}" cy="${o.size / 2}" fill="none" stroke="${s.color}" stroke-width="${o.stroke}" stroke-dasharray="${l} ${c - l}" stroke-dashoffset="${-off}" transform="rotate(-90 ${o.size / 2} ${o.size / 2})"/>`; off += l; });
-      return `<svg viewBox="0 0 ${o.size} ${o.size}" width="${o.size}" height="${o.size}"><circle r="${r}" cx="${o.size / 2}" cy="${o.size / 2}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="${o.stroke}"/>${g}<text x="50%" y="48%" text-anchor="middle" class="font-display" font-size="${o.size / 6}" fill="#dbe1ff" font-weight="700">${o.center}</text><text x="50%" y="62%" text-anchor="middle" class="ctext">${o.sub}</text></svg>`;
+      segs.forEach((s) => { const l = (s.v / tot) * c; g += `<circle r="${r}" cx="${o.size / 2}" cy="${o.size / 2}" fill="none" style="stroke:${s.color}" stroke-width="${o.stroke}" stroke-dasharray="${l} ${c - l}" stroke-dashoffset="${-off}" transform="rotate(-90 ${o.size / 2} ${o.size / 2})"/>`; off += l; });
+      return `<svg viewBox="0 0 ${o.size} ${o.size}" width="${o.size}" height="${o.size}"><circle r="${r}" cx="${o.size / 2}" cy="${o.size / 2}" fill="none" style="stroke:rgb(var(--on-surface) / .08)" stroke-width="${o.stroke}"/>${g}<text x="50%" y="48%" text-anchor="middle" class="font-display" font-size="${o.size / 6}" style="fill:rgb(var(--on-surface))" font-weight="700">${o.center}</text><text x="50%" y="62%" text-anchor="middle" class="ctext">${o.sub}</text></svg>`;
     },
-    ring(pct, o) { o = o || {}; return UI.donut([{ v: pct, color: o.color || '#4edea3' }, { v: 100 - pct, color: 'rgba(255,255,255,0.04)' }], { size: o.size || 120, stroke: o.stroke || 12, center: o.center || Math.round(pct) + '%', sub: o.sub || '' }); },
+    ring(pct, o) { o = o || {}; return UI.donut([{ v: pct, color: o.color || '#4edea3' }, { v: 100 - pct, color: 'rgb(var(--on-surface) / .06)' }], { size: o.size || 120, stroke: o.stroke || 12, center: o.center || Math.round(pct) + '%', sub: o.sub || '' }); },
     spark(data, color, w, h) {
       w = w || 160; h = h || 36;
       const min = Math.min(...data), max = Math.max(...data);
@@ -134,7 +134,7 @@
     modal(title, body, opts) {
       opts = opts || {};
       const root = document.getElementById('modal-root');
-      root.innerHTML = `<div class="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/60 backdrop-blur-sm p-6" data-close>
+      root.innerHTML = `<div class="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto scrim p-6" data-close>
         <div class="card-elev w-full ${opts.wide ? 'max-w-4xl' : 'max-w-2xl'} mt-10" onclick="event.stopPropagation()">
           <div class="flex items-center justify-between px-6 py-4 border-b border-white/10"><h3 class="font-headline-md text-headline-md">${title}</h3><button class="btn-ghost !px-2" data-close>${icon('close')}</button></div>
           <div class="p-6">${body}</div></div></div>`;
@@ -161,14 +161,17 @@
       const ev = Store.eventsFor(code, 8);
       const ucs = REF.usecases.filter((u) => u.primary === code || u.related.split(/,\s*/).includes(code));
       return `<section class="card p-5" id="relasi-panel">
-        ${UI.h('Relasi Dashboard & Event Lintas Modul', 'Aliran data masuk/keluar ' + esc(DBMAP[code].name) + ' (sumber: UseCase_Relasi_Dashboard.xlsx)', `<a href="#/usecase" class="btn-ghost">${icon('account_tree', 'text-[16px]')} Simulator Use Case</a>`, 'hub')}
+        ${UI.h('Relasi dashboard & event lintas modul', 'Aliran data masuk dan keluar ' + esc(DBMAP[code].name) + ' (sumber: UseCase_Relasi_Dashboard.xlsx)', `<a href="#/usecase" class="btn-ghost">${icon('account_tree', 'text-[16px]')} Simulator Use Case</a>`, 'hub')}
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
           <div><div class="lbl mb-2">Masuk dari</div><div class="flex flex-col gap-2">${inn.map((r) => `<a href="#/${DBMAP[r.frm].route}" class="rel-row">${icon(ICON[r.frm], 'text-[16px] text-primary')}<div><div class="font-label-lg text-label-lg text-on-surface">${r.frm} → ${code}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
           <div><div class="lbl mb-2">Keluar ke</div><div class="flex flex-col gap-2">${out.map((r) => `<a href="#/${DBMAP[r.to].route}" class="rel-row">${icon(ICON[r.to], 'text-[16px] text-secondary')}<div><div class="font-label-lg text-label-lg text-on-surface">${code} → ${r.to}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
-          <div><div class="lbl mb-2">Event terbaru (live)</div><div class="flex flex-col gap-2">${ev.length ? ev.map((e) => `<div class="rel-row !cursor-default"><span class="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style="background:${(PRIO[e.sev] || {}).hex || '#38bdf8'}"></span><div class="min-w-0"><div class="font-label-md text-label-md text-on-surface-variant">${time(e.ts)} · ${e.from}→${e.to} · ${e.code}${e.ucId ? ' · ' + e.ucId : ''}</div><div class="font-body-sm text-body-sm text-on-surface truncate">${esc(e.title)}</div></div></div>`).join('') : `<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada event. Jalankan skenario di Simulator Use Case untuk melihat aliran antar dashboard.</div>`}</div>
+          <div><div class="lbl mb-2">Event terbaru</div><div class="flex flex-col gap-2">${ev.length ? ev.map((e) => `<div class="rel-row !cursor-default"><span class="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style="background:${(PRIO[e.sev] || {}).hex || '#38bdf8'}"></span><div class="min-w-0"><div class="font-label-md text-label-md text-on-surface-variant">${time(e.ts)} · ${e.from}→${e.to} · ${e.code}${e.ucId ? ' · ' + e.ucId : ''}</div><div class="font-body-sm text-body-sm text-on-surface truncate">${esc(e.title)}</div></div></div>`).join('') : `<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada event. Jalankan skenario di Simulator Use Case untuk melihat aliran antar dashboard.</div>`}</div>
             <div class="lbl mt-4 mb-2">Use case terkait</div><div class="flex flex-wrap gap-1.5">${ucs.map((u) => `<a href="#/usecase?uc=${u.id}" class="chip-btn" title="${esc(u.name)}">${u.id}</a>`).join('')}</div></div>
         </div></section>`;
     },
   };
   window.UI = UI;
 })();
+
+// Esc menutup modal yang sedang terbuka (Command Center dan konsol pengelola)
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('modal-root')?.innerHTML) UI.closeModal(); });

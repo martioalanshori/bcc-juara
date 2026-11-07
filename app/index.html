@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html class="dark" lang="id">
+<html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Summarecon Mall · Integrated Command Center Ticketing System</title>
   <!-- Semua aset lokal (tanpa internet): font di vendor/fonts, Tailwind hasil build statis.
-       Tema "Aegis Command" ada di tools/tailwind/tailwind.config.js -->
-  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=3" />
-  <link rel="stylesheet" href="vendor/tailwind.css?v=7" />
-  <link rel="stylesheet" href="css/app.css?v=7" />
+       Tema "Papan Petunjuk": token di css/tokens.css, build di tools/tailwind/tailwind.config.js -->
+  <script src="js/theme.js?v=10"></script>
+  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=4" />
+  <link rel="stylesheet" href="vendor/tailwind.css?v=10" />
+  <link rel="stylesheet" href="css/app.css?v=10" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <!-- SIDEBAR -->
@@ -17,7 +18,7 @@
       <div class="px-5 flex items-center justify-between">
         <a href="#/ticketing" class="flex items-center gap-3">
           <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary text-[20px]">hub</span></div>
-          <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-tight">COMMAND HUB</span><span class="font-label-sm text-label-sm text-secondary tracking-widest uppercase">SUMMARECON MALL OPS</span></div>
+          <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight">Command Center</span><span class="font-label-sm text-label-sm text-secondary">Summarecon Mall Bandung</span></div>
         </a>
         <div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
       </div>
@@ -25,38 +26,39 @@
     </div>
     <div class="px-4 flex flex-col gap-3">
       <div class="bg-surface-container rounded-xl p-3 flex flex-col gap-2">
-        <div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-sm text-label-sm uppercase tracking-wider">Zone Telemetry</span><span class="font-label-sm text-label-sm text-secondary" id="tele-status">All Nominal</span></div>
-        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">Core Mesh Latency</span><span class="text-on-surface" id="tele-lat">14ms</span></div>
-        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">IoT Grid Nodes</span><span class="text-primary">1,842 Live</span></div>
+        <div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-sm text-label-sm">Telemetri zona</span><span class="font-label-sm text-label-sm text-secondary" id="tele-status">Semua normal</span></div>
+        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">Latensi jaringan inti</span><span class="text-on-surface" id="tele-lat">14ms</span></div>
+        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">Node IoT aktif</span><span class="text-primary">1.842</span></div>
       </div>
       <div class="flex items-center justify-between px-2 text-on-surface-variant">
-        <span class="font-label-sm text-label-sm">BUILD 4.19.0-SMB</span>
-        <button id="btn-reset" class="font-label-sm text-label-sm text-outline hover:text-tertiary" title="Kembalikan data demo ke kondisi awal">RESET DEMO</button>
+        <span class="font-label-sm text-label-sm">Build 4.19.0-SMB</span>
+        <button id="btn-reset" class="font-label-sm text-label-sm text-outline hover:text-tertiary" title="Kembalikan data demo ke kondisi awal">Reset demo</button>
       </div>
     </div>
   </aside>
 
   <div class="pl-72">
     <!-- HEADER -->
-    <header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 px-6 shadow-[0_1px_8px_rgba(0,0,0,0.25)] flex items-center justify-between gap-4">
+    <header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 px-6 border-b border-outline-variant flex items-center justify-between gap-4">
       <div class="flex items-center gap-6 min-w-0">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary text-[22px]">domain</span>
           <div class="flex flex-col leading-tight"><span class="font-headline-sm text-headline-sm text-on-surface whitespace-nowrap">Summarecon Mall</span><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Integrated Command Center</span></div>
         </div>
         <div class="h-6 w-px bg-surface-container-highest"></div>
-        <div class="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="text-outline font-label-sm text-label-sm">•</span><span class="font-label-sm text-label-sm text-on-surface-variant">Facility &amp; Security</span></div>
+        <div class="hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-md bg-surface-container whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="text-outline font-label-sm text-label-sm">•</span><span class="font-label-sm text-label-sm text-on-surface-variant">Fasilitas &amp; Keamanan</span></div>
       </div>
       <div class="flex items-center gap-5">
         <div class="hidden xl:flex items-center gap-5">
-          <a href="#/ticketing" class="flex items-center gap-2"><span class="font-label-sm text-label-sm uppercase text-outline">Active Tickets</span><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-label-md text-label-md" id="hdr-active">0</span></a>
-          <a href="#/owner360" class="flex items-center gap-2"><span class="font-label-sm text-label-sm uppercase text-outline">Mall Occupancy</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-label-md text-label-md">94.2%</span></a>
-          <a href="#/bms" class="flex items-center gap-2"><span class="font-label-sm text-label-sm uppercase text-outline">System Health</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary font-label-md text-label-md" id="hdr-health">99.8%</span></a>
+          <a href="#/ticketing" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Tiket aktif</span><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-label-md text-label-md" id="hdr-active">0</span></a>
+          <a href="#/owner360" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Okupansi mal</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-label-md text-label-md">94.2%</span></a>
+          <a href="#/bms" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Kesehatan sistem</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary font-label-md text-label-md" id="hdr-health">99.8%</span></a>
         </div>
-        <button id="btn-broadcast" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white font-label-md text-label-md uppercase tracking-wider"><span class="material-symbols-outlined text-[18px]">campaign</span>Broadcast Alert</button>
+        <button id="btn-broadcast" class="btn-danger whitespace-nowrap"><span class="material-symbols-outlined text-[18px]">campaign</span>Kirim siaran</button>
+        <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
         <button type="button" data-logout="command-center" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari sesi PIN"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
         <div class="flex items-center gap-3">
-          <div class="flex flex-col items-end leading-tight"><span class="font-label-lg text-label-lg text-on-surface">Aris Thorne</span><span class="font-label-sm text-label-sm text-on-surface-variant">Ops Lead · L4</span></div>
+          <div class="hidden 2xl:flex flex-col items-end leading-tight whitespace-nowrap"><span class="font-label-lg text-label-lg text-on-surface">Aris Thorne</span><span class="font-label-sm text-label-sm text-on-surface-variant">Kepala operasional (L4)</span></div>
           <div class="w-9 h-9 rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">person</span></div>
         </div>
       </div>
@@ -74,25 +76,25 @@
 
   <script src="vendor/qrcode.js"></script>
   <script src="vendor/jsQR.js"></script>
-  <script src="js/sop-data.js?v=7"></script>
-  <script src="js/data.js?v=7"></script>
-  <script src="js/store.js?v=7"></script>
-  <script src="js/ui.js?v=7"></script>
-  <script src="js/views/ticketing.js?v=7"></script>
-  <script src="js/views/bms.js?v=7"></script>
-  <script src="js/views/tenant.js?v=7"></script>
-  <script src="js/views/cctv.js?v=7"></script>
-  <script src="js/views/energy.js?v=7"></script>
-  <script src="js/views/analytics.js?v=7"></script>
-  <script src="js/views/parking.js?v=7"></script>
-  <script src="js/views/owner360.js?v=7"></script>
-  <script src="js/evt/engine.js?v=7"></script>
-  <script src="js/evt/checkin-ui.js?v=7"></script>
-  <script src="js/views/event.js?v=7"></script>
-  <script src="js/views/sop.js?v=7"></script>
-  <script src="js/views/usecase.js?v=7"></script>
-  <script src="js/sim.js?v=7"></script>
-  <script src="js/auth.js?v=7"></script>
-  <script src="js/app.js?v=7"></script>
+  <script src="js/sop-data.js?v=10"></script>
+  <script src="js/data.js?v=10"></script>
+  <script src="js/store.js?v=10"></script>
+  <script src="js/ui.js?v=10"></script>
+  <script src="js/views/ticketing.js?v=10"></script>
+  <script src="js/views/bms.js?v=10"></script>
+  <script src="js/views/tenant.js?v=10"></script>
+  <script src="js/views/cctv.js?v=10"></script>
+  <script src="js/views/energy.js?v=10"></script>
+  <script src="js/views/analytics.js?v=10"></script>
+  <script src="js/views/parking.js?v=10"></script>
+  <script src="js/views/owner360.js?v=10"></script>
+  <script src="js/evt/engine.js?v=10"></script>
+  <script src="js/evt/checkin-ui.js?v=10"></script>
+  <script src="js/views/event.js?v=10"></script>
+  <script src="js/views/sop.js?v=10"></script>
+  <script src="js/views/usecase.js?v=10"></script>
+  <script src="js/sim.js?v=10"></script>
+  <script src="js/auth.js?v=10"></script>
+  <script src="js/app.js?v=10"></script>
 </body>
 </html>

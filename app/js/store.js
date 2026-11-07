@@ -3,7 +3,7 @@
   const KEY = 'smicc-ts-summarecon-v1';
   const REF = window.SMICC_REF;
   const STATUSES = ['OPEN', 'ACKNOWLEDGED', 'DISPATCHED', 'ON-SITE', 'RESOLVED', 'CLOSED'];
-  const STATUS_LABEL = { OPEN: 'Baru', ACKNOWLEDGED: 'Diakui', DISPATCHED: 'Tim Dikirim', 'ON-SITE': 'Di Lokasi', RESOLVED: 'Selesai', CLOSED: 'Ditutup', ESCALATED: 'Eskalasi' };
+  const STATUS_LABEL = { OPEN: 'Baru', ACKNOWLEDGED: 'Diakui', DISPATCHED: 'Tim dikirim', 'ON-SITE': 'Di lokasi', RESOLVED: 'Selesai', CLOSED: 'Ditutup', ESCALATED: 'Eskalasi' };
   const SLA = {};
   REF.sla.forEach((s) => (SLA[s.level] = s));
   const SOP = {};
@@ -103,7 +103,7 @@
       t.id = id;
       t.createdAt = Date.now();
       t.checks = sop ? sop.steps.map(() => false) : [];
-      t.log = [{ ts: t.createdAt, who: o.by || 'CCO', text: 'Tiket dibuat - sumber: ' + t.source + (sop ? ' | SOP ' + sop.id : '') }];
+      t.log = [{ ts: t.createdAt, who: o.by || 'CCO', text: 'Tiket dibuat, sumber: ' + t.source + (sop ? ', SOP ' + sop.id : '') }];
       state.tickets.unshift(t);
       if (!quiet) api.addEvent({ from: o.fromDb || 'TIC', to: 'TIC', code: 'EVT-TICKET-CREATED', title: id + ' ' + t.title, detail: t.priority + ' · ' + t.location, sev: t.priority, ticketId: id, ucId: o.ucId });
       if (t.priority === 'P1') api.escalate(id, 'L1+L2 GM & Owner (otomatis P1)', true);
@@ -126,14 +126,14 @@
       const i = STATUSES.indexOf(t.status);
       if (i < 0 || i >= STATUSES.length - 1) return;
       const next = STATUSES[i + 1];
-      const msg = { ACKNOWLEDGED: 'Tiket diakui operator', DISPATCHED: 'Tim ' + (t.team || '-') + ' dikirim', 'ON-SITE': 'Tim tiba di lokasi', RESOLVED: 'Pekerjaan selesai, menunggu verifikasi', CLOSED: 'Diverifikasi & ditutup, survei CSAT dikirim' }[next];
+      const msg = { ACKNOWLEDGED: 'Tiket diakui operator', DISPATCHED: 'Tim ' + (t.team || '-') + ' dikirim', 'ON-SITE': 'Tim tiba di lokasi', RESOLVED: 'Pekerjaan selesai, menunggu verifikasi', CLOSED: 'Diverifikasi dan ditutup, survei CSAT dikirim' }[next];
       api.updateTicket(id, { status: next }, msg, who);
     },
     escalate(id, level, silentEmit) {
       const t = api.ticket(id);
       if (!t) return;
       t.escalations.push({ ts: Date.now(), level });
-      t.log.push({ ts: Date.now(), who: 'SL', text: 'ESKALASI: ' + level });
+      t.log.push({ ts: Date.now(), who: 'SL', text: 'Eskalasi: ' + level });
       api.addEvent({ from: 'TIC', to: 'O360', code: 'EVT-ESCALATION', title: 'Eskalasi ' + id, detail: level + ' · ' + t.title, sev: t.priority, ticketId: id, quiet: true });
       if (!silentEmit) emit('ticket');
     },
@@ -167,8 +167,8 @@
     clearCam(cam) { delete state.camAlerts[cam]; emit('cam'); },
     broadcast(text, zone, ucId) {
       state.broadcasts.unshift({ ts: Date.now(), text, zone: zone || 'ALL', ucId });
-      state.chats.push({ ts: Date.now(), from: 'Command Center Broadcast', ch: 'Broadcast ' + (zone || 'Semua Zona'), bot: true, text });
-      api.addEvent({ from: 'TIC', to: 'TEN', code: 'EVT-TENANT-BROADCAST', title: 'Broadcast tenant ' + (zone || 'semua zona'), detail: text, sev: 'P3', ucId, quiet: true });
+      state.chats.push({ ts: Date.now(), from: 'Siaran Command Center', ch: 'Siaran ' + (zone || 'semua zona'), bot: true, text });
+      api.addEvent({ from: 'TIC', to: 'TEN', code: 'EVT-TENANT-BROADCAST', title: 'Siaran tenant ' + (zone || 'semua zona'), detail: text, sev: 'P3', ucId, quiet: true });
       emit('tenant');
     },
     chat(msg) { state.chats.push(Object.assign({ ts: Date.now() }, msg)); emit('tenant'); },
