@@ -322,11 +322,13 @@
     const links = isMgr()
       ? `<a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a><a class="btn-ghost" href="checkin.html" target="_blank">${icon('qr_code_scanner', 'text-[16px]')} Check-in ponsel</a><button class="btn-ghost" id="evt-reset" title="Kembalikan data event ke kondisi awal">${icon('restart_alt', 'text-[16px]')} Reset</button>`
       : `<a class="btn-ghost" href="pengelola.html" target="_blank">${icon('admin_panel_settings', 'text-[16px]')} Konsol Pengelola</a><a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a>`;
-    let h = Evt.modeBanner() + `<section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-      <span class="chip-btn">${Evt.mode === 'server' ? '<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Server LAN, versi ' + Evt.version : '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>Mode lokal (1 perangkat)'}</span>
-      ${isMgr() ? UI.chip('Pengelola acara, kendali penuh', 'bg-primary/15 text-primary') : UI.chip('Manajemen mall, pemantauan (hanya baca)', 'bg-secondary/15 text-secondary')}
-      <div class="flex flex-wrap gap-2">${tabs.map(([k, l, i]) => `<button class="chip-btn !py-2 !px-3 ${ui.tab === k ? 'on' : ''}" data-tab="${k}">${icon(i, 'text-[16px]')} ${l}</button>`).join('')}</div>
-      <div class="ml-auto flex gap-2">${links}</div></section>`;
+    let h = Evt.modeBanner() + `<section class="card pagebar">
+      <div class="pagebar-info">
+        ${Evt.mode === 'server' ? '<span class="stat live"><span class="dot"></span>Server LAN</span><span class="stat">Versi data <b>' + Evt.version + '</b></span>' : '<span class="stat live"><span class="dot warn"></span>Mode lokal (1 perangkat)</span>'}
+        ${isMgr() ? UI.chip('Event Organizer, kendali penuh', 'bg-primary/15 text-primary') : UI.chip('Manajemen mal, read-only', 'bg-secondary/15 text-secondary')}
+      </div>
+      <div class="pagebar-actions">${links}</div>
+      <div class="pagebar-row" role="tablist">${tabs.map(([k, l, i]) => `<button class="chip-btn !py-2 !px-3 ${ui.tab === k ? 'on' : ''}" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${icon(i, 'text-[16px]')} ${l}</button>`).join('')}</div></section>`;
     if (global) return h;
     const e = Evt.ev(ui.ev); const sale = Evt.saleState(e);
     h += `<div class="flex flex-wrap gap-2 mb-3">${Evt.s.order.filter((id) => isMgr() || Evt.ev(id).status !== 'DRAFT').map((id) => { const x = Evt.ev(id); return `<button class="chip-btn ${id === ui.ev ? 'on' : ''}" data-ev="${id}" title="${esc(x.name)}">${id} · ${esc(x.name.length > 28 ? x.name.slice(0, 28) + '…' : x.name)}${x.status === 'CANCELLED' ? ' (batal)' : x.status === 'DRAFT' ? ' (draft)' : ''}</button>`; }).join('')}</div>

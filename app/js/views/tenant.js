@@ -18,12 +18,14 @@
       const tTk = Store.s.tickets.filter((t) => t.tenant === ten.id);
       const chats = Store.s.chats.slice(-7).reverse();
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Meja operasional tenant</span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Tenant aktif: <b class="text-secondary">284 / 284 terhubung</b></span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Sinkronisasi omnichannel: 6 detik lalu</span>
-        <span class="chip-btn">Dispatcher aktif: 6 meja</span>
-        <div class="ml-auto flex gap-2"><button class="btn-ghost" id="memo">${icon('campaign', 'text-[16px]')} Siaran memo</button><button class="btn-ghost" id="permit">${icon('assignment', 'text-[16px]')} Izin kerja</button><button class="btn" id="newreq">${icon('add_circle')} Buat tiket tenant</button></div>
+      <section class="card pagebar">
+        <div class="pagebar-info">
+          <span class="stat live"><span class="dot"></span>Meja operasional tenant</span>
+          <span class="stat">Tenant terhubung <b>284 / 284</b></span>
+          <span class="stat">Dispatcher aktif <b>6 meja</b></span>
+          <span class="stat">Sinkronisasi omnichannel 6 detik lalu</span>
+        </div>
+        <div class="pagebar-actions"><button class="btn-ghost" id="memo">${icon('campaign', 'text-[16px]')} Siaran memo</button><button class="btn-ghost" id="permit">${icon('assignment', 'text-[16px]')} Izin kerja</button><button class="btn" id="newreq">${icon('add_circle')} Buat tiket tenant</button></div>
       </section>
       <div class="flex flex-wrap gap-2 mb-5">${cats.map(([k, l]) => `<button class="chip-btn ${F.cat === k ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>
 

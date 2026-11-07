@@ -82,6 +82,23 @@ label.f { display: flex; flex-direction: column; gap: .35rem; font-size: 13px; f
 .nav-item.active { background: rgb(var(--surface-container-highest)); color: rgb(var(--on-surface)); font-weight: 600; box-shadow: inset 3px 0 0 rgb(var(--primary)); }
 .nav-item .cnt { margin-left: auto; font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; min-width: 22px; text-align: center; padding: 0 6px; border-radius: 4px; background: #c62828; color: #fff; }
 
+/* Bar atas halaman: status (teks biasa, bukan tombol) di kiri, aksi di kanan, tab/filter di baris sendiri. */
+.pagebar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; padding: .75rem 1rem; margin-bottom: 1.25rem; }
+.pagebar-info { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.25rem; flex: 1 1 320px; min-width: 0; }
+.pagebar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-left: auto; }
+.pagebar-row { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: .5rem; padding-top: .75rem; border-top: 1px solid rgb(var(--outline-variant)); }
+.pagebar-title { display: flex; flex-direction: column; gap: .15rem; flex: 1 1 320px; min-width: 0; }
+.pagebar-title .crumb { font-size: 12px; font-weight: 600; color: rgb(var(--on-surface-variant)); }
+.pagebar-title h2 { font-family: 'Barlow Condensed', 'Barlow', sans-serif; font-size: 28px; line-height: 32px; font-weight: 700; color: rgb(var(--on-surface)); }
+.pagebar-title p { font-size: 13px; color: rgb(var(--on-surface-variant)); }
+.stat { display: inline-flex; align-items: center; gap: .4rem; font-size: 13px; color: rgb(var(--on-surface-variant)); white-space: nowrap; }
+.stat b { color: rgb(var(--on-surface)); font-weight: 600; }
+.stat.live { color: rgb(var(--on-surface)); font-weight: 600; }
+.stat .dot { width: 8px; height: 8px; border-radius: 999px; background: rgb(var(--secondary)); flex-shrink: 0; }
+.stat .dot.warn { background: rgb(var(--amber-400)); }
+.stat-alarm { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .6rem; border-radius: 6px; background: #c62828; color: #fff; font-size: 13px; font-weight: 600; }
+.seg { display: inline-flex; gap: .25rem; }
+
 .theme-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 6px; border: 1px solid rgb(var(--outline-variant)); color: rgb(var(--on-surface-variant)); background: transparent; }
 .theme-btn:hover { color: rgb(var(--on-surface)); background: rgb(var(--on-surface) / .06); }
 .theme-btn .material-symbols-outlined { font-size: 20px; }
@@ -162,7 +179,8 @@ details > summary::-webkit-details-marker { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-  .ticker-move { padding-left: 0; white-space: normal; }
+  /* Ticker insiden tetap berjalan dari kanan ke kiri; berhenti saat disorot. */
+  .ticker-move { animation-duration: 38s !important; animation-iteration-count: infinite !important; }
 }
 
 /* atribut hidden harus menang atas utilitas display (.flex dll.) */

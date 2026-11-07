@@ -50,10 +50,13 @@
     // ticker
     const crit = act.filter((t) => t.priority === 'P1' || t.priority === 'P2').sort((a, b) => a.priority.localeCompare(b.priority) || b.createdAt - a.createdAt);
     const top = crit[0];
-    document.getElementById('ticker').innerHTML = top ? `<div class="flex items-stretch rounded-xl overflow-hidden border ${top.priority === 'P1' ? 'border-rose-500/50 bg-rose-950/40' : 'border-orange-500/30 bg-orange-950/20'}">
+    const tickerHtml = top ? `<div class="flex items-stretch rounded-xl overflow-hidden border ${top.priority === 'P1' ? 'border-rose-500/50 bg-rose-950/40' : 'border-orange-500/30 bg-orange-950/20'}">
       <a href="#/ticketing?id=${top.id}" class="flex items-center gap-2 px-4 py-2 ${top.priority === 'P1' ? 'bg-rose-600/30' : 'bg-orange-500/15'} shrink-0"><span class="w-2 h-2 rounded-md ${top.priority === 'P1' ? 'bg-rose-500 pulse-ring' : 'bg-orange-400'}"></span><span class="font-label-sm text-label-sm ${top.priority === 'P1' ? 'text-rose-200' : 'text-orange-200'}">Protokol insiden prioritas ${top.priority.slice(1)}</span></a>
       <div class="ticker-wrap flex-1 py-2"><div class="ticker-move font-body-sm text-body-sm text-on-surface">${crit.slice(0, 6).map((t) => `<b class="${t.priority === 'P1' ? 'text-rose-300' : 'text-orange-300'}">${t.priority} ${t.id}:</b> ${esc(t.title)}, ${esc(t.location)} (${Store.STATUS_LABEL[t.status]}, SOP ${t.sop})`).join('<span class="mx-6 text-outline">◆</span>')}</div></div>
       <a href="#/sop?id=${top.sop}" class="flex items-center px-3 font-label-sm text-label-sm text-on-surface-variant hover:text-primary shrink-0">SOP ${top.sop}</a></div>` : '';
+    // Tulis ulang hanya bila isinya berubah, supaya animasi geser tidak mulai lagi dari awal.
+    const tk = document.getElementById('ticker');
+    if (tk.dataset.html !== tickerHtml) { tk.innerHTML = tickerHtml; tk.dataset.html = tickerHtml; }
   }
 
   function route() {

@@ -14,9 +14,9 @@
       const arTot = AR.reduce((a, x) => a + x.v, 0);
       const heat = [['LG', [62, 78, 55, 40, 71]], ['GF', [88, 95, 91, 76, 84]], ['1F', [70, 66, 81, 58, 63]], ['2F', [44, 38, 61, 29, 52]], ['3F', [80, 92, 74, 69, 87]], ['ROOF', [35, 22, 48, 30, 41]]];
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <div><span class="chip-btn on">Tampilan pemilik 360°</span><h2 class="font-headline-lg text-headline-lg mt-1">Komersial & Keuangan</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Sudut pandang pemilik mall: operasional, komersial & keuangan (sumber: Blueprint sheet 1, 2, 3)</p></div>
-        <div class="ml-auto flex gap-2">${UI.dbLink('ANL', '', 'Laporan BOD')}${UI.dbLink('TEN', '', 'Layanan Tenant & SLA')}</div>
+      <section class="card pagebar">
+        <div class="pagebar-title"><span class="crumb">Owner 360° / Summarecon Mall Bandung</span><h2>Komersial & Keuangan</h2><p>Operasional, komersial dan keuangan dari sudut pandang pemilik mal (sumber: Blueprint sheet 1, 2, 3)</p></div>
+        <div class="pagebar-actions">${UI.dbLink('ANL', '', 'Laporan BOD')}${UI.dbLink('TEN', '', 'Layanan Tenant & SLA')}</div>
       </section>
       ${esc0.length ? `<section class="card p-4 mb-5 crit-left"><div class="flex items-center gap-2 mb-2">${icon('notifications_active', 'text-rose-300')}<span class="font-headline-sm text-headline-sm">Eskalasi ke pemilik (EVT-ESCALATION)</span></div>${esc0.map((e) => `<a href="#/ticketing?id=${e.ticketId}" class="rel-row mb-1">${UI.prio(e.sev)}<span class="font-label-md text-label-md text-outline">${UI.time(e.ts)}</span><span class="font-body-sm text-body-sm">${esc(e.detail)}</span></a>`).join('')}</section>` : ''}
       <div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">

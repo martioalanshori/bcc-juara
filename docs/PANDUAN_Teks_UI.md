@@ -10,9 +10,9 @@ mal sehari-hari: tiket, insiden, SOP, runbook, SLA, BMS, CCTV, HVAC, tenant, shi
 e-ticket, QR, QRIS, event, dashboard, use case, sandbox. Nama produk, merek tenant, dan nama
 perangkat (ANPR, VAV, AHU, chiller) juga tetap.
 
-Kata bahasa Inggris lain diterjemahkan: "Active Tickets" jadi "Tiket aktif", "System Health" jadi
-"Kesehatan sistem", "All Nominal" jadi "Semua normal", "Live" jadi "Langsung" atau dihapus bila
-tidak menambah arti.
+Bahasa campur boleh (keputusan 2026-11-08): kalau istilah bahasa Inggris lebih cocok dan lebih
+dikenal pengguna (mis. Event Organizer, waiting list, read-only, publish, scanner, crowd,
+Prototype), pakai bahasa Inggris. Kalimat penjelas tetap bahasa Indonesia.
 
 ## Nama menu dan halaman
 

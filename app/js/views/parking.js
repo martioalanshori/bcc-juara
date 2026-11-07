@@ -17,10 +17,14 @@
       const tk = Store.activeTickets().filter((t) => t.zone === 'BASEMENT' || /parkir|gate|drop-off/i.test(t.title));
       const anpr = [['14:21:08', 'B 1204 KOS', 'B1 Zona C', 'Pelanggaran jalur damkar', 'text-rose-300'], ['14:20:55', 'B 2871 PJN', 'Gate P1', 'Masuk, member Gold', 'text-on-surface'], ['14:20:41', 'B 1990 SKY', 'Gate Keluar', 'Keluar, QRIS Rp 12.000', 'text-on-surface'], ['14:20:12', 'D 1445 ABC', 'EV Bay 03', 'Mulai mengisi daya', 'text-secondary'], ['14:19:58', 'B 7710 TRI', 'VIP Lobby', 'Valet terdaftar', 'text-on-surface']];
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Sistem parkir pintar aktif</span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Sensor ultrasonik bay <b class="text-on-surface">1.724 node</b>, LPR/ANPR <b class="text-on-surface">18 kamera</b>, EVSE OCPP 1.6J</span>
-        <div class="ml-auto flex gap-2"><a class="btn-ghost" href="#/cctv?cam=CAM-61">${icon('videocam', 'text-[16px]')} Kamera gate</a><button class="btn" id="newpark">${icon('add_circle')} Buat tiket parkir</button></div>
+      <section class="card pagebar">
+        <div class="pagebar-info">
+          <span class="stat live"><span class="dot"></span>Smart parking aktif</span>
+          <span class="stat">Sensor ultrasonik bay <b>1.724 node</b></span>
+          <span class="stat">LPR/ANPR <b>18 kamera</b></span>
+          <span class="stat">EVSE <b>OCPP 1.6J</b></span>
+        </div>
+        <div class="pagebar-actions"><a class="btn-ghost" href="#/cctv?cam=CAM-61">${icon('videocam', 'text-[16px]')} Kamera gate</a><button class="btn" id="newpark">${icon('add_circle')} Buat tiket parkir</button></div>
       </section>
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
         ${UI.kpi({ label: 'Okupansi parkir mobil', icon: 'local_parking', value: ((used / cap) * 100).toFixed(1) + '%', unit: num(used) + ' / ' + num(cap) + ' slot', bar: (used / cap) * 100, barcls: used / cap > 0.9 ? 'bg-rose-400' : 'bg-primary-container' })}

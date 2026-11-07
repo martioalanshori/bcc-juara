@@ -26,11 +26,14 @@
       const zones = [['ALL', 'Semua zona (1.420)'], ['GF', 'Main Atrium & Lobby (312)'], ['LG', 'LG & Retail (184)'], ['2F', 'Family & Kids (96)'], ['3F', 'Food Court & Hiburan (142)'], ['BASEMENT', 'Basement & Loading (420)']];
       const secTk = Store.activeTickets().filter((t) => t.category.startsWith('Keamanan'));
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Jaringan pengawasan online</span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Cluster NVR: <b class="text-on-surface">v8.4.1 (active-sync)</b>, latensi stream <b class="text-secondary">18ms</b></span>
-        <span class="chip-btn">${icon('videocam', 'text-[14px]')} 1.420 / 1.428 kamera aktif (99.4%)</span>
-        <div class="ml-auto flex gap-2"><button class="btn-ghost" id="patrol">${icon('local_police', 'text-[16px]')} Patroli keamanan (14 personel)</button><button class="btn-danger" id="lock">${icon('lock', 'text-[16px]')} Lockdown otomatis</button></div>
+      <section class="card pagebar">
+        <div class="pagebar-info">
+          <span class="stat live"><span class="dot"></span>Jaringan pengawasan online</span>
+          <span class="stat">Cluster NVR <b>v8.4.1 (active-sync)</b></span>
+          <span class="stat">Latensi stream <b class="!text-secondary">18ms</b></span>
+          <span class="stat">${icon('videocam', 'text-[16px]')} <b>1.420 / 1.428</b> kamera aktif (99.4%)</span>
+        </div>
+        <div class="pagebar-actions"><button class="btn-ghost" id="patrol">${icon('local_police', 'text-[16px]')} Patroli keamanan (14 personel)</button><button class="btn-danger" id="lock">${icon('lock', 'text-[16px]')} Lockdown otomatis</button></div>
       </section>
       <div class="flex flex-wrap items-center gap-2 mb-5">${zones.map(([k, l]) => `<button class="chip-btn ${F.zone === k ? 'on' : ''}" data-zone="${k}">${l}</button>`).join('')}
         <span class="ml-auto flex gap-1">${[[1, 'crop_square'], [4, 'grid_view'], [9, 'apps']].map(([n, ic]) => `<button class="chip-btn ${F.grid === n ? 'on' : ''}" data-grid="${n}">${icon(ic, 'text-[16px]')}</button>`).join('')}<button class="chip-btn" id="tour">${icon('autorenew', 'text-[14px]')} Tur otomatis (15 detik)</button></span></div>

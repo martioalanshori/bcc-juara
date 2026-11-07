@@ -61,12 +61,14 @@
       };
       const num = UI.num;
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Jaringan BMS online</span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Siklus sinkronisasi: <span class="text-on-surface" data-clock></span></span>
-        <span class="chip-btn">LIDAR-SCADA v6.2 · BACnet/Modbus</span>
-        <div class="flex gap-1 ml-auto">${[['ALL', 'Seluruh mal'], ['PLANT', 'Central Plant B2'], ['EAST', 'East Mall'], ['WEST', 'West Mall']].map(([k, l]) => `<button class="chip-btn ${area === k ? 'on' : ''}" data-area="${k}">${l}</button>`).join('')}</div>
-        ${bad.length ? `<span class="px-3 py-1.5 rounded-lg bg-rose-600/80 text-white font-label-md text-label-md flex items-center gap-1">${icon('warning', 'text-[16px]')} ${bad.length} alarm aktif: ${bad.map(([id]) => id).join(', ')}</span>` : ''}
+      <section class="card pagebar">
+        <div class="pagebar-info">
+          <span class="stat live"><span class="dot"></span>Jaringan BMS online</span>
+          <span class="stat">Sinkronisasi terakhir <b data-clock></b></span>
+          <span class="stat">LIDAR-SCADA v6.2, BACnet/Modbus</span>
+          ${bad.length ? `<span class="stat-alarm">${icon('warning', 'text-[16px]')} ${bad.length} alarm aktif: ${bad.map(([id]) => id).join(', ')}</span>` : ''}
+        </div>
+        <div class="pagebar-actions seg" role="group" aria-label="Area">${[['ALL', 'Seluruh mal'], ['PLANT', 'Central Plant B2'], ['EAST', 'East Mall'], ['WEST', 'West Mall']].map(([k, l]) => `<button class="chip-btn ${area === k ? 'on' : ''}" data-area="${k}">${l}</button>`).join('')}</div>
       </section>
 
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">

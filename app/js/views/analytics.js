@@ -34,9 +34,9 @@
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun (est.)'];
       const zones = [['Sayap barat (luxury & fashion)', 'Lantai GF-L3, 84 tenant', 482, 537.4, 98.1, 'Optimal'], ['Atrium timur & anchor', 'Lantai GF-L5, Sogo & Gramedia', 610, 680.1, 96.4, 'Optimal'], ['Food court & restoran F&B', 'Lantai 3, beban termal dapur', 390, 435.2, 94.2, 'Perlu Optimasi'], ['Hiburan & bioskop', 'Lantai 3, XXI & Timezone', 295, 328.9, 99.0, 'Optimal'], ['Central chiller plant', '5 chiller sentrifugal, 5.800 TR', 840, 936.6, 6.2, 'COP prima']];
       return `
-      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
-        <div><div class="flex gap-2 font-label-sm text-label-sm"><span class="chip-btn on">Portal eksekutif</span><span class="text-on-surface-variant self-center">Summarecon Mall Bandung /</span></div><h2 class="font-headline-lg text-headline-lg mt-1">Analitik & Laporan</h2><span class="chip-btn text-secondary mt-1">● Konsolidasi data bulanan & triwulan</span></div>
-        <div class="ml-auto flex flex-wrap gap-2">${['Hari ini', 'MTD', 'Q4 2026', 'YTD'].map((r) => `<button class="chip-btn ${F.range === r ? 'on' : ''}" data-range="${r}">${r}</button>`).join('')}<button class="btn-ghost" data-gen="csv">${icon('table_view', 'text-[16px]')} Ekspor CSV</button><button class="btn" data-gen="html">${icon('picture_as_pdf')} Unduh laporan BOD (PDF)</button></div>
+      <section class="card pagebar">
+        <div class="pagebar-title"><span class="crumb">Portal eksekutif / Summarecon Mall Bandung</span><h2>Analitik & Laporan</h2><p>Konsolidasi data bulanan dan triwulan</p></div>
+        <div class="pagebar-actions"><div class="seg" role="group" aria-label="Periode">${['Hari ini', 'MTD', 'Q4 2026', 'YTD'].map((r) => `<button class="chip-btn ${F.range === r ? 'on' : ''}" data-range="${r}">${r}</button>`).join('')}</div><button class="btn-ghost" data-gen="csv">${icon('table_view', 'text-[16px]')} Ekspor CSV</button><button class="btn" data-gen="html">${icon('picture_as_pdf')} Unduh laporan BOD (PDF)</button></div>
       </section>
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
         ${UI.kpi({ label: 'OEE & efisiensi gedung', icon: 'precision_manufacturing', value: '96.8%', delta: '+2.4% MoM', foot: 'Ketersediaan BMS core 99.85%, MTTR ' + (done.length ? Math.round(done.reduce((a, t) => a + (t.resolvedAt - t.createdAt), 0) / done.length / 60000) : 0) + ' menit, LTI 0' })}
