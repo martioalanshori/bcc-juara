@@ -36,7 +36,7 @@ test('2 gate memindai tiket yang sama bersamaan: 1 VALID + 1 USED', async () => 
   const r = await Evt.dualGateTest('EVT-01');
   assert.deepEqual([...r.results].map((x) => x.result).sort(), ['USED', 'VALID']); // salin: array dari realm vm
   assert.notEqual(r.results[0].gate, r.results[1].gate);
-  assert.ok(Evt.s.tickets[r.ticket].checkedInAt);
+  assert.equal(Evt.s.scans.filter((x) => x.test && x.ticket === r.ticket).length, 2);
 });
 
 test('acara dengan 1 gate memakai label perangkat 2', async () => {
@@ -201,4 +201,61 @@ test('2 pindaian gagal belum anomali', async () => {
   await Evt.checkIn('QR-PALSU', 'EVT-01', GB);
   await Evt.checkIn('QR-PALSU', 'EVT-01', GB);
   assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'), null);
+});
+
+// ------------------------------------------------------------------ perbaikan review akhir
+test('klaim yang gagal tidak melakukan commit (tidak ada badai versi)', async () => {
+  const { Evt } = await loadEvt();
+  await fail3(Evt);
+  assert.ok(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'));
+  const v = Evt.version;
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-2'), null);
+  assert.equal(await Evt.claimReport(Evt.s.reports[0].id, 'CC-2'), null);
+  assert.equal(await Evt.claimAnomaly('EVT-01', 'Gate A (Lobby Utama)', 'CC-2'), null); // bukan anomali
+  assert.equal(Evt.version, v);
+});
+
+test('pesanan campuran VIP + Gold: penjualan per kategori sesuai harga masing-masing', async () => {
+  const { Evt } = await loadEvt();
+  const ev = Evt.ev('EVT-01');
+  const seatOf = (t) => Evt.allSeats(ev).find((s) => Evt.seatType(ev, s) === t && Evt.seatStatus('EVT-01', s, null) === 'available');
+  const by = () => Object.fromEntries([...Evt.finance('EVT-01').byType].map((b) => [b.type, b.gross]));
+  const g0 = by();
+  await Evt.holdSeat('EVT-01', seatOf('VIP'), 'MIX');
+  await Evt.holdSeat('EVT-01', seatOf('GLD'), 'MIX');
+  const id = await Evt.createOrder('EVT-01', 'MIX', { name: 'Campur', email: 'c@example.com', phone: '0812' });
+  assert.equal(await Evt.pay(id, 'QRIS', true), 'PAID');
+  await Evt.updateType('EVT-01', 'VIP', { price: 1 });
+  const g1 = by();
+  assert.equal(g1.VIP - g0.VIP, 750000);
+  assert.equal(g1.GLD - g0.GLD, 450000);
+});
+
+test('uji 2 gate mengembalikan tiket ke belum check-in dan tidak memicu anomali', async () => {
+  const { Evt, clock } = await loadEvt();
+  clock.now += 11 * 60000; // pindaian gagal seed keluar dari jendela
+  let r;
+  for (let i = 0; i < 3; i++) r = await Evt.dualGateTest('EVT-01');
+  assert.equal(Evt.s.tickets[r.ticket].checkedInAt, null);
+  assert.equal(Evt.anomalies('EVT-01').length, 0);
+  assert.equal(await Evt.claimAnomaly('EVT-01', 'Gate B (Sisi Food Court)', 'CC-1'), null);
+});
+
+test('cc-bridge: penautan gagal tidak membuat tiket insiden kedua', async () => {
+  const tickets = [];
+  const Store = { createTicket: (f) => { const t = Object.assign({ id: 'TCK-' + (tickets.length + 1) }, f); tickets.unshift(t); return t; } };
+  const { Evt, clock, ctx } = await loadEvt({
+    globals: { Store, UI: { toast() {}, esc: (x) => x }, EvtAdmin: { incidentFields: (e, gate, text) => ({ title: gate, desc: text }) } },
+    scripts: ['app/js/evt/cc-bridge.js'],
+  });
+  const orig = Evt.linkReport;
+  let fails = 1;
+  Evt.linkReport = (...a) => (fails-- > 0 ? Promise.reject(new Error('Server sedang sibuk')) : orig(...a));
+  await fail3(Evt);
+  await ctx.CCBridge.check(); await ctx.CCBridge.check();
+  assert.equal(tickets.length, 1);
+  clock.now += 61000; // klaim menggantung, boleh diambil alih
+  await ctx.CCBridge.check(); await ctx.CCBridge.check();
+  assert.equal(tickets.length, 1);
+  assert.equal(Evt.s.reports.find((r) => r.auto).ticketId, 'TCK-1');
 });

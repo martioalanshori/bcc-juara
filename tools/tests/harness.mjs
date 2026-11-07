@@ -16,8 +16,9 @@ function storage() {
   };
 }
 
-// Jam yang bisa dimajukan test: clock.now dalam ms
-export async function loadEvt() {
+// Jam yang bisa dimajukan test: clock.now dalam ms.
+// opts.globals: objek tambahan di window (mis. stub Store/UI). opts.scripts: skrip lain yang dimuat setelah engine.
+export async function loadEvt(opts = {}) {
   const clock = { now: Date.now() };
   class FakeDate extends Date {
     constructor(...a) { if (a.length) super(...a); else super(clock.now); }
@@ -36,9 +37,14 @@ export async function loadEvt() {
     console,
     Date: FakeDate,
   };
+  Object.assign(ctx, opts.globals || {});
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx, { filename: ENGINE });
+  for (const rel of opts.scripts || []) {
+    const f = fileURLToPath(new URL('../../' + rel, import.meta.url));
+    vm.runInContext(readFileSync(f, 'utf8'), ctx, { filename: f });
+  }
   await ctx.Evt.init();
-  return { Evt: ctx.Evt, clock };
+  return { Evt: ctx.Evt, clock, ctx };
 }

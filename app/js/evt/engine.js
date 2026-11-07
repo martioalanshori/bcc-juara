@@ -102,7 +102,8 @@
     const mkOrder = (ev, items, opts) => {
       const p = person();
       const id = 'BK-' + rand(6);
-      const sub = items.reduce((a, it) => a + typeById(ev, it.type).price, 0);
+      items.forEach((it) => (it.price = typeById(ev, it.type).price));
+      const sub = items.reduce((a, it) => a + it.price, 0);
       const fee = sub > 0 ? FEE * items.length : 0;
       const paidAt = opts.paidAt || t - Math.floor(R() * 18 * D) - H;
       const o = { id, ev: ev.id, cart: 'SEED', ...p, items, sub, fee, total: sub + fee, status: opts.status || 'PAID', method: sub ? METHODS[Math.floor(R() * METHODS.length)] : 'Gratis', createdAt: paidAt - 4 * 60000, paidAt: opts.status === 'PENDING' ? null : paidAt, until: opts.until || null, tickets: [], log: [] };
@@ -227,8 +228,12 @@
         return;
       }
       totals.fee += o.fee || 0;
-      const per = o.items.length ? (o.sub || 0) / o.items.length : 0;
-      o.items.forEach((it) => { const b = byT[it.type] = byT[it.type] || { type: it.type, name: typeById(e, it.type).name, qty: 0, gross: 0 }; b.qty++; b.gross += per; });
+      // Harga per item saat beli (it.price). Pesanan lama tanpa it.price: subtotal dibagi sebanding harga jenis saat ini.
+      const cur = o.items.reduce((a, it) => a + typeById(e, it.type).price, 0);
+      o.items.forEach((it) => {
+        const unit = it.price != null ? it.price : cur > 0 ? (o.sub || 0) * typeById(e, it.type).price / cur : (o.sub || 0) / o.items.length;
+        const b = byT[it.type] = byT[it.type] || { type: it.type, name: typeById(e, it.type).name, qty: 0, gross: 0 }; b.qty++; b.gross += unit;
+      });
       if (o.total !== (o.sub || 0) + (o.fee || 0)) mismatches.push({ order: o.id, reason: 'Total ' + rp(o.total) + ' tidak sama dengan subtotal + biaya layanan.' });
       else if (tks.length !== o.items.length) mismatches.push({ order: o.id, reason: 'Jumlah e-ticket (' + tks.length + ') tidak sama dengan jumlah tiket dipesan (' + o.items.length + ').' });
       else if (tks.some((x) => !x || x.status !== 'ACTIVE')) mismatches.push({ order: o.id, reason: 'Pesanan lunas punya e-ticket yang tidak aktif.' });
@@ -248,7 +253,7 @@
   const ANOM_MIN = 3, CLAIM_MS = 60000;
   function anomaliesIn(d, evId, mins, t) {
     const from = t - (mins || 10) * 60000, by = {};
-    d.scans.filter((s) => s.ev === evId && s.ts > from && s.result !== 'VALID').forEach((s) => { by[s.gate] = (by[s.gate] || 0) + 1; });
+    d.scans.filter((s) => s.ev === evId && s.ts > from && s.result !== 'VALID' && !s.test).forEach((s) => { by[s.gate] = (by[s.gate] || 0) + 1; });
     return Object.entries(by).filter(([, n]) => n >= ANOM_MIN).map(([gate, n]) => ({ gate, n }));
   }
   // Laporan boleh diklaim CC bila belum punya tiket insiden dan belum diklaim, atau klaimnya menggantung > 60 detik
@@ -323,6 +328,7 @@
 
   function emit() { subs.forEach((f) => { try { f(); } catch (e) { console.error(e); } }); }
 
+  const NOOP = { noop: true }; // penanda mutasi tanpa perubahan
   async function tx(mut, opts) {
     for (let i = 0; i < 8; i++) {
       const base = version;
@@ -330,6 +336,7 @@
       const t = now();
       sweep(d, t);
       const res = mut(d, t); // EvtError = aturan bisnis menolak; tidak ada commit
+      if (res === NOOP) return null; // tidak ada perubahan: jangan commit (mencegah versi naik tanpa guna)
       const r = await backend().commit(base, d);
       if (r.ok) { version = r.version; state = d; if (r.now) offset = r.now - Date.now(); emit(); return res; }
       // kalah balapan: ambil state terbaru, jalankan ulang aturan di atasnya
@@ -447,6 +454,7 @@
         const q = d.qholds[evId].filter((h) => h.cart === cart && !h.order);
         if (!seats.length && !q.length) fail('Waktu hold kursi habis. Pilih kursi lagi.');
         const items = seats.map(([sid]) => ({ type: seatType(e, sid), seat: sid })).concat(...q.map((h) => Array.from({ length: h.qty }, () => ({ type: h.type, seat: null }))));
+        items.forEach((it) => (it.price = typeById(e, it.type).price)); // harga saat beli (rekonsiliasi & laporan)
         (info.holders || []).forEach((h, i) => { if (items[i] && h) items[i].holder = h; });
         const p = price(e, items);
         const id = 'BK-' + rand(6);
@@ -488,11 +496,12 @@
     },
     updateContact(orderId, patch) { return tx((d, t) => { const o = d.orders[orderId]; if (!o) fail('Pesanan tidak ditemukan.'); ['name', 'email', 'phone'].forEach((k) => { if (patch[k]) o[k] = patch[k]; }); (patch.holders || []).forEach((h, i) => { const tk = d.tickets[o.tickets[i]]; if (tk && h) tk.holder = h; }); o.log.push({ ts: t, text: 'Data peserta diperbarui panitia' }); }); },
     resend(orderId) { return tx((d, t) => { const o = d.orders[orderId]; const e = d.events[o.ev]; notify(d, o, 'Kirim ulang e-ticket · ' + o.id, `Halo ${o.name}, berikut e-ticket ${e.name} (${o.tickets.length} tiket). Tunjukkan QR di gate.`, t); }); },
-    checkIn(text, evId, gate) {
+    checkIn(text, evId, gate, opts) {
+      const test = !!(opts && opts.test); // pindaian uji: tidak dihitung sebagai anomali gate
       return tx((d, t) => {
         const res = verify(d, String(text || '').trim(), evId);
         if (res.result === 'VALID') { const tk = d.tickets[res.ticket.id]; tk.checkedInAt = t; tk.gate = gate; res.ticket = tk; }
-        d.scans.unshift({ ts: t, ev: evId, gate, result: res.result, ticket: res.ticket ? res.ticket.id : null, reason: res.reason });
+        d.scans.unshift(Object.assign({ ts: t, ev: evId, gate, result: res.result, ticket: res.ticket ? res.ticket.id : null, reason: (test ? 'Uji 2 gate: ' : '') + res.reason }, test ? { test: true } : {}));
         d.scans = d.scans.slice(0, 500);
         return res;
       });
@@ -576,9 +585,9 @@
     claimAnomaly(evId, gate, by) {
       return tx((d, t) => {
         const a = anomaliesIn(d, evId, 10, t).find((x) => x.gate === gate);
-        if (!a) return null;
+        if (!a) return NOOP;
         const r = d.reports.find((x) => x.ev === evId && x.gate === gate && x.ts > t - 10 * 60000);
-        if (r) { if (!claimable(r, t)) return null; r.claimedBy = by; r.claimedAt = t; return r.id; }
+        if (r) { if (!claimable(r, t)) return NOOP; r.claimedBy = by; r.claimedAt = t; return r.id; }
         const id = 'GR-' + rand(4);
         d.reports.unshift({ id, ts: t, ev: evId, gate, text: 'Otomatis: ' + a.n + ' pindaian gagal/duplikat dalam 10 menit di ' + gate + '.', auto: true, claimedBy: by, claimedAt: t, ticketId: null });
         return id;
@@ -587,7 +596,7 @@
     claimReport(id, by) {
       return tx((d, t) => {
         const r = d.reports.find((x) => x.id === id);
-        if (!r || !claimable(r, t)) return null;
+        if (!r || !claimable(r, t)) return NOOP;
         r.claimedBy = by; r.claimedAt = t; return r.id;
       });
     },
@@ -637,14 +646,16 @@
       return { seat, n, winner, rejected: n - ok.length, conflicts, ms, log };
     },
     // Uji check-in serentak: dua gate memindai QR yang sama pada tick yang sama -> satu VALID, satu USED.
-    // Tiket contoh yang dipakai benar-benar tercatat check-in (kembalikan dengan Reset).
+    // Pindaian ditandai uji (tidak memicu anomali) dan tiket dikembalikan ke belum check-in setelahnya.
     async dualGateTest(evId) {
       const e = ev(evId); if (!e) fail('Acara tidak ditemukan.');
       const tk = Object.values(state.tickets).find((x) => x.ev === evId && x.status === 'ACTIVE' && !x.checkedInAt);
       if (!tk) fail('Tidak ada tiket aktif yang belum check-in untuk uji ini.');
       const g1 = e.gates[0] || 'Gate 1', g2 = e.gates[1] || g1 + ' (perangkat 2)';
       const code = qrText(tk);
-      const res = await Promise.all([A.checkIn(code, evId, g1), A.checkIn(code, evId, g2)]);
+      const res = await Promise.all([A.checkIn(code, evId, g1, { test: true }), A.checkIn(code, evId, g2, { test: true })]);
+      // Kembalikan tiket peserta ke belum check-in agar pemiliknya tetap bisa masuk di gate
+      await tx((d) => { const x = d.tickets[tk.id]; if (x && (x.gate === g1 || x.gate === g2)) { x.checkedInAt = null; x.gate = null; } });
       return { ticket: tk.id, results: [{ gate: g1, result: res[0].result, reason: res[0].reason }, { gate: g2, result: res[1].result, reason: res[1].reason }] };
     },
   };

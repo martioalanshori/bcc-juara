@@ -28,18 +28,18 @@
   // Tiket insiden ada di Store (localStorage) browser CC yang membuatnya. Nomor TCK dihitung per browser,
   // jadi tautkan hanya bila tiket itu memang tiket SOP-EVT-03 di browser ini.
   const tkLink = (id) => (window.Store && Store.ticket(id) && Store.ticket(id).sop === 'SOP-EVT-03'
-    ? `<a href="#/ticketing?id=${id}" class="chip-btn">${id}</a>`
-    : `<span class="font-label-sm text-label-sm text-emerald-300" title="Tiket dibuat di perangkat Command Center lain">${id} (perangkat CC lain)</span>`);
+    ? `<a href="#/ticketing?id=${encodeURIComponent(id)}" class="chip-btn">${esc(id)}</a>`
+    : `<span class="font-label-sm text-label-sm text-emerald-300" title="Tiket dibuat di perangkat Command Center lain">${esc(id)} (perangkat CC lain)</span>`);
   function anomList(e) {
     const anom = EvtCheckin.anomalies(e.id);
     const reports = Evt.s.reports.filter((r) => r.ev === e.id);
     const rows = anom.map((a) => { const rep = reports.find((r) => r.gate === a.gate && r.ts > Evt.now() - 30 * 60000);
-      const btn = isMgr() ? (rep ? `<span class="font-label-sm text-label-sm ${rep.ticketId ? 'text-emerald-300' : 'text-amber-300'}">${rep.ticketId ? 'Ditangani ' + rep.ticketId : 'Terkirim, menunggu CC'}</span>` : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-report="${esc(a.gate)}">Laporkan ke CC</button>`)
+      const btn = isMgr() ? (rep ? `<span class="font-label-sm text-label-sm ${rep.ticketId ? 'text-emerald-300' : 'text-amber-300'}">${rep.ticketId ? 'Ditangani ' + esc(rep.ticketId) : 'Terkirim, menunggu CC'}</span>` : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-report="${esc(a.gate)}">Laporkan ke CC</button>`)
         : rep && rep.ticketId ? tkLink(rep.ticketId)
         : rep && rep.claimedBy ? '<span class="font-label-sm text-label-sm text-amber-300">Sedang dibuat otomatis</span>'
         : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-inc="${esc(a.gate)}">Buat tiket insiden</button>`;
       return `<div class="rel-row !cursor-default items-center">${icon('warning', 'text-rose-300 text-[18px]')}<div class="flex-1"><div class="font-label-lg text-label-lg">${esc(a.gate)}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${a.n} pindaian tidak valid/duplikat, indikasi tiket palsu atau calo</div></div>${btn}</div>`; });
-    reports.forEach((r) => rows.push(`<div class="rel-row !cursor-default items-center">${icon('campaign', 'text-amber-300 text-[18px]')}<div class="flex-1"><div class="font-label-md text-label-md text-on-surface-variant">${r.id} · ${Evt.fmtTime(r.ts)} · ${esc(r.gate)}</div><div class="font-body-sm text-body-sm">${esc(r.text)}</div></div>${r.ticketId ? (isMgr() ? `<span class="chip-btn">${r.ticketId}</span>` : tkLink(r.ticketId)) : isMgr() ? '<span class="font-label-sm text-label-sm text-amber-300">Menunggu CC</span>' : r.claimedBy ? '<span class="font-label-sm text-label-sm text-amber-300">Sedang dibuat otomatis</span>' : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-rep="${r.id}">Buat tiket insiden</button>`}</div>`));
+    reports.forEach((r) => rows.push(`<div class="rel-row !cursor-default items-center">${icon('campaign', 'text-amber-300 text-[18px]')}<div class="flex-1"><div class="font-label-md text-label-md text-on-surface-variant">${r.id} · ${Evt.fmtTime(r.ts)} · ${esc(r.gate)}</div><div class="font-body-sm text-body-sm">${esc(r.text)}</div></div>${r.ticketId ? (isMgr() ? `<span class="chip-btn">${esc(r.ticketId)}</span>` : tkLink(r.ticketId)) : isMgr() ? '<span class="font-label-sm text-label-sm text-amber-300">Menunggu CC</span>' : r.claimedBy ? '<span class="font-label-sm text-label-sm text-amber-300">Sedang dibuat otomatis</span>' : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-rep="${r.id}">Buat tiket insiden</button>`}</div>`));
     return { html: rows.join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada anomali. Gate normal.</div>', alert: anom.length || reports.some((r) => !r.ticketId) };
   }
   function anomPanel(e) {
@@ -123,7 +123,8 @@
 
   // ------------------------------------------------------------------ tab: kelola acara
   function finFields(e) {
-    const fin = Object.assign({}, Evt.FIN_DEFAULT, e.fin);
+    const raw = Object.assign({}, Evt.FIN_DEFAULT, e.fin);
+    const fin = { rent: +raw.rent || 0, revShare: +raw.revShare || 0, cost: +raw.cost || 0, spend: +raw.spend || 0 }; // angka saja
     return `<div class="col-span-2 lbl mt-1">Kontrak venue (sesuai perjanjian dengan mall)</div>
           <label class="f">Sewa venue (Rp)<input class="inp" type="number" min="0" step="100000" name="finRent" value="${fin.rent}"></label>
           <label class="f">Bagi hasil tiket ke mall (%)<input class="inp" type="number" min="0" max="100" step="0.5" name="finShare" value="${+(fin.revShare * 100).toFixed(2)}"></label>
@@ -194,7 +195,7 @@
           <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Metode</th><th>Transaksi</th><th>Bruto</th><th>Refund</th><th>Neto</th></tr></thead><tbody>
           ${f.byMethod.map((m) => `<tr><td class="font-body-sm text-body-sm">${esc(m.method)}</td><td class="font-label-md text-label-md">${m.orders}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(m.gross)}</td><td class="font-label-md text-label-md whitespace-nowrap text-amber-300">${money(m.refunded)}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(m.net)}</td></tr>`).join('') || '<tr><td colspan="5" class="text-on-surface-variant">Belum ada transaksi.</td></tr>'}
           <tr><td><b>Total</b></td><td class="font-label-md text-label-md"><b>${T.orders}</b></td><td class="font-label-md text-label-md whitespace-nowrap"><b>${money(T.gross)}</b></td><td class="font-label-md text-label-md whitespace-nowrap text-amber-300"><b>${money(T.refunded)}</b></td><td class="font-label-md text-label-md whitespace-nowrap"><b>${money(T.net)}</b></td></tr></tbody></table></div>
-          ${f.mismatches.length ? `<div class="flex flex-col gap-2 mt-3">${f.mismatches.map((m) => `<button class="rel-row text-left w-full" data-order="${m.order}">${icon('error', 'text-rose-300 text-[18px]')}<div class="flex-1"><b>${m.order}</b><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(m.reason)}</div></div></button>`).join('')}</div>` : ''}</section>
+          ${f.mismatches.length ? `<div class="flex flex-col gap-2 mt-3">${f.mismatches.map((m) => `<button class="rel-row text-left w-full" data-order="${esc(m.order)}">${icon('error', 'text-rose-300 text-[18px]')}<div class="flex-1"><b>${esc(m.order)}</b><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(m.reason)}</div></div></button>`).join('')}</div>` : ''}</section>
         <section class="card p-5">${UI.h('Laporan penjualan per kategori', 'Pesanan lunas, dihitung dengan harga saat pembelian', '', 'sell')}
           <table class="tbl"><thead><tr><th>Kategori</th><th>Tiket</th><th>Pendapatan tiket</th></tr></thead><tbody>
           ${f.byType.map((b) => `<tr><td><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background:${Evt.typeById(e, b.type).color}"></span>${esc(b.name)}</td><td class="font-label-md text-label-md">${b.qty}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(b.gross)}</td></tr>`).join('') || '<tr><td colspan="3" class="text-on-surface-variant">Belum ada tiket terjual.</td></tr>'}</tbody></table></section></div>
@@ -225,7 +226,7 @@
         <section class="card p-5">${UI.h('Uji check-in serentak', 'Dua gate memindai QR yang sama pada detik yang sama', '', 'sync_lock')}
           <button class="btn w-full justify-center" id="dual">${icon('qr_code_scanner')} Jalankan uji 2 gate</button>
           ${ui.dual && ui.dual.ev === e.id ? `<div class="flex flex-col gap-2 mt-3">${ui.dual.results.map((x) => `<div class="inner px-3 py-2 font-body-sm text-body-sm"><div class="flex justify-between gap-2"><span>${esc(x.gate)}</span><b class="${x.result === 'VALID' ? 'text-emerald-300' : x.result === 'USED' ? 'text-amber-300' : 'text-rose-300'}">${x.result === 'VALID' ? 'VALID' : x.result === 'USED' ? 'SUDAH DIGUNAKAN' : 'TIDAK VALID'}</b></div><div class="text-on-surface-variant">${esc(x.reason)}</div></div>`).join('')}<div class="font-label-sm text-label-sm text-on-surface-variant">Tiket ${esc(ui.dual.ticket)}: hanya satu gate yang menerima.</div></div>` : ''}
-          <p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Satu tiket contoh akan tercatat sudah check-in. Gunakan Reset untuk mengembalikan data.</p></section>
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Memakai satu tiket aktif yang belum check-in. Setelah uji, tiket itu dikembalikan ke belum check-in dan pindaian uji tidak dihitung sebagai anomali gate.</p></section>
         <section class="card p-5">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div></div>`;
   }
 
