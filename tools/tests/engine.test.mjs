@@ -104,3 +104,59 @@ test('tombol manual mengisi alasan manual', async () => {
   assert.equal(await Evt.notifyWaitlist('EVT-01'), 1);
   assert.equal(Evt.s.waitlist.find((w) => w.name === 'F').reason, 'manual');
 });
+
+// ------------------------------------------------------------------ Task 4: keuangan & ROI
+test('rekonsiliasi: neto = pendapatan lunas, tanpa selisih', async () => {
+  const { Evt } = await loadEvt();
+  const f = Evt.finance('EVT-01');
+  assert.equal(f.totals.net, Evt.stats('EVT-01').revenue);
+  assert.equal(f.mismatches.length, 0);
+  assert.equal(f.byMethod.reduce((a, m) => a + m.net, 0), f.totals.net);
+  assert.ok(f.totals.refunded > 0); // seed punya 1 pesanan refund
+});
+
+test('refund menaikkan refunded dan menurunkan neto sebesar total pesanan', async () => {
+  const { Evt } = await loadEvt();
+  const before = Evt.finance('EVT-01').totals;
+  const o = Object.values(Evt.s.orders).find((x) => x.ev === 'EVT-01' && x.status === 'PAID' && !x.tickets.some((t) => Evt.s.tickets[t].checkedInAt));
+  await Evt.refund(o.id, 'uji');
+  const after = Evt.finance('EVT-01').totals;
+  assert.equal(after.refunded - before.refunded, o.total);
+  assert.equal(before.net - after.net, o.total);
+});
+
+test('penjualan per kategori memakai harga saat beli, bukan harga terbaru', async () => {
+  const { Evt } = await loadEvt();
+  const vip = () => Evt.finance('EVT-01').byType.find((x) => x.type === 'VIP').gross;
+  const g0 = vip();
+  await Evt.updateType('EVT-01', 'VIP', { price: 1 });
+  assert.equal(vip(), g0);
+});
+
+test('selisih rekonsiliasi terdeteksi bila total tidak sama dengan subtotal + biaya', async () => {
+  const { Evt } = await loadEvt();
+  const o = Object.values(Evt.s.orders).find((x) => x.ev === 'EVT-01' && x.status === 'PAID');
+  Evt.s.orders[o.id].total += 1000; // korupsi data langsung di memori (hanya untuk test)
+  const m = Evt.finance('EVT-01').mismatches;
+  assert.equal(m.length, 1);
+  assert.equal(m[0].order, o.id);
+});
+
+test('acara gratis dan biaya 0: tidak ada NaN, ROI null', async () => {
+  const { Evt } = await loadEvt();
+  await Evt.updateEvent('EVT-02', { fin: { cost: 0 } });
+  const f = Evt.finance('EVT-02');
+  assert.equal(f.totals.net, 0);
+  assert.equal(f.roi.roi, null);
+  assert.ok(Object.values(f.roi).every((v) => v === null || typeof v === 'string' || Number.isFinite(v)));
+});
+
+test('ROI = (sewa + bagi hasil - biaya) / biaya, memakai default bila e.fin kosong', async () => {
+  const { Evt } = await loadEvt();
+  const f = Evt.finance('EVT-01');
+  const D = Evt.FIN_DEFAULT;
+  assert.equal(f.roi.share, Math.round(f.totals.net * D.revShare));
+  assert.equal(f.roi.benefit, D.rent + f.roi.share);
+  assert.equal(f.roi.roi, (f.roi.benefit - D.cost) / D.cost);
+  assert.equal(Evt.finance('EVT-03').roi.rent, 20000000);
+});

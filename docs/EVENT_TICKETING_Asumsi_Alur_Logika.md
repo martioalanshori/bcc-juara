@@ -42,6 +42,12 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Denah kursi live**: detail pemesan per kursi, mode blokir kursi (kamera/FOH/kursi roda), uji rebutan kursi.
 - **Kelola acara**: nama, jadwal, gate, venue, status (Draft/Dipublikasikan/Ditutup), periode jual, durasi hold, maks per pesanan; jenis tiket, harga, kuota, dijual/undangan.
 - **Peserta & transaksi**: pencarian, filter status, ubah data peserta, kirim ulang e-ticket, batal, refund; ekspor CSV peserta (per tiket) & transaksi.
+- **Keuangan & ROI** (`Evt.finance(evId)`, untuk Finance & Marketing):
+  - Rekonsiliasi per metode pembayaran: bruto = total pesanan lunas + refund, refund, neto = bruto - refund, biaya layanan. Ekspor CSV rekonsiliasi.
+  - Selisih rekonsiliasi: pesanan lunas yang total-nya tidak sama dengan subtotal + biaya layanan, jumlah e-ticket tidak sama dengan jumlah tiket, atau punya e-ticket tidak aktif; pesanan refund yang masih punya e-ticket aktif.
+  - Penjualan per kategori memakai subtotal yang tercatat di pesanan (harga saat beli), bukan harga jenis tiket terbaru.
+  - ROI untuk mall: manfaat = sewa venue + bagi hasil tiket (persen dari neto); ROI = (manfaat - biaya operasional mall) / biaya, tampil "-" bila biaya 0. Estimasi belanja pengunjung di tenant = pengunjung (check-in bila acara sudah mulai, selain itu tiket aktif) × rata-rata belanja; tidak masuk ROI.
+  - Angka kontrak venue (`e.fin`: sewa, bagi hasil, biaya, belanja) diisi pengelola di Kelola acara. Bila kosong dipakai asumsi demo `FIN_DEFAULT` (sewa Rp 35 jt, bagi hasil 10%, biaya Rp 12 jt, belanja Rp 150 rb); seed Summarecon Hall memakai sewa Rp 20 jt. Command Center melihat tab ini read-only.
 - **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log pindaian langsung.
 - **Anomali gate**: tombol **Laporkan ke Command Center** (konsol & ponsel gate). Statusnya tampil "menunggu CC" lalu "Ditangani TCK-…".
 - **Notifikasi & waitlist**: outbox, kirim pengingat massal, kabari daftar tunggu.

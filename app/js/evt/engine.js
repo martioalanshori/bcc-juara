@@ -18,6 +18,9 @@
   const API = '/api/evt/state';
   const PAY_MIN = 15; // batas waktu pembayaran (menit)
   const FEE = 5000; // biaya layanan per tiket berbayar
+  // Asumsi keuangan demo per acara (bisa diubah pengelola di Kelola acara): sewa venue, bagi hasil tiket ke mall,
+  // biaya operasional mall, rata-rata belanja pengunjung di tenant. Angka contoh, bukan data kontrak nyata.
+  const FIN_DEFAULT = { rent: 35000000, revShare: 0.1, cost: 12000000, spend: 150000 };
 
   let mode = 'lokal', version = 0, state = null, offset = 0, ready = null;
   const subs = new Set();
@@ -87,7 +90,7 @@
         { id: 'UMM', name: 'Umum (Registrasi)', price: 0, color: '#4edea3', seated: true, onSale: true, perks: 'Gratis, wajib registrasi' },
       ] };
     ev2.layout = { stage: ATRIUM.stage, rows: ATRIUM.rows.map((r) => ({ r: r.r, n: r.n, t: r.r <= 'B' ? 'UND' : 'UMM' })) };
-    const ev3 = { id: 'EVT-03', name: 'Stand-Up Comedy Night: "Macet Itu Rejeki"', tagline: 'Line-up komika Bandung', cat: 'Komedi', start: new Date(2026, 10, 28, 20, 0).getTime(), doors: new Date(2026, 10, 28, 19, 0).getTime(), venue: 'Summarecon Hall, Lt. 3 · Summarecon Mall Bandung', layout: HALL, desc: 'Malam stand-up dengan kursi bernomor. Penjualan dibuka 10 November 2026 pukul 10:00.', saleStart: new Date(2026, 10, 10, 10, 0).getTime(), saleEnd: new Date(2026, 10, 28, 19, 0).getTime(), status: 'PUBLISHED', holdMin: 8, maxPerOrder: 4, color: '#fb923c', gates: ['Gate Hall Lt. 3'], blocked: [],
+    const ev3 = { id: 'EVT-03', name: 'Stand-Up Comedy Night: "Macet Itu Rejeki"', tagline: 'Line-up komika Bandung', cat: 'Komedi', start: new Date(2026, 10, 28, 20, 0).getTime(), doors: new Date(2026, 10, 28, 19, 0).getTime(), venue: 'Summarecon Hall, Lt. 3 · Summarecon Mall Bandung', layout: HALL, fin: { rent: 20000000 }, desc: 'Malam stand-up dengan kursi bernomor. Penjualan dibuka 10 November 2026 pukul 10:00.', saleStart: new Date(2026, 10, 10, 10, 0).getTime(), saleEnd: new Date(2026, 10, 28, 19, 0).getTime(), status: 'PUBLISHED', holdMin: 8, maxPerOrder: 4, color: '#fb923c', gates: ['Gate Hall Lt. 3'], blocked: [],
       types: [
         { id: 'PRM', name: 'Premium', price: 300000, color: '#f472b6', seated: true, onSale: true, perks: 'Baris A-C' },
         { id: 'REG', name: 'Reguler', price: 175000, color: '#60a5fa', seated: true, onSale: true, perks: 'Baris D-H' },
@@ -207,6 +210,39 @@
     const items = seats.map((x) => ({ type: x.type, seat: x.seat })).concat(...q.map((h) => Array.from({ length: h.qty }, () => ({ type: h.type, seat: null }))));
     const until = Math.min(...seats.map((x) => x.until).concat(q.map((h) => h.until)), Infinity);
     return { items, until: isFinite(until) ? until : null };
+  }
+  // Rekonsiliasi & ROI (Finance & Marketing). Murni baca: memakai angka yang tercatat di pesanan, bukan harga terbaru.
+  function finance(evId) {
+    const e = ev(evId), t = now();
+    const orders = Object.values(state.orders).filter((o) => o.ev === evId && (o.status === 'PAID' || o.status === 'REFUNDED'));
+    const totals = { orders: orders.length, gross: 0, refunded: 0, net: 0, fee: 0 };
+    const byM = {}, byT = {}, mismatches = [];
+    orders.forEach((o) => {
+      const m = byM[o.method || '-'] = byM[o.method || '-'] || { method: o.method || '-', orders: 0, gross: 0, refunded: 0, net: 0 };
+      m.orders++; m.gross += o.total; totals.gross += o.total;
+      const tks = o.tickets.map((id) => state.tickets[id]);
+      if (o.status === 'REFUNDED') {
+        m.refunded += o.total; totals.refunded += o.total;
+        if (tks.some((x) => !x || x.status !== 'VOID')) mismatches.push({ order: o.id, reason: 'Pesanan refund masih punya e-ticket aktif.' });
+        return;
+      }
+      totals.fee += o.fee || 0;
+      const per = o.items.length ? (o.sub || 0) / o.items.length : 0;
+      o.items.forEach((it) => { const b = byT[it.type] = byT[it.type] || { type: it.type, name: typeById(e, it.type).name, qty: 0, gross: 0 }; b.qty++; b.gross += per; });
+      if (o.total !== (o.sub || 0) + (o.fee || 0)) mismatches.push({ order: o.id, reason: 'Total ' + rp(o.total) + ' tidak sama dengan subtotal + biaya layanan.' });
+      else if (tks.length !== o.items.length) mismatches.push({ order: o.id, reason: 'Jumlah e-ticket (' + tks.length + ') tidak sama dengan jumlah tiket dipesan (' + o.items.length + ').' });
+      else if (tks.some((x) => !x || x.status !== 'ACTIVE')) mismatches.push({ order: o.id, reason: 'Pesanan lunas punya e-ticket yang tidak aktif.' });
+    });
+    Object.values(byM).forEach((m) => (m.net = m.gross - m.refunded));
+    totals.net = totals.gross - totals.refunded;
+    const fin = Object.assign({}, FIN_DEFAULT, e.fin);
+    const tks = Object.values(state.tickets).filter((x) => x.ev === evId && x.status === 'ACTIVE');
+    const started = e.start <= t;
+    const attendees = started ? tks.filter((x) => x.checkedInAt).length : tks.length;
+    const share = Math.round(totals.net * fin.revShare);
+    const benefit = fin.rent + share;
+    const roi = { rent: fin.rent, revShare: fin.revShare, share, cost: fin.cost, benefit, roi: fin.cost > 0 ? (benefit - fin.cost) / fin.cost : null, attendees, basis: started ? 'check-in' : 'tiket terjual', spend: fin.spend, tenantSpend: attendees * fin.spend };
+    return { totals, byMethod: Object.values(byM).sort((a, b) => b.net - a.net), byType: Object.values(byT).map((b) => Object.assign(b, { gross: Math.round(b.gross) })), mismatches, roi };
   }
   function price(e, items) { const sub = items.reduce((a, i) => a + typeById(e, i.type).price, 0); const fee = sub > 0 ? FEE * items.length : 0; return { sub, fee, total: sub + fee }; }
 
@@ -672,7 +708,7 @@
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, FIN_DEFAULT, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });

@@ -8,8 +8,8 @@
   const { esc, icon, num } = UI;
   let ROLE = 'mall'; const isMgr = () => ROLE === 'pengelola';
   const TABS = {
-    pengelola: [['acara', 'Daftar acara', 'event_note'], ['ringkasan', 'Ringkasan', 'monitoring'], ['kursi', 'Denah kursi', 'event_seat'], ['kelola', 'Kelola acara', 'edit_calendar'], ['peserta', 'Peserta & transaksi', 'groups'], ['checkin', 'Check-in QR', 'qr_code_scanner'], ['notif', 'Notifikasi & daftar tunggu', 'notifications']],
-    mall: [['portofolio', 'Portofolio event', 'travel_explore'], ['ringkasan', 'Detail acara', 'monitoring'], ['kursi', 'Denah langsung', 'event_seat'], ['gate', 'Gate & keamanan', 'shield_person'], ['peserta', 'Transaksi', 'receipt_long']],
+    pengelola: [['acara', 'Daftar acara', 'event_note'], ['ringkasan', 'Ringkasan', 'monitoring'], ['kursi', 'Denah kursi', 'event_seat'], ['kelola', 'Kelola acara', 'edit_calendar'], ['peserta', 'Peserta & transaksi', 'groups'], ['keuangan', 'Keuangan & ROI', 'account_balance'], ['checkin', 'Check-in QR', 'qr_code_scanner'], ['notif', 'Notifikasi & daftar tunggu', 'notifications']],
+    mall: [['portofolio', 'Portofolio event', 'travel_explore'], ['ringkasan', 'Detail acara', 'monitoring'], ['kursi', 'Denah langsung', 'event_seat'], ['gate', 'Gate & keamanan', 'shield_person'], ['peserta', 'Transaksi', 'receipt_long'], ['keuangan', 'Keuangan & ROI', 'account_balance']],
   };
   const GLOBAL_TABS = ['acara', 'portofolio']; // tab lintas acara (tanpa pemilih acara)
   const ui = { ev: 'EVT-01', tab: null, seatMode: 'info', seatSel: null, race: null, q: '', st: 'ALL', gate: null, ch: 'ALL' };
@@ -115,6 +115,14 @@
   }
 
   // ------------------------------------------------------------------ tab: kelola acara
+  function finFields(e) {
+    const fin = Object.assign({}, Evt.FIN_DEFAULT, e.fin);
+    return `<div class="col-span-2 lbl mt-1">Kontrak venue (sesuai perjanjian dengan mall)</div>
+          <label class="f">Sewa venue (Rp)<input class="inp" type="number" min="0" step="100000" name="finRent" value="${fin.rent}"></label>
+          <label class="f">Bagi hasil tiket ke mall (%)<input class="inp" type="number" min="0" max="100" step="0.5" name="finShare" value="${+(fin.revShare * 100).toFixed(2)}"></label>
+          <label class="f">Biaya operasional mall (Rp)<input class="inp" type="number" min="0" step="100000" name="finCost" value="${fin.cost}"></label>
+          <label class="f">Rata-rata belanja pengunjung di tenant (Rp)<input class="inp" type="number" min="0" step="1000" name="finSpend" value="${fin.spend}"></label>`;
+  }
   function kelola(e) {
     if (e.status === 'CANCELLED') return `<section class="card p-8 crit-left">${UI.h('Acara dibatalkan', 'Dibatalkan ' + Evt.fmtDT(e.cancelledAt) + (e.cancelReason ? ' (' + esc(e.cancelReason) + ')' : ''), '', 'event_busy')}<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Semua pesanan lunas sudah di-refund otomatis dan peserta dikabari. Data acara dikunci. Hapus acara dari tab Daftar acara bila tidak diperlukan lagi.</p><button class="btn-ghost" data-tab="acara">${icon('event_note', 'text-[16px]')} Ke Daftar acara</button></section>`;
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
@@ -133,6 +141,7 @@
           <label class="f">Maks tiket per pesanan<input class="inp" type="number" min="1" max="10" name="maxPerOrder" value="${e.maxPerOrder}"></label>
           <label class="f col-span-2">Gate check-in (pisahkan dengan koma)<input class="inp" name="gates" value="${esc(e.gates.join(', '))}"></label>
           <label class="f col-span-2">Deskripsi<textarea class="inp" name="desc" rows="3">${esc(e.desc)}</textarea></label>
+          ${finFields(e)}
           <div class="col-span-2 flex justify-end"><button class="btn">${icon('save')} Simpan acara</button></div></form></section>
       <section class="card p-5 2xl:col-span-5">${UI.h('Jenis tiket, harga & kuota', 'Kuota kursi bernomor = jumlah kursi kategori di denah (atur lewat mode blokir)', '', 'sell')}
         <div class="flex flex-col gap-3">${e.types.map((ty) => { const p = Evt.stats(e.id).per[ty.id]; return `<form class="inner p-4 grid grid-cols-2 gap-3" data-type="${ty.id}">
@@ -158,6 +167,35 @@
     return `<section class="card p-5">${UI.h('Data peserta & status pembayaran', isMgr() ? 'Klik baris untuk detail: ubah data peserta, kirim ulang e-ticket, batalkan, refund' : 'Pemantauan transaksi, hanya baca (refund & perubahan data oleh pengelola acara)', `<div class="flex gap-2"><button class="btn-ghost" id="csv-p">${icon('download', 'text-[16px]')} Peserta (CSV)</button><button class="btn-ghost" id="csv-t">${icon('download', 'text-[16px]')} Transaksi (CSV)</button></div>`, 'groups')}
       <div class="flex flex-wrap gap-2 items-center mb-4"><input class="inp !w-80" id="q" placeholder="Cari booking, nama, email, HP, kursi…" value="${esc(ui.q)}">${sts.map(([k, l]) => `<button class="chip-btn ${ui.st === k ? 'on' : ''}" data-st="${k}">${l}</button>`).join('')}</div>
       <div id="evt-table">${pesertaTable(e)}</div></section>`;
+  }
+
+  // ------------------------------------------------------------------ tab: keuangan & ROI (Finance & Marketing)
+  function keuangan(e) {
+    const f = Evt.finance(e.id), T = f.totals, R = f.roi;
+    const pct = (x) => (x * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%';
+    const money = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+    const row = (k, v, cls) => `<div class="flex justify-between gap-3 py-1.5"><span class="text-on-surface-variant">${k}</span><b class="${cls || ''}">${v}</b></div>`;
+    return `<div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
+      ${UI.kpi({ label: 'Bruto', icon: 'payments', value: rpJt(T.gross), unit: T.gross >= 1e6 ? 'Jt' : '', foot: T.orders + ' transaksi lunas & refund' })}
+      ${UI.kpi({ label: 'Refund', icon: 'currency_exchange', value: rpJt(T.refunded), unit: T.refunded >= 1e6 ? 'Jt' : '', vcls: T.refunded ? 'text-amber-300' : 'text-on-surface', foot: 'dikembalikan ke peserta' })}
+      ${UI.kpi({ label: 'Neto', icon: 'account_balance_wallet', value: rpJt(T.net), unit: T.net >= 1e6 ? 'Jt' : '', vcls: 'text-emerald-300', foot: 'bruto dikurangi refund' })}
+      ${UI.kpi({ label: 'Biaya layanan', icon: 'receipt', value: rpJt(T.fee), unit: T.fee >= 1e6 ? 'Jt' : '', foot: rp(Evt.FEE) + ' per tiket berbayar' })}
+      ${UI.kpi({ label: 'Selisih rekonsiliasi', icon: f.mismatches.length ? 'error' : 'verified', value: f.mismatches.length, vcls: f.mismatches.length ? 'text-rose-300' : 'text-emerald-300', foot: f.mismatches.length ? 'pesanan perlu diperiksa' : 'semua pesanan cocok' })}</div>
+    <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
+      <div class="2xl:col-span-7 flex flex-col gap-5">
+        <section class="card p-5">${UI.h('Rekonsiliasi per metode pembayaran', 'Dicocokkan dari setiap pesanan: total = subtotal + biaya layanan, jumlah e-ticket = jumlah tiket', `<button class="btn-ghost" id="csv-fin">${icon('download', 'text-[16px]')} Rekonsiliasi (CSV)</button>`, 'account_balance')}
+          <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Metode</th><th>Transaksi</th><th>Bruto</th><th>Refund</th><th>Neto</th></tr></thead><tbody>
+          ${f.byMethod.map((m) => `<tr><td class="font-body-sm text-body-sm">${esc(m.method)}</td><td class="font-label-md text-label-md">${m.orders}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(m.gross)}</td><td class="font-label-md text-label-md whitespace-nowrap text-amber-300">${money(m.refunded)}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(m.net)}</td></tr>`).join('') || '<tr><td colspan="5" class="text-on-surface-variant">Belum ada transaksi.</td></tr>'}
+          <tr><td><b>Total</b></td><td class="font-label-md text-label-md"><b>${T.orders}</b></td><td class="font-label-md text-label-md whitespace-nowrap"><b>${money(T.gross)}</b></td><td class="font-label-md text-label-md whitespace-nowrap text-amber-300"><b>${money(T.refunded)}</b></td><td class="font-label-md text-label-md whitespace-nowrap"><b>${money(T.net)}</b></td></tr></tbody></table></div>
+          ${f.mismatches.length ? `<div class="flex flex-col gap-2 mt-3">${f.mismatches.map((m) => `<button class="rel-row text-left w-full" data-order="${m.order}">${icon('error', 'text-rose-300 text-[18px]')}<div class="flex-1"><b>${m.order}</b><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(m.reason)}</div></div></button>`).join('')}</div>` : ''}</section>
+        <section class="card p-5">${UI.h('Laporan penjualan per kategori', 'Pesanan lunas, dihitung dengan harga saat pembelian', '', 'sell')}
+          <table class="tbl"><thead><tr><th>Kategori</th><th>Tiket</th><th>Pendapatan tiket</th></tr></thead><tbody>
+          ${f.byType.map((b) => `<tr><td><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background:${Evt.typeById(e, b.type).color}"></span>${esc(b.name)}</td><td class="font-label-md text-label-md">${b.qty}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(b.gross)}</td></tr>`).join('') || '<tr><td colspan="3" class="text-on-surface-variant">Belum ada tiket terjual.</td></tr>'}</tbody></table></section></div>
+      <div class="2xl:col-span-5 flex flex-col gap-5">
+        <section class="card p-5">${UI.h('ROI acara untuk mall', 'Manfaat = sewa venue + bagi hasil tiket. ROI = (manfaat - biaya) / biaya', '', 'trending_up')}
+          <div class="font-body-sm text-body-sm">${row('Sewa venue', money(R.rent))}${row('Bagi hasil tiket (' + pct(R.revShare) + ' dari neto)', money(R.share))}${row('Total manfaat', money(R.benefit))}${row('Biaya operasional mall', money(R.cost))}${row('ROI', R.roi == null ? '-' : pct(R.roi), R.roi == null ? '' : R.roi >= 0 ? 'text-emerald-300' : 'text-rose-300')}</div>
+          <div class="inner p-3 mt-4 font-body-sm text-body-sm">${icon('storefront', 'text-primary text-[16px] align-middle')} Estimasi belanja pengunjung di tenant: <b>${money(R.tenantSpend)}</b><div class="text-on-surface-variant">${num(R.attendees)} pengunjung (${R.basis}) × ${money(R.spend)}. Tidak dihitung dalam ROI.</div></div>
+          <p class="font-label-sm text-label-sm text-on-surface-variant mt-3">Angka sewa, bagi hasil, biaya dan belanja adalah asumsi${isMgr() ? ', ubah di tab Kelola acara sesuai perjanjian dengan mall.' : ' dari pengelola acara (diisi di Konsol Pengelola).'}</p></section></div></div>`;
   }
 
   // ------------------------------------------------------------------ tab: check-in
@@ -321,7 +359,7 @@
     if (ui.tab === 'acara') return acara();
     if (ui.tab === 'portofolio') return portofolio();
     const e = Evt.ev(ui.ev); const s = Evt.stats(ui.ev);
-    return { ringkasan, kursi, kelola, peserta, checkin, notif, gate }[ui.tab](e, s);
+    return { ringkasan, kursi, kelola, peserta, keuangan, checkin, notif, gate }[ui.tab](e, s);
   }
   function header() {
     const tabs = TABS[ROLE]; const global = GLOBAL_TABS.includes(ui.tab);
@@ -426,7 +464,8 @@
     // kelola
     const fe = el.querySelector('#f-ev'); if (fe) fe.addEventListener('submit', (ev) => {
       ev.preventDefault(); const f = Object.fromEntries(new FormData(fe));
-      const p = { name: f.name, tagline: f.tagline, cat: f.cat, status: f.status, venue: f.venue, desc: f.desc, start: new Date(f.start).getTime(), doors: new Date(f.doors).getTime(), saleStart: new Date(f.saleStart).getTime(), saleEnd: new Date(f.saleEnd).getTime(), holdMin: +f.holdMin, maxPerOrder: +f.maxPerOrder, gates: f.gates.split(',').map((x) => x.trim()).filter(Boolean) };
+      const p = { name: f.name, tagline: f.tagline, cat: f.cat, status: f.status, venue: f.venue, desc: f.desc, start: new Date(f.start).getTime(), doors: new Date(f.doors).getTime(), saleStart: new Date(f.saleStart).getTime(), saleEnd: new Date(f.saleEnd).getTime(), holdMin: +f.holdMin, maxPerOrder: +f.maxPerOrder, gates: f.gates.split(',').map((x) => x.trim()).filter(Boolean),
+        fin: { rent: Math.max(0, +f.finRent || 0), revShare: Math.min(100, Math.max(0, +f.finShare || 0)) / 100, cost: Math.max(0, +f.finCost || 0), spend: Math.max(0, +f.finSpend || 0) } };
       if (p.saleEnd <= p.saleStart) return UI.toast('Waktu penjualan ditutup harus setelah penjualan dibuka.', 'P2');
       if (p.doors > p.start) return UI.toast('Jam gate dibuka harus sebelum acara mulai.', 'P2');
       act(() => Evt.updateEvent(e.id, p), 'Acara ' + e.id + ' disimpan').then(() => redraw());
@@ -448,6 +487,12 @@
       const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Jumlah Tiket', 'Kursi', 'Subtotal', 'Biaya Layanan', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar', 'Catatan Refund']];
       Evt.stats(e.id).orders.forEach((o) => rows.push([o.id, e.name, o.name, o.email, o.phone, o.items.length, o.items.map((i) => i.seat || Evt.typeById(e, i.type).name).join(' '), o.sub, o.fee, o.total, o.method || '', o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status, Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '', o.refundReason || '']));
       Evt.csv('transaksi_' + e.id + '.csv', rows);
+    });
+    // keuangan
+    const cf = el.querySelector('#csv-fin'); if (cf) cf.addEventListener('click', () => {
+      const rows = [['Booking', 'Acara', 'Metode', 'Status', 'Subtotal', 'Biaya Layanan', 'Total', 'Jumlah Tiket', 'Dibayar', 'Refund']];
+      Object.values(Evt.s.orders).filter((o) => o.ev === e.id && (o.status === 'PAID' || o.status === 'REFUNDED')).forEach((o) => rows.push([o.id, e.name, o.method || '', o.status, o.sub, o.fee, o.total, o.items.length, o.paidAt ? Evt.fmtDT(o.paidAt) : '', o.refundedAt ? Evt.fmtDT(o.refundedAt) : '']));
+      Evt.csv('rekonsiliasi_' + e.id + '.csv', rows);
     });
     // check-in
     const g = el.querySelector('#gate'); if (g) g.addEventListener('change', () => (ui.gate = g.value));
