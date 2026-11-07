@@ -185,6 +185,7 @@
   }
 
   // ------------------------------------------------------------------ tab: notifikasi & waitlist
+  const WL_REASON = { refund: 'refund', kedaluwarsa: 'pesanan kedaluwarsa', batal: 'pesanan batal', 'acara-batal': 'acara dibatalkan', manual: 'manual' };
   function notif(e) {
     const ids = new Set(Evt.stats(e.id).orders.map((o) => o.id));
     const wl = Evt.s.waitlist.filter((w) => w.ev === e.id);
@@ -197,7 +198,7 @@
           <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Kirim pengingat (jadwal, lokasi, jam gate, QR) lewat email & WhatsApp ke semua pemesan lunas. Di versi produksi, pengingat terkirim otomatis H-1 dan 3 jam sebelum acara.</p>
           <button class="btn w-full justify-center" id="remind">${icon('send')} Kirim pengingat</button></section>
         <section class="card p-5">${UI.h('Daftar tunggu', wl.length + ' orang', '', 'hourglass_top')}
-          <div class="flex flex-col gap-2 mb-3">${wl.length ? wl.map((w) => `<div class="inner px-3 py-2 font-body-sm text-body-sm flex justify-between gap-2"><span>${esc(w.name)} · ${w.qty}× ${esc(Evt.typeById(e, w.type).name)}<br><span class="text-on-surface-variant">${esc(w.contact)}</span></span><span class="font-label-sm text-label-sm ${w.notified ? 'text-emerald-300' : 'text-amber-300'}">${w.notified ? 'Dikabari ' + Evt.fmtTime(w.notified) : 'Menunggu'}</span></div>`).join('') : '<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada. Pengunjung dapat bergabung saat kategori habis.</div>'}</div>
+          <div class="flex flex-col gap-2 mb-3">${wl.length ? wl.map((w) => `<div class="inner px-3 py-2 font-body-sm text-body-sm flex justify-between gap-2"><span>${esc(w.name)} · ${w.qty}× ${esc(Evt.typeById(e, w.type).name)}<br><span class="text-on-surface-variant">${esc(w.contact)}</span></span><span class="font-label-sm text-label-sm ${w.notified ? 'text-emerald-300' : 'text-amber-300'}">${w.notified ? 'Dikabari ' + Evt.fmtTime(w.notified) + (WL_REASON[w.reason] ? ' · ' + WL_REASON[w.reason] : '') : 'Menunggu'}</span></div>`).join('') : '<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada. Pengunjung dapat bergabung saat kategori habis.</div>'}</div>
           <button class="btn-ghost w-full justify-center" id="wl-notify" ${wl.some((w) => !w.notified) ? '' : 'disabled'}>${icon('campaign', 'text-[16px]')} Kabari daftar tunggu (kursi tersedia: ${Evt.stats(e.id).available})</button></section></div></div>`;
   }
 

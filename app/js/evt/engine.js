@@ -216,7 +216,7 @@
     d.qholds[o.ev] = (d.qholds[o.ev] || []).filter((h) => h.order !== o.id);
   }
   function sweep(d, t) {
-    Object.values(d.orders).forEach((o) => { if (o.status === 'PENDING' && o.until < t) { o.status = 'EXPIRED'; o.log.push({ ts: t, text: 'Batas waktu pembayaran habis, kursi dilepas' }); release(d, o); } });
+    Object.values(d.orders).forEach((o) => { if (o.status === 'PENDING' && o.until < t) { o.status = 'EXPIRED'; o.log.push({ ts: t, text: 'Batas waktu pembayaran habis, kursi dilepas' }); release(d, o); wakeWaitlist(d, o, 'kedaluwarsa', t); } });
     Object.keys(d.seats).forEach((eid) => Object.entries(d.seats[eid]).forEach(([sid, x]) => { if (x.st === 'HELD' && x.until < t) delete d.seats[eid][sid]; }));
     Object.keys(d.qholds).forEach((eid) => (d.qholds[eid] = d.qholds[eid].filter((h) => h.until >= t)));
   }
@@ -224,6 +224,26 @@
     d.outbox.unshift({ ts: t, ch: 'Email', to: o.email, order: o.id, subject, body });
     d.outbox.unshift({ ts: t + 1, ch: 'WhatsApp', to: o.phone, order: o.id, subject, body });
     d.outbox = d.outbox.slice(0, 400);
+  }
+  // Daftar tunggu: pesan ke kontak (email bila ada '@', selain itu WhatsApp)
+  function waitMsg(d, w, subject, body, t) {
+    d.outbox.unshift({ ts: t, ch: /@/.test(w.contact) ? 'Email' : 'WhatsApp', to: w.contact, order: w.id, subject, body });
+    d.outbox = d.outbox.slice(0, 400);
+  }
+  // Kursi/kuota pesanan o kembali tersedia: kabari antrean jenis yang sama (FIFO) sebanyak tiket yang dilepas
+  function wakeWaitlist(d, o, reason, t) {
+    const e = d.events[o.ev]; if (!e || e.status === 'CANCELLED') return 0;
+    const freed = {}; o.items.forEach((it) => (freed[it.type] = (freed[it.type] || 0) + 1));
+    let n = 0;
+    Object.entries(freed).forEach(([type, qty]) => {
+      let covered = 0;
+      (d.waitlist || []).filter((w) => w.ev === o.ev && w.type === type && !w.notified).sort((a, b) => a.ts - b.ts).forEach((w) => {
+        if (covered >= qty) return;
+        w.notified = t; w.reason = reason; covered += w.qty || 1; n++;
+        waitMsg(d, w, 'Kursi tersedia · ' + e.name, `Halo ${w.name}, ada ${qty} tiket ${typeById(e, type).name} yang kembali tersedia. Segera pesan sebelum habis.`, t);
+      });
+    });
+    return n;
   }
   function issue(d, o, method, t) {
     o.status = 'PAID'; o.paidAt = t; o.method = method; o.until = null;
@@ -407,7 +427,7 @@
         return 'PAID';
       });
     },
-    cancel(orderId, by) { return tx((d, t) => { const o = d.orders[orderId]; if (!o || o.status !== 'PENDING') fail('Hanya pesanan menunggu pembayaran yang dapat dibatalkan.'); o.status = 'CANCELLED'; o.log.push({ ts: t, text: 'Dibatalkan oleh ' + (by || 'pengunjung') }); release(d, o); }); },
+    cancel(orderId, by) { return tx((d, t) => { const o = d.orders[orderId]; if (!o || o.status !== 'PENDING') fail('Hanya pesanan menunggu pembayaran yang dapat dibatalkan.'); o.status = 'CANCELLED'; o.log.push({ ts: t, text: 'Dibatalkan oleh ' + (by || 'pengunjung') }); release(d, o); wakeWaitlist(d, o, 'batal', t); }); },
     refund(orderId, reason) {
       return tx((d, t) => {
         const o = d.orders[orderId];
@@ -418,6 +438,7 @@
         o.items.forEach((it) => { if (it.seat && d.seats[o.ev][it.seat] && d.seats[o.ev][it.seat].order === o.id) delete d.seats[o.ev][it.seat]; });
         o.log.push({ ts: t, text: 'Refund ' + rp(o.total) + ' diproses (sandbox): ' + o.refundReason + '. E-ticket dinonaktifkan, kursi kembali tersedia.' });
         notify(d, o, 'Refund ' + o.id, `Refund ${rp(o.total)} untuk ${o.id} diproses ke metode ${o.method}. E-ticket tidak berlaku lagi.`, t);
+        wakeWaitlist(d, o, 'refund', t);
       });
     },
     updateContact(orderId, patch) { return tx((d, t) => { const o = d.orders[orderId]; if (!o) fail('Pesanan tidak ditemukan.'); ['name', 'email', 'phone'].forEach((k) => { if (patch[k]) o[k] = patch[k]; }); (patch.holders || []).forEach((h, i) => { const tk = d.tickets[o.tickets[i]]; if (tk && h) tk.holder = h; }); o.log.push({ ts: t, text: 'Data peserta diperbarui panitia' }); }); },
@@ -487,6 +508,7 @@
         });
         d.seats[evId] = {}; d.qholds[evId] = [];
         e.status = 'CANCELLED'; e.cancelReason = reason || ''; e.cancelledAt = t;
+        d.waitlist.filter((w) => w.ev === evId && !w.notified).forEach((w) => { w.notified = t; w.reason = 'acara-batal'; waitMsg(d, w, 'Acara dibatalkan · ' + e.name, `Mohon maaf, ${e.name} dibatalkan. Pendaftaran daftar tunggu Anda kami tutup.`, t); });
         return { refunded, cancelled, total };
       });
     },
@@ -501,7 +523,7 @@
     notifyWaitlist(evId) {
       return tx((d, t) => {
         const e = d.events[evId]; let n = 0;
-        d.waitlist.filter((w) => w.ev === evId && !w.notified).forEach((w) => { w.notified = t; n++; d.outbox.unshift({ ts: t, ch: /@/.test(w.contact) ? 'Email' : 'WhatsApp', to: w.contact, order: w.id, subject: 'Kursi tersedia · ' + e.name, body: `Halo ${w.name}, ada kursi ${typeById(e, w.type).name} yang kembali tersedia. Segera pesan sebelum habis.` }); });
+        d.waitlist.filter((w) => w.ev === evId && !w.notified).forEach((w) => { w.notified = t; w.reason = 'manual'; n++; waitMsg(d, w, 'Kursi tersedia · ' + e.name, `Halo ${w.name}, ada kursi ${typeById(e, w.type).name} yang kembali tersedia. Segera pesan sebelum habis.`, t); });
         return n;
       });
     },

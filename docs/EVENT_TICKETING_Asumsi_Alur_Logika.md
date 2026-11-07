@@ -45,6 +45,9 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log pindaian langsung.
 - **Anomali gate**: tombol **Laporkan ke Command Center** (konsol & ponsel gate). Statusnya tampil "menunggu CC" lalu "Ditangani TCK-…".
 - **Notifikasi & waitlist**: outbox, kirim pengingat massal, kabari daftar tunggu.
+  - Daftar tunggu dikabari **otomatis** saat kursi/kuota kembali tersedia: pesanan di-refund (`refund`), pesanan menunggu bayar kedaluwarsa (`sweep`), atau pesanan dibatalkan (`cancel`). Untuk tiap jenis tiket yang dilepas, entri antrean jenis itu dikabari urut waktu daftar (FIFO) sampai jumlah tiket yang diminta menutup jumlah yang dilepas; entri pertama selalu dikabari. Entri yang sudah dikabari tidak dikabari lagi.
+  - Acara dibatalkan (`cancelEvent`): semua antrean acara itu yang belum dikabari menerima pesan pembatalan sekali.
+  - Setiap entri mencatat `notified` dan `reason` (`refund`, `kedaluwarsa`, `batal`, `acara-batal`, `manual`); alasan tampil di tab Notifikasi & daftar tunggu. Tombol manual tetap ada.
 
 ## 3b. Pemantauan Event di Command Center (`/command-center`, manajemen mall, hanya baca)
 - **Portofolio Event 360**:
