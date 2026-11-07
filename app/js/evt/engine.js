@@ -244,6 +244,15 @@
     const roi = { rent: fin.rent, revShare: fin.revShare, share, cost: fin.cost, benefit, roi: fin.cost > 0 ? (benefit - fin.cost) / fin.cost : null, attendees, basis: started ? 'check-in' : 'tiket terjual', spend: fin.spend, tenantSpend: attendees * fin.spend };
     return { totals, byMethod: Object.values(byM).sort((a, b) => b.net - a.net), byType: Object.values(byT).map((b) => Object.assign(b, { gross: Math.round(b.gross) })), mismatches, roi };
   }
+  // Anomali gate (SOP-EVT-03): >= 3 pindaian gagal/duplikat per gate dalam `mins` menit terakhir
+  const ANOM_MIN = 3, CLAIM_MS = 60000;
+  function anomaliesIn(d, evId, mins, t) {
+    const from = t - (mins || 10) * 60000, by = {};
+    d.scans.filter((s) => s.ev === evId && s.ts > from && s.result !== 'VALID').forEach((s) => { by[s.gate] = (by[s.gate] || 0) + 1; });
+    return Object.entries(by).filter(([, n]) => n >= ANOM_MIN).map(([gate, n]) => ({ gate, n }));
+  }
+  // Laporan boleh diklaim CC bila belum punya tiket insiden dan belum diklaim, atau klaimnya menggantung > 60 detik
+  const claimable = (r, t) => !r.ticketId && (!r.claimedBy || t - (r.claimedAt || 0) > CLAIM_MS);
   function price(e, items) { const sub = items.reduce((a, i) => a + typeById(e, i.type).price, 0); const fee = sub > 0 ? FEE * items.length : 0; return { sub, fee, total: sub + fee }; }
 
   // ------------------------------------------------------------------ mutasi internal (dipanggil di dalam tx)
@@ -563,6 +572,25 @@
         return n;
       });
     },
+    // Command Center mengklaim anomali secara atomik (CAS): hanya satu browser CC yang membuat tiket insiden
+    claimAnomaly(evId, gate, by) {
+      return tx((d, t) => {
+        const a = anomaliesIn(d, evId, 10, t).find((x) => x.gate === gate);
+        if (!a) return null;
+        const r = d.reports.find((x) => x.ev === evId && x.gate === gate && x.ts > t - 10 * 60000);
+        if (r) { if (!claimable(r, t)) return null; r.claimedBy = by; r.claimedAt = t; return r.id; }
+        const id = 'GR-' + rand(4);
+        d.reports.unshift({ id, ts: t, ev: evId, gate, text: 'Otomatis: ' + a.n + ' pindaian gagal/duplikat dalam 10 menit di ' + gate + '.', auto: true, claimedBy: by, claimedAt: t, ticketId: null });
+        return id;
+      });
+    },
+    claimReport(id, by) {
+      return tx((d, t) => {
+        const r = d.reports.find((x) => x.id === id);
+        if (!r || !claimable(r, t)) return null;
+        r.claimedBy = by; r.claimedAt = t; return r.id;
+      });
+    },
     report(evId, gate, text) { return tx((d, t) => { d.reports.unshift({ id: 'GR-' + rand(4), ts: t, ev: evId, gate, text, ticketId: null }); }); },
     linkReport(id, ticketId) { return tx((d) => { const r = d.reports.find((x) => x.id === id); if (r) r.ticketId = ticketId; }); },
     async reset() { await backend().reset(); sessionStorage.removeItem(CART_KEY); adopt(Object.assign({ state: null }, await backend().get())); await ensureSeed(); emit(); },
@@ -708,7 +736,7 @@
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, FIN_DEFAULT, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });

@@ -160,3 +160,45 @@ test('ROI = (sewa + bagi hasil - biaya) / biaya, memakai default bila e.fin koso
   assert.equal(f.roi.roi, (f.roi.benefit - D.cost) / D.cost);
   assert.equal(Evt.finance('EVT-03').roi.rent, 20000000);
 });
+
+// ------------------------------------------------------------------ Task 5: anomali gate -> tiket insiden otomatis
+const GB = 'Gate B (Sisi Food Court)';
+const fail3 = async (Evt) => { for (let i = 0; i < 3; i++) await Evt.checkIn('QR-PALSU', 'EVT-01', GB); };
+
+test('3 pindaian gagal: hanya satu CC yang berhasil mengklaim', async () => {
+  const { Evt } = await loadEvt();
+  await fail3(Evt);
+  assert.deepEqual([...Evt.anomalies('EVT-01')].map((a) => a.gate), [GB]);
+  const [a, b] = await Promise.all([Evt.claimAnomaly('EVT-01', GB, 'CC-1'), Evt.claimAnomaly('EVT-01', GB, 'CC-2')]);
+  assert.equal([a, b].filter(Boolean).length, 1);
+  assert.equal(Evt.s.reports.filter((r) => r.auto).length, 1);
+});
+
+test('klaim menggantung > 60 detik bisa diambil alih, yang sudah tertaut tidak', async () => {
+  const { Evt, clock } = await loadEvt();
+  await fail3(Evt);
+  const id = await Evt.claimAnomaly('EVT-01', GB, 'CC-1');
+  assert.ok(id);
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-2'), null); // masih < 60 detik
+  clock.now += 61000;
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-2'), id);
+  await Evt.linkReport(id, 'TCK-999');
+  assert.equal(await Evt.claimReport(id, 'CC-3'), null);
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-3'), null);
+});
+
+test('laporan manual dari gate bisa diklaim sekali', async () => {
+  const { Evt } = await loadEvt();
+  await Evt.report('EVT-01', GB, 'Petugas gate melapor');
+  const id = Evt.s.reports[0].id;
+  assert.equal(await Evt.claimReport(id, 'CC-1'), id);
+  assert.equal(await Evt.claimReport(id, 'CC-2'), null);
+});
+
+test('2 pindaian gagal belum anomali', async () => {
+  const { Evt, clock } = await loadEvt();
+  clock.now += 11 * 60000; // pindaian gagal dari seed keluar dari jendela 10 menit
+  await Evt.checkIn('QR-PALSU', 'EVT-01', GB);
+  await Evt.checkIn('QR-PALSU', 'EVT-01', GB);
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'), null);
+});

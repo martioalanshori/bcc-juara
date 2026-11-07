@@ -52,7 +52,7 @@ UI changes still have to be checked by running `server.py` and opening the pages
 
 | Path (alias in `server.py`) | Page | Scripts |
 |---|---|---|
-| `/command-center` | `app/index.html` | everything: `sop-data`, `data`, `store`, `ui`, `views/*`, `evt/engine`, `sim`, `app` |
+| `/command-center` | `app/index.html` | everything: `sop-data`, `data`, `store`, `ui`, `views/*`, `evt/engine`, `evt/cc-bridge`, `sim`, `app` |
 | `/pengelola` | `app/pengelola.html` | `ui`, `evt/engine`, `evt/checkin-ui`, `views/event.js` → `EvtAdmin.mount(el, 'pengelola')` |
 | `/pengunjung` | `app/pengunjung.html` | `evt/engine`, `evt/visitor` (mobile-first buyer portal) |
 | `/checkin` | `app/checkin.html` | `evt/engine`, `evt/checkin-ui` (gate QR scanner) |

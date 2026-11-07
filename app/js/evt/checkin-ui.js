@@ -107,11 +107,7 @@
       if (b.dataset.demo === 'refund') { const t = tks.find((x) => x.status === 'VOID'); go(t ? E.qrText(t) : 'SMB1|X|X|X|X'); }
     }));
   }
-  function anomalies(evId, mins) {
-    const t = E.now() - (mins || 10) * 60000; const by = {};
-    E.s.scans.filter((s) => s.ev === evId && s.ts > t && s.result !== 'VALID').forEach((s) => { by[s.gate] = (by[s.gate] || 0) + 1; });
-    return Object.entries(by).filter(([, n]) => n >= 3).map(([gate, n]) => ({ gate, n }));
-  }
+  const anomalies = (evId, mins) => E.anomalies(evId, mins); // aturan ambang ada di engine
   function logTable(evId, n) {
     const rows = E.s.scans.filter((s) => s.ev === evId).slice(0, n || 25);
     const col = { VALID: 'text-emerald-300', USED: 'text-amber-300', INVALID: 'text-rose-300' };

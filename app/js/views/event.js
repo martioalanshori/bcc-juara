@@ -25,14 +25,21 @@
   async function act(p, ok) { try { const r = await p(); if (ok) UI.toast(ok, 'P4'); return r; } catch (e) { UI.toast(esc(e.message), 'P2'); return null; } }
 
   // ------------------------------------------------------------------ anomali gate (pengelola melapor, Command Center membuat tiket insiden)
+  // Tiket insiden ada di Store (localStorage) browser CC yang membuatnya. Nomor TCK dihitung per browser,
+  // jadi tautkan hanya bila tiket itu memang tiket SOP-EVT-03 di browser ini.
+  const tkLink = (id) => (window.Store && Store.ticket(id) && Store.ticket(id).sop === 'SOP-EVT-03'
+    ? `<a href="#/ticketing?id=${id}" class="chip-btn">${id}</a>`
+    : `<span class="font-label-sm text-label-sm text-emerald-300" title="Tiket dibuat di perangkat Command Center lain">${id} (perangkat CC lain)</span>`);
   function anomList(e) {
     const anom = EvtCheckin.anomalies(e.id);
     const reports = Evt.s.reports.filter((r) => r.ev === e.id);
     const rows = anom.map((a) => { const rep = reports.find((r) => r.gate === a.gate && r.ts > Evt.now() - 30 * 60000);
       const btn = isMgr() ? (rep ? `<span class="font-label-sm text-label-sm ${rep.ticketId ? 'text-emerald-300' : 'text-amber-300'}">${rep.ticketId ? 'Ditangani ' + rep.ticketId : 'Terkirim, menunggu CC'}</span>` : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-report="${esc(a.gate)}">Laporkan ke CC</button>`)
+        : rep && rep.ticketId ? tkLink(rep.ticketId)
+        : rep && rep.claimedBy ? '<span class="font-label-sm text-label-sm text-amber-300">Sedang dibuat otomatis</span>'
         : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-inc="${esc(a.gate)}">Buat tiket insiden</button>`;
       return `<div class="rel-row !cursor-default items-center">${icon('warning', 'text-rose-300 text-[18px]')}<div class="flex-1"><div class="font-label-lg text-label-lg">${esc(a.gate)}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${a.n} pindaian tidak valid/duplikat, indikasi tiket palsu atau calo</div></div>${btn}</div>`; });
-    reports.forEach((r) => rows.push(`<div class="rel-row !cursor-default items-center">${icon('campaign', 'text-amber-300 text-[18px]')}<div class="flex-1"><div class="font-label-md text-label-md text-on-surface-variant">${r.id} · ${Evt.fmtTime(r.ts)} · ${esc(r.gate)}</div><div class="font-body-sm text-body-sm">${esc(r.text)}</div></div>${r.ticketId ? (isMgr() ? `<span class="chip-btn">${r.ticketId}</span>` : `<a href="#/ticketing?id=${r.ticketId}" class="chip-btn">${r.ticketId}</a>`) : isMgr() ? '<span class="font-label-sm text-label-sm text-amber-300">Menunggu CC</span>' : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-rep="${r.id}">Buat tiket insiden</button>`}</div>`));
+    reports.forEach((r) => rows.push(`<div class="rel-row !cursor-default items-center">${icon('campaign', 'text-amber-300 text-[18px]')}<div class="flex-1"><div class="font-label-md text-label-md text-on-surface-variant">${r.id} · ${Evt.fmtTime(r.ts)} · ${esc(r.gate)}</div><div class="font-body-sm text-body-sm">${esc(r.text)}</div></div>${r.ticketId ? (isMgr() ? `<span class="chip-btn">${r.ticketId}</span>` : tkLink(r.ticketId)) : isMgr() ? '<span class="font-label-sm text-label-sm text-amber-300">Menunggu CC</span>' : r.claimedBy ? '<span class="font-label-sm text-label-sm text-amber-300">Sedang dibuat otomatis</span>' : `<button class="btn-danger !px-2 !py-1 text-[12px]" data-rep="${r.id}">Buat tiket insiden</button>`}</div>`));
     return { html: rows.join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada anomali. Gate normal.</div>', alert: anom.length || reports.some((r) => !r.ticketId) };
   }
   function anomPanel(e) {
@@ -259,8 +266,12 @@
     const rf = root.querySelector('#o-refund'); if (rf) rf.addEventListener('click', async () => { const reason = prompt('Alasan refund:', 'Permintaan peserta'); if (reason == null) return; if ((await act(() => Evt.refund(id, reason), 'Refund ' + id + ' diproses, kursi kembali tersedia')) !== null) UI.closeModal(); });
     const cc = root.querySelector('#o-cancel'); if (cc) cc.addEventListener('click', async () => { if ((await act(() => Evt.cancel(id, 'panitia'), 'Pesanan dibatalkan')) !== null) UI.closeModal(); });
   }
+  // Field tiket insiden anomali gate (SOP-EVT-03, P2). Dipakai tombol manual dan jembatan otomatis (evt/cc-bridge.js).
+  function incidentFields(e, gate, text, source) {
+    return { title: 'Indikasi tiket palsu/calo di ' + gate, desc: (text ? text + ' ' : '') + 'Acara ' + e.name + '. Pindaian QR gagal/duplikat berulang (lihat log check-in DB-EVT).', sop: 'SOP-EVT-03', priority: 'P2', category: 'Keamanan, Parkir & Crowd', zone: 'GF', location: gate + ' · ' + e.venue.split(',')[0], source: source || 'Check-in event (DB-EVT)', cam: 'CAM-01', team: 'Regu Bravo', fromDb: 'EVT' };
+  }
   function incident(e, gate, report) {
-    Shell.newTicket({ title: 'Indikasi tiket palsu/calo di ' + gate, desc: (report ? report.text + ' ' : '') + 'Acara ' + e.name + '. Pindaian QR gagal/duplikat berulang (lihat log check-in DB-EVT).', sop: 'SOP-EVT-03', priority: 'P2', category: 'Keamanan, Parkir & Crowd', zone: 'GF', location: gate + ' · ' + e.venue.split(',')[0], source: 'Check-in event (DB-EVT)', cam: 'CAM-01', team: 'Regu Bravo', fromDb: 'EVT' });
+    Shell.newTicket(incidentFields(e, gate, report && report.text));
     const t0 = Store.s.tickets.length;
     const watch = Store.subscribe(() => { if (Store.s.tickets.length > t0) { watch(); const tk = Store.s.tickets[0]; if (report) Evt.linkReport(report.id, tk.id); } });
   }
@@ -520,6 +531,7 @@
   window.EvtAdmin = {
     mount(root, role) { root.innerHTML = loading; mount(root, role); },
     open(params) { if (params.ev) ui.ev = params.ev; if (params.tab) ui.tab = params.tab; },
+    incidentFields,
   };
   // Command Center: sudut pandang manajemen mall 360 (hanya baca)
   window.Views.event = {
