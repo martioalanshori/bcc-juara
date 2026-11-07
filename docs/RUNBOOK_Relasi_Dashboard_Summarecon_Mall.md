@@ -1,50 +1,50 @@
-# Runbook Relasi Antar Dashboard — Summarecon Mall Integrated Command Center
+# Runbook relasi antar dashboard Summarecon Mall Integrated Command Center
 
 > **Sistem:** Summarecon Mall Integrated Command Center Ticketing System (SMICC-TS)  
-> **Versi:** 2026-11-07 · dihasilkan oleh `tools/build_docs.py` (sumber data `tools/sop_data.py` & `tools/usecase_data.py`)  
+> **Versi:** 2026-11-08 · dihasilkan oleh `tools/build_docs.py` (sumber data `tools/sop_data.py` & `tools/usecase_data.py`)  
 > **Pendamping:** `docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `app/index.html` (menu *Simulator Use Case*)
 
-## Daftar Isi
-1. [Tujuan & Ruang Lingkup](#1-tujuan--ruang-lingkup)
-2. [Peta Dashboard & Relasi](#2-peta-dashboard--relasi)
-3. [Prinsip Operasi Lintas Dashboard](#3-prinsip-operasi-lintas-dashboard)
-4. [Matriks SLA & Eskalasi](#4-matriks-sla--eskalasi)
-5. [Prosedur Rutin Command Center](#5-prosedur-rutin-command-center)
-6. [Runbook per Use Case](#6-runbook-per-use-case)
-7. [Kamus Event Integrasi](#7-kamus-event-integrasi)
-8. [Lampiran: Role & Kontak](#8-lampiran-role--kontak)
+## Daftar isi
+1. [Tujuan & ruang lingkup](#1-tujuan--ruang-lingkup)
+2. [Peta dashboard & relasi](#2-peta-dashboard--relasi)
+3. [Prinsip operasi lintas dashboard](#3-prinsip-operasi-lintas-dashboard)
+4. [Matriks SLA & eskalasi](#4-matriks-sla--eskalasi)
+5. [Prosedur rutin Command Center](#5-prosedur-rutin-command-center)
+6. [Runbook per use case](#6-runbook-per-use-case)
+7. [Kamus event integrasi](#7-kamus-event-integrasi)
+8. [Lampiran: role & kontak](#8-lampiran-role--kontak)
 
-## 1. Tujuan & Ruang Lingkup
+## 1. Tujuan & ruang lingkup
 
-Runbook ini menjadi panduan operasional bagi Operator, Shift Lead, dan PIC lapangan Summarecon Mall dalam menjalankan skenario yang melibatkan **lebih dari satu dashboard**. Setiap use case menjelaskan siapa melakukan apa, di dashboard mana, data apa yang berpindah, dan kapan harus eskalasi. Detail langkah per SOP ada di Excel SOP Drill-down.
+Runbook ini menjadi panduan operasional bagi operator, Shift Lead, dan PIC lapangan Summarecon Mall dalam menjalankan skenario yang melibatkan **lebih dari satu dashboard**. Setiap use case menjelaskan siapa melakukan apa, di dashboard mana, data apa yang berpindah, dan kapan harus eskalasi. Detail langkah per SOP ada di Excel SOP drill-down.
 
 **Ruang lingkup:** 9 dashboard, 18 use case lintas dashboard, 48 SOP, 43 relasi data, dan 16 jenis event integrasi.
 
-## 2. Peta Dashboard & Relasi
+## 2. Peta dashboard & relasi
 
-| Kode | Dashboard | Route Prototype | Tujuan | Pengguna Utama |
+| Kode | Dashboard | Route prototype | Tujuan | Pengguna utama |
 |---|---|---|---|---|
-| **TIC** | Ticketing & Incident Ops | `#/ticketing` | Pusat seluruh tiket insiden: triage P1-P4, dispatch tim, SLA countdown, eskalasi & penutupan. | Operator Command Center, Shift Lead, Supervisor Lapangan |
-| **BMS** | Facility & BMS Control | `#/bms` | Monitoring & kontrol MEP: chiller, AHU, lift/eskalator, trafo, genset, plumbing. | Chief Engineering, Teknisi MEP, Operator BMS |
-| **TEN** | Tenant Support & SLA | `#/tenant` | Helpdesk tenant omnichannel: komplain, izin kerja/fit-out, overtime, kepatuhan regulasi gedung. | Tenant Relation Officer, Customer Service, Leasing |
-| **CCTV** | CCTV & Security Feeds | `#/cctv` | Video wall AI analytics, verifikasi visual insiden, kontrol PTZ, regu patroli & bukti video. | Chief Security, Operator CCTV, Security Quick Response |
-| **ENE** | Energy & Utility Audit | `#/energy` | Audit konsumsi listrik/air, tarif WBP/LWBP, peak shaving, PLTS & ESG, sub-metering tenant. | Energy Manager, Chief Engineering, Finance |
-| **ANL** | Analytics & Executive Reports | `#/analytics` | Konsolidasi KPI lintas departemen, tren SLA, pareto root-cause, generator laporan BOD. | General Manager, Direksi/Owner, Head of Departments |
-| **PARK** | Parking & Mobility | `#/parking` | Okupansi parkir per zona, antrean gate ANPR, drop-off lobi/valet, EV charger, rekonsiliasi QRIS. | Koordinator Parkir, Security Lobi, Finance Parkir |
-| **O360** | Owner 360 - Commercial & Finance | `#/owner360` | Pandangan 360 pemilik mall: okupansi NLA, produktivitas tenant/OCR, footfall & CSAT, AR aging, P&L/NOI. | Owner/Direksi, GM, Leasing, Finance, Marketing |
-| **EVT** | Event Ticketing & Check-in | `#/event` | Tiket acara di Summarecon Mall Bandung dalam 3 path: /pengunjung (beli tiket: denah kursi, hold & anti double-booking, bayar sandbox, e-ticket QR), /pengelola (EO: tambah/hapus/batalkan acara, tiket, harga, kuota, denah, peserta, refund, check-in, waitlist) dan Command Center Event 360 (manajemen mall: portofolio acara, dampak operasional, keamanan gate → tiket insiden; hanya baca). | Event Officer/Panitia (Konsol Pengelola), Petugas Gate, Manajemen Mall & Ops Command Center (Event 360), Marketing, Finance, Security |
+| **TIC** | Tiket & Insiden | `#/ticketing` | Pusat semua tiket insiden: triage P1-P4, dispatch tim, hitung mundur SLA, eskalasi, dan penutupan. | Operator Command Center, Shift Lead, Supervisor Lapangan |
+| **BMS** | Fasilitas & BMS | `#/bms` | Pemantauan dan kontrol MEP: chiller, AHU, lift/eskalator, trafo, genset, plumbing. | Chief Engineering, Teknisi MEP, Operator BMS |
+| **TEN** | Layanan Tenant & SLA | `#/tenant` | Helpdesk tenant lewat semua kanal: komplain, izin kerja/fit-out, overtime, kepatuhan regulasi gedung. | Tenant Relation Officer, Customer Service, Leasing |
+| **CCTV** | CCTV & Keamanan | `#/cctv` | Video wall dengan AI analytics, verifikasi visual insiden, kontrol PTZ, regu patroli, dan bukti video. | Chief Security, Operator CCTV, Security Quick Response |
+| **ENE** | Energi & Utilitas | `#/energy` | Audit konsumsi listrik/air, tarif WBP/LWBP, peak shaving, PLTS & ESG, sub-metering tenant. | Energy Manager, Chief Engineering, Finance |
+| **ANL** | Analitik & Laporan | `#/analytics` | Konsolidasi KPI lintas departemen, tren SLA, pareto root-cause, generator laporan BOD. | General Manager, Direksi/Owner, Head of Departments |
+| **PARK** | Parkir & Mobilitas | `#/parking` | Okupansi parkir per zona, antrean gate ANPR, drop-off lobi/valet, EV charger, rekonsiliasi QRIS. | Koordinator Parkir, Security Lobi, Finance Parkir |
+| **O360** | Komersial & Keuangan | `#/owner360` | Ringkasan bisnis untuk pemilik mall: okupansi NLA, produktivitas tenant/OCR, footfall & CSAT, AR aging, P&L/NOI. | Owner/Direksi, GM, Leasing, Finance, Marketing |
+| **EVT** | Pemantauan Event | `#/event` | Tiket acara di Summarecon Mall Bandung lewat 3 path: /pengunjung (beli tiket: denah kursi, hold & anti double-booking, bayar sandbox, e-ticket QR), /pengelola (EO: tambah/hapus/batalkan acara, tiket, harga, kuota, denah, peserta, refund, check-in, waitlist), dan Pemantauan Event di Command Center (manajemen mall, hanya baca: portofolio acara, dampak operasional, keamanan gate → tiket insiden). | Event Officer/Panitia (Konsol Pengelola), Petugas Gate, Manajemen Mall & Ops Command Center (Pemantauan Event), Marketing, Finance, Security |
 
 ```mermaid
 flowchart LR
-  TIC["Ticketing & Incident Ops"]
-  BMS["Facility & BMS Control"]
-  TEN["Tenant Support & SLA"]
-  CCTV["CCTV & Security Feeds"]
-  ENE["Energy & Utility Audit"]
-  ANL["Analytics & Executive Reports"]
-  PARK["Parking & Mobility"]
-  O360["Owner 360 - Commercial & Finance"]
-  EVT["Event Ticketing & Check-in"]
+  TIC["Tiket & Insiden"]
+  BMS["Fasilitas & BMS"]
+  TEN["Layanan Tenant & SLA"]
+  CCTV["CCTV & Keamanan"]
+  ENE["Energi & Utilitas"]
+  ANL["Analitik & Laporan"]
+  PARK["Parkir & Mobilitas"]
+  O360["Komersial & Keuangan"]
+  EVT["Pemantauan Event"]
   BMS -->|"Alarm SCADA kritikal"| TIC
   BMS -->|"Lokasi aset alarm"| CCTV
   BMS -->|"Gangguan HVAC/listrik/air zona"| TEN
@@ -92,7 +92,7 @@ flowchart LR
   class TIC hub;
 ```
 
-**Ticketing & Incident Ops (TIC)** adalah *hub*: setiap event dari BMS, CCTV, Tenant, Energy dan Parking yang memerlukan tindakan manusia **wajib** berakhir sebagai tiket agar SLA, eskalasi, dan pelaporan Analytics terukur.
+**Tiket & Insiden (TIC)** adalah *hub*: setiap event dari BMS, CCTV, TEN, ENE, dan PARK yang memerlukan tindakan manusia **wajib** berakhir sebagai tiket agar SLA, eskalasi, dan pelaporan Analitik & Laporan terukur.
 
 ### Matriks relasi ringkas
 
@@ -110,15 +110,15 @@ flowchart LR
 
 ● = ada aliran data/aksi. Detail isi tiap relasi: sheet `2_Matriks_Relasi` dan `3_Daftar_Relasi`.
 
-## 3. Prinsip Operasi Lintas Dashboard
+## 3. Prinsip operasi lintas dashboard
 
 - **Satu insiden = satu tiket.** Alarm dari beberapa sumber (BMS + CCTV + chat tenant) untuk lokasi & kejadian sama digabung (merge) ke tiket induk.
 - **Verifikasi visual sebelum dispatch P1/P2.** Operator membuka kamera terdekat (CCTV) maksimal 60 detik; tidak boleh menunda dispatch P1 lebih dari itu.
-- **Dashboard pemilik aset melakukan mitigasi teknis**, dashboard Ticketing mencatat status. Contoh: start chiller standby dilakukan di BMS, status DISPATCHED/RESOLVED di TIC.
-- **Tenant selalu diberi tahu** bila zona tenant terdampak (TEN broadcast) — paling lambat T+10 untuk P2 dan T+3 untuk P1.
+- **Dashboard pemilik aset melakukan mitigasi teknis**, dashboard TIC mencatat status. Contoh: start chiller standby dilakukan di BMS, status DISPATCHED/RESOLVED di TIC.
+- **Tenant selalu diberi tahu** bila zona tenant terdampak (TEN broadcast), paling lambat T+10 untuk P2 dan T+3 untuk P1.
 - **Tidak ada tiket ditutup tanpa bukti**: foto sesudah, sensor normal (BMS/ENE), atau kamera aman (CCTV).
-- **Analytics hanya membaca** (consumer). Semua KPI dihitung dari event; tidak ada input manual angka KPI.
-- **Owner 360 menerima eskalasi P1 otomatis** (detik ke-1) dan P2 bila melewati 15 menit.
+- **Analitik & Laporan hanya membaca** (consumer). Semua KPI dihitung dari event; tidak ada input manual angka KPI.
+- **Komersial & Keuangan menerima eskalasi P1 otomatis** (detik ke-1) dan P2 bila melewati 15 menit.
 
 ### Status siklus tiket
 
@@ -127,14 +127,14 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
                  \-> ESCALATED (paralel, tidak menghentikan siklus)
 ```
 
-## 4. Matriks SLA & Eskalasi
+## 4. Matriks SLA & eskalasi
 
-| Level | Kategori | Contoh | Respons | Resolusi | PIC | Eskalasi Owner |
+| Level | Kategori | Contoh | Respons | Resolusi | PIC | Eskalasi owner |
 |---|---|---|---|---|---|---|
-| **P1 CRITICAL** | Keselamatan Jiwa & Kebakaran | Titik api di dapur F&B, Gempa bumi, Ancaman teror/keamanan | 2 menit | < 15 Menit (Evakuasi) | Chief Security, ERT (Emergency Team) & Damkar | Real-time (Detik ke-1 via WhatsApp/Call Prioritas) |
-| **P2 HIGH** | Kegagalan Utilitas Utama | Pemadaman PLN (Genset gagal sinkron), Chiller utama trip, Pipa utama pecah | 5 menit | < 30 Menit | Chief Engineering & Teknisi MEP Siaga | Jika belum pulih dalam 15 menit |
-| **P3 MEDIUM** | Gangguan Operasional Area | Eskalator berhenti, Antrean gate parkir macet >10 mobil, Lift macet | 10 menit | < 2 Jam | Supervisor Teknisi / Koordinator Parkir | Laporan rekap harian (kecuali viral di medsos) |
-| **P4 LOW** | Kenyamanan & Kebersihan | Toilet bau/tisu habis, Tumpahan minuman di koridor, Suhu zona agak panas | 15 menit | < 45 Menit | Tim Housekeeping & Teknisi Zona | Rekap bulanan evaluasi vendor |
+| **P1 CRITICAL** | Keselamatan jiwa & kebakaran | Titik api di dapur F&B, gempa bumi, ancaman teror/keamanan | 2 menit | < 15 menit (evakuasi) | Chief Security, ERT (Emergency Team) & Damkar | Langsung, detik ke-1 via WhatsApp/call prioritas |
+| **P2 HIGH** | Kegagalan utilitas utama | Pemadaman PLN (genset gagal sinkron), chiller utama trip, pipa utama pecah | 5 menit | < 30 menit | Chief Engineering & Teknisi MEP Siaga | Jika belum pulih dalam 15 menit |
+| **P3 MEDIUM** | Gangguan operasional area | Eskalator berhenti, antrean gate parkir macet >10 mobil, lift macet | 10 menit | < 2 jam | Supervisor Teknisi / Koordinator Parkir | Laporan rekap harian (kecuali viral di medsos) |
+| **P4 LOW** | Kenyamanan & kebersihan | Toilet bau/tisu habis, tumpahan minuman di koridor, suhu zona agak panas | 15 menit | < 45 menit | Tim Housekeeping & Teknisi Zona | Rekap bulanan evaluasi vendor |
 
 **Eskalasi berjenjang**
 
@@ -144,7 +144,7 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 | P1 | L1 Manajemen | 1 mnt | SL -> GM | Call prioritas + WhatsApp Grup Crisis | Otomatis untuk semua P1 |
 | P1 | L2 Direksi | 2 mnt | GM -> BOD / Owner | Call prioritas + WhatsApp | Otomatis untuk semua P1 (detik ke-1 notifikasi sistem) |
 | P1 | L3 Eksternal | 3 mnt | CSEC -> Damkar / Polisi / Ambulans | Telepon 112 / 113 / 110 | Api/ancaman tidak terkendali APAR atau ada korban |
-| P1 | L4 Komunikasi Publik | 30 mnt | GM -> PR | Holding statement medsos & media | Insiden terlihat publik / viral |
+| P1 | L4 Komunikasi publik | 30 mnt | GM -> PR | Holding statement medsos & media | Insiden terlihat publik / viral |
 | P2 | L0 Deteksi | 0 mnt | CCO -> CENG + MEP Siaga | Radio HT CH-02 + Tiket otomatis | BMS SCADA critical alert |
 | P2 | L1 Manajemen | 15 mnt | CENG -> GM | Call + WhatsApp | Belum pulih dalam 15 menit |
 | P2 | L2 Direksi | 30 mnt | GM -> BOD | WhatsApp + email ringkas | Belum pulih dalam 30 menit / dampak > 25% tenant |
@@ -154,11 +154,11 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 | P3 | L2 Manajemen | 120 mnt | SL -> GM | Rekap harian | SLA 2 jam terlampaui atau viral di medsos (langsung) |
 | P4 | L0 Deteksi | 0 mnt | CCO -> HK / Teknisi Zona | Patroli App push | Sensor NH3 / QR feedback / patroli |
 | P4 | L1 Supervisor | 30 mnt | HK -> SL | Patroli App | Belum selesai 30 menit |
-| P4 | L2 Vendor Review | Bulanan | SL -> GM (rekap bulanan) | Laporan evaluasi vendor | Akumulasi breach bulanan |
+| P4 | L2 Review vendor | Bulanan | SL -> GM (rekap bulanan) | Laporan evaluasi vendor | Akumulasi breach bulanan |
 
-## 5. Prosedur Rutin Command Center
+## 5. Prosedur rutin Command Center
 
-### SOP-CC-05 — Serah Terima Shift (Shift Handover) Command Center
+### SOP-CC-05: Serah terima shift (shift handover) Command Center
 
 *Trigger:* Pergantian shift A (07-15), B (15-23), C (23-07) · *PIC:* Shift Lead Ops Command Center · *KPI:* Handover selesai < 15 menit; 0 tiket tanpa PIC setelah handover
 
@@ -167,7 +167,7 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 3. **[SL · TEN · H-5 menit]** Briefing tatap muka dengan shift masuk: insiden P1/P2, pekerjaan izin kerja tenant malam, event atrium. → _Notulen briefing_
 4. **[SL · TIC · H+0]** Re-assign PIC tiket aktif ke personel shift baru; tanda tangan digital kedua Shift Lead. → _Form handover_
 
-### SOP-CC-01 — Triage, Klasifikasi Severity & Pembuatan Tiket
+### SOP-CC-01: Triage, klasifikasi severity & pembuatan tiket
 
 *Trigger:* Setiap alarm sensor, laporan tenant/pengunjung, temuan patroli, atau panggilan radio · *PIC:* Operator Command Center (Dispatcher) · *KPI:* % tiket terklasifikasi benar (target >= 98%), waktu pembuatan tiket < 60 detik
 
@@ -179,18 +179,18 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 6. **[CCO · TIC · T+2]** Jalankan SOP spesifik sesuai kategori (lihat kolom SOP terkait) & dispatch tim (SOP-CC-02). → _Status DISPATCHED_
 7. **[SL · ANL · Akhir shift]** Audit sampling 10% tiket per shift untuk ketepatan klasifikasi; koreksi & coaching operator. → _Log audit klasifikasi_
 
-### SOP-CC-02 — Dispatch & Penugasan Tim Lapangan
+### SOP-CC-02: Dispatch & penugasan tim lapangan
 
 *Trigger:* Tiket berstatus OPEN/ACKNOWLEDGED · *PIC:* Operator Command Center (Dispatcher) · *KPI:* Waktu dispatch <= target respons SLA; ETA tim akurat +/- 1 menit
 
-1. **[CCO · TIC · T+0]** Lihat panel 'Kesiapan Tim Reaksi Cepat'; pilih tim terdekat dengan skill sesuai (MEP/Security/HK/Parkir). → _Tim terpilih_
+1. **[CCO · TIC · T+0]** Lihat panel kesiapan tim reaksi cepat; pilih tim terdekat dengan skill sesuai (MEP/Security/HK/Parkir). → _Tim terpilih_
 2. **[CCO · TIC · T+0:30]** Kirim penugasan via Patroli App + radio channel sesuai domain (CH-01 Security, CH-02 MEP, CH-03 HK, CH-04 Parkir). → _Penugasan terkirim_
 3. **[QRT · TIC · T+1]** Tim membalas 'COPY' dan berangkat; status otomatis ON-THE-WAY dengan ETA dari GPS. → _Status ON-THE-WAY_
 4. **[CCO · CCTV · Kontinu]** Pantau pergerakan tim via kamera rute; arahkan jalur tercepat (lift servis/tangga darurat). → _Log pergerakan_
 5. **[QRT · TIC · <= SLA respons]** Tiba di lokasi, tap NFC checkpoint terdekat, unggah foto kondisi awal. → _Status ON-SITE + foto_
 6. **[CCO · TIC · T+1]** Jika tim tidak merespons 60 detik, re-dispatch ke tim cadangan & catat ke log kinerja vendor. → _Re-dispatch log_
 
-### SOP-CC-03 — Matriks Eskalasi Berjenjang & Komunikasi Krisis
+### SOP-CC-03: Matriks eskalasi berjenjang & komunikasi krisis
 
 *Trigger:* SLA respons/resolusi terlampaui atau kriteria eskalasi otomatis (P1) · *PIC:* Shift Lead Ops Command Center · *KPI:* 100% P1 tereskalasi ke GM < 1 menit; 0 eskalasi terlewat
 
@@ -201,7 +201,7 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 5. **[PR · ANL · T+30]** Siapkan holding statement jika insiden terlihat publik/viral (P1 atau P3 viral). → _Draft statement_
 6. **[SL · ANL · Harian]** Rekap eskalasi harian & bulanan dikirim otomatis ke GM; review di rapat operasional mingguan. → _Laporan eskalasi_
 
-### SOP-CC-04 — Penutupan Tiket, Verifikasi Bukti & Root Cause Analysis
+### SOP-CC-04: Penutupan tiket, verifikasi bukti & root cause analysis
 
 *Trigger:* Tim lapangan menandai RESOLVED · *PIC:* Shift Lead Ops Command Center · *KPI:* First Contact Resolution >= 90%; reopen rate < 3%
 
@@ -211,7 +211,7 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 4. **[SL · ANL · <= 48 jam]** P1/P2 atau tiket berulang (>= 3x/30 hari): wajib RCA 5-Why dalam 48 jam. → _Dokumen RCA_
 5. **[CENG · BMS · <= 7 hari]** Tindak lanjut preventif (work order PM, perubahan setpoint, penggantian aset) dicatat & ditautkan. → _Work order PM_
 
-### SOP-CC-06 — Mode Degradasi: Sensor / Sistem Offline
+### SOP-CC-06: Mode degradasi: sensor / sistem offline
 
 *Trigger:* Node IoT offline > 5%, NVR/SCADA tidak sinkron > 2 menit, latensi mesh > 200 ms · *PIC:* IT/OT Engineer · *KPI:* Pemulihan sistem kritikal < 30 menit; 0 insiden tak terdeteksi selama degradasi
 
@@ -221,47 +221,47 @@ OPEN -> ACKNOWLEDGED -> DISPATCHED -> ON-SITE -> RESOLVED -> CLOSED
 4. **[IT · TIC · T+30]** Eskalasi ke vendor sistem jika belum pulih 30 menit (P2). → _Tiket vendor_
 5. **[IT · ANL · Setelah pulih]** Validasi data backfill & catat periode blind-spot di laporan harian. → _Laporan blind-spot_
 
-## 6. Runbook per Use Case
+## 6. Runbook per use case
 
-| UC | Nama | Prioritas | Dashboard Utama | Dashboard Terkait | SOP |
+| UC | Nama | Prioritas | Dashboard utama | Dashboard terkait | SOP |
 |---|---|---|---|---|---|
-| [UC-01](#uc-01) | Kebocoran Pipa Chiller & Genangan di Atrium | P2 | BMS | TIC, CCTV, TEN, ENE, ANL | SOP-BMS-02, SOP-BMS-01, SOP-CC-02 |
-| [UC-02](#uc-02) | Eskalator Trip (Comb-Plate) di Area Ramai | P3 | BMS | TIC, CCTV, ANL | SOP-BMS-05, SOP-CC-02 |
-| [UC-03](#uc-03) | Komplain Suhu Tenant Anchor (Zara GF-104) | P2 | TEN | TIC, BMS, ENE, O360 | SOP-COM-05, SOP-BMS-01 |
-| [UC-04](#uc-04) | Kebakaran Dapur F&B (Code Red) | P1 | CCTV | TIC, BMS, TEN, PARK, ANL, O360 | SOP-SEC-01, SOP-CC-03 |
-| [UC-05](#uc-05) | Orang Dalam Pengawasan & Barang Tak Bertuan | P2 | CCTV | TIC, TEN, ANL | SOP-SEC-04, SOP-SEC-03 |
-| [UC-06](#uc-06) | Antrean Gate Parkir Utama > 8 Mobil | P3 | PARK | TIC, CCTV, ANL | SOP-PRK-01 |
-| [UC-07](#uc-07) | Peak Load WBP & Peak Shaving Otomatis | P3 | ENE | BMS, TEN, ANL, O360 | SOP-BMS-04 |
-| [UC-08](#uc-08) | Pemadaman PLN & Genset Gagal Sinkron | P2 | BMS | TIC, CCTV, ENE, TEN, O360, ANL | SOP-BMS-03, SOP-BMS-05, SOP-CC-03 |
-| [UC-09](#uc-09) | Toilet Bau (NH3) & Feedback QR Pengunjung | P4 | TIC | CCTV, ANL | SOP-SEC-07, SOP-VIS-03 |
-| [UC-10](#uc-10) | Tenant Menunggak > 60 Hari | - | O360 | TEN, BMS, ANL | SOP-FIN-02 |
-| [UC-11](#uc-11) | Izin Overtime AC & Loading Dock Tenant Malam | P3 | TEN | BMS, CCTV, ENE, O360 | SOP-COM-06, SOP-COM-02 |
-| [UC-12](#uc-12) | Kebocoran Air Malam Hari (Flow Anomali) | P2 | ENE | TIC, BMS, CCTV | SOP-BMS-02 |
-| [UC-13](#uc-13) | Kerumunan Event Atrium Melebihi Kapasitas | P2 | CCTV | TIC, BMS, O360, PARK | SOP-VIS-01, SOP-COM-04 |
-| [UC-14](#uc-14) | Predictive Maintenance Eskalator Sebelum Akhir Pekan | P3 | BMS | TIC, ANL | SOP-BMS-06 |
-| [UC-15](#uc-15) | Anak Hilang (Code Adam) | P1 | TIC | CCTV, PARK, TEN | SOP-SEC-09 |
-| [UC-16](#uc-16) | Laporan BOD Bulanan Terintegrasi | - | ANL | O360, TIC, BMS, ENE, TEN, CCTV, PARK | SOP-FIN-04, SOP-FIN-03 |
-| [UC-17](#uc-17) | Hari-H Acara Atrium: Indikasi Tiket Palsu & Lonjakan Check-in | P2 | EVT | TIC, CCTV, PARK, ANL | SOP-EVT-03, SOP-EVT-01 |
-| [UC-18](#uc-18) | Rebutan Kursi & Pembayaran Gagal saat Penjualan Dibuka | P3 | EVT | TIC, O360, ANL | SOP-EVT-02, SOP-EVT-04 |
+| [UC-01](#uc-01) | Kebocoran pipa chiller & genangan di atrium | P2 | BMS | TIC, CCTV, TEN, ENE, ANL | SOP-BMS-02, SOP-BMS-01, SOP-CC-02 |
+| [UC-02](#uc-02) | Eskalator trip (comb-plate) di area ramai | P3 | BMS | TIC, CCTV, ANL | SOP-BMS-05, SOP-CC-02 |
+| [UC-03](#uc-03) | Komplain suhu tenant anchor (Zara GF-104) | P2 | TEN | TIC, BMS, ENE, O360 | SOP-COM-05, SOP-BMS-01 |
+| [UC-04](#uc-04) | Kebakaran dapur F&B (Code Red) | P1 | CCTV | TIC, BMS, TEN, PARK, ANL, O360 | SOP-SEC-01, SOP-CC-03 |
+| [UC-05](#uc-05) | Orang dalam pengawasan & barang tak bertuan | P2 | CCTV | TIC, TEN, ANL | SOP-SEC-04, SOP-SEC-03 |
+| [UC-06](#uc-06) | Antrean gate parkir utama > 8 mobil | P3 | PARK | TIC, CCTV, ANL | SOP-PRK-01 |
+| [UC-07](#uc-07) | Peak load WBP & peak shaving otomatis | P3 | ENE | BMS, TEN, ANL, O360 | SOP-BMS-04 |
+| [UC-08](#uc-08) | Pemadaman PLN & genset gagal sinkron | P2 | BMS | TIC, CCTV, ENE, TEN, O360, ANL | SOP-BMS-03, SOP-BMS-05, SOP-CC-03 |
+| [UC-09](#uc-09) | Toilet bau (NH3) & feedback QR pengunjung | P4 | TIC | CCTV, ANL | SOP-SEC-07, SOP-VIS-03 |
+| [UC-10](#uc-10) | Tenant menunggak > 60 hari | - | O360 | TEN, BMS, ANL | SOP-FIN-02 |
+| [UC-11](#uc-11) | Izin overtime AC & loading dock tenant malam | P3 | TEN | BMS, CCTV, ENE, O360 | SOP-COM-06, SOP-COM-02 |
+| [UC-12](#uc-12) | Kebocoran air malam hari (flow anomali) | P2 | ENE | TIC, BMS, CCTV | SOP-BMS-02 |
+| [UC-13](#uc-13) | Kerumunan event atrium melebihi kapasitas | P2 | CCTV | TIC, BMS, O360, PARK | SOP-VIS-01, SOP-COM-04 |
+| [UC-14](#uc-14) | Predictive maintenance eskalator sebelum akhir pekan | P3 | BMS | TIC, ANL | SOP-BMS-06 |
+| [UC-15](#uc-15) | Anak hilang (Code Adam) | P1 | TIC | CCTV, PARK, TEN | SOP-SEC-09 |
+| [UC-16](#uc-16) | Laporan BOD bulanan gabungan | - | ANL | O360, TIC, BMS, ENE, TEN, CCTV, PARK | SOP-FIN-04, SOP-FIN-03 |
+| [UC-17](#uc-17) | Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in | P2 | EVT | TIC, CCTV, PARK, ANL | SOP-EVT-03, SOP-EVT-01 |
+| [UC-18](#uc-18) | Rebutan kursi & pembayaran gagal saat penjualan dibuka | P3 | EVT | TIC, O360, ANL | SOP-EVT-02, SOP-EVT-04 |
 
 ### UC-01
-#### Kebocoran Pipa Chiller & Genangan di Atrium
+#### Kebocoran pipa chiller & genangan di atrium
 
 - **Trigger:** Sensor tekanan CHW turun + laporan genangan di UG Main Atrium
-- **Prioritas:** P2 · **Dashboard utama:** Facility & BMS Control · **Terkait:** TIC, CCTV, TEN, ENE, ANL
+- **Prioritas:** P2 · **Dashboard utama:** Fasilitas & BMS · **Terkait:** TIC, CCTV, TEN, ENE, ANL
 - **SOP acuan:** SOP-BMS-02, SOP-BMS-01, SOP-CC-02
 - **Aktor:** BMSO (Operator BMS), CCO (Operator Command Center (Dispatcher)), MEP (Teknisi MEP Siaga), HK (Supervisor Housekeeping), TRO (Tenant Relation Officer), ENM (Energy Manager)
 - **Kriteria sukses:** Kebocoran terisolasi <= 10 menit, tanpa pengunjung terpeleset, tenant sekitar terinformasi
-- **Tiket:** "Kebocoran Pipa Chiller & Genangan Air" · lokasi LG Main Atrium · sumber BMS SCADA #BMS-CH-04 · kamera CAM-17
+- **Tiket:** "Kebocoran pipa chiller & genangan air" · lokasi LG Main Atrium · sumber BMS SCADA #BMS-CH-04 · kamera CAM-17
 
 ```mermaid
 sequenceDiagram
-  participant BMS as Facility & BMS Control
-  participant TIC as Ticketing & Incident Ops
-  participant CCTV as CCTV & Security Feeds
-  participant TEN as Tenant Support & SLA
-  participant ENE as Energy & Utility Audit
-  participant ANL as Analytics & Executive Reports
+  participant BMS as Fasilitas & BMS
+  participant TIC as Tiket & Insiden
+  participant CCTV as CCTV & Keamanan
+  participant TEN as Layanan Tenant & SLA
+  participant ENE as Energi & Utilitas
+  participant ANL as Analitik & Laporan
   BMS->>BMS: T+0 EVT-BMS-ALARM: Alarm tekanan loop CHW Chiller-04 turun 12% & delta T abnorm
   BMS->>TIC: T+0:30 EVT-BMS-ALARM: Tiket P2 dibuat otomatis, SLA respons 5 menit aktif
   TIC->>CCTV: T+1 EVT-CAM-VERIFY: Kamera CAM-17 LG Atrium dibuka otomatis, genangan terkonfirm
@@ -293,21 +293,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Pipa diperbaiki, area kering, tekanan normal.
 
 ### UC-02
-#### Eskalator Trip (Comb-Plate) di Area Ramai
+#### Eskalator trip (comb-plate) di area ramai
 
 - **Trigger:** PLC fault code comb-plate eskalator E-04 West Atrium
-- **Prioritas:** P3 · **Dashboard utama:** Facility & BMS Control · **Terkait:** TIC, CCTV, ANL
+- **Prioritas:** P3 · **Dashboard utama:** Fasilitas & BMS · **Terkait:** TIC, CCTV, ANL
 - **SOP acuan:** SOP-BMS-05, SOP-CC-02
 - **Aktor:** BMSO (Operator BMS), CCO (Operator Command Center (Dispatcher)), QRT (Security Quick Response Team), MEP (Teknisi MEP Siaga), CENG (Chief Engineering)
 - **Kriteria sukses:** Area aman <= 3 menit, tidak ada korban, eskalator kembali beroperasi <= 2 jam
-- **Tiket:** "Eskalator E-04 Mati Mendadak (Emergency Trip)" · lokasi 2F West Atrium E-04 · sumber PLC Fault Code ESC-E04 · kamera CAM-29
+- **Tiket:** "Eskalator E-04 mati mendadak (emergency trip)" · lokasi 2F West Atrium E-04 · sumber PLC Fault Code ESC-E04 · kamera CAM-29
 
 ```mermaid
 sequenceDiagram
-  participant BMS as Facility & BMS Control
-  participant TIC as Ticketing & Incident Ops
-  participant CCTV as CCTV & Security Feeds
-  participant ANL as Analytics & Executive Reports
+  participant BMS as Fasilitas & BMS
+  participant TIC as Tiket & Insiden
+  participant CCTV as CCTV & Keamanan
+  participant ANL as Analitik & Laporan
   BMS->>BMS: T+0 EVT-BMS-ALARM: E-04 TRIP: sensor comb-plate kanan bawah, motor berhenti 0.3
   BMS->>TIC: T+0:20 EVT-BMS-ALARM: Tiket P3 otomatis
   TIC->>CCTV: T+1 EVT-CAM-VERIFY: CAM-29 diverifikasi: tidak ada korban, antrean menumpuk di l
@@ -335,22 +335,22 @@ sequenceDiagram
 **Verifikasi penutupan:** Unit uji jalan aman & dibuka kembali.
 
 ### UC-03
-#### Komplain Suhu Tenant Anchor (Zara GF-104)
+#### Komplain suhu tenant anchor (Zara GF-104)
 
 - **Trigger:** Store manager mengirim komplain suhu fitting room 28 C via WhatsApp
-- **Prioritas:** P2 · **Dashboard utama:** Tenant Support & SLA · **Terkait:** TIC, BMS, ENE, O360
+- **Prioritas:** P2 · **Dashboard utama:** Layanan Tenant & SLA · **Terkait:** TIC, BMS, ENE, O360
 - **SOP acuan:** SOP-COM-05, SOP-BMS-01
 - **Aktor:** TRO (Tenant Relation Officer), CCO (Operator Command Center (Dispatcher)), MEP (Teknisi MEP Siaga), BMSO (Operator BMS), ENM (Energy Manager)
 - **Kriteria sukses:** Suhu kembali <= 24 C <= 30 menit, tenant memberikan CSAT
-- **Tiket:** "Tenant Zara (GF-104) AC Suhu 28 C" · lokasi GF Luxury Wing Unit GF-104 · sumber WhatsApp Tenant · kamera CAM-14
+- **Tiket:** "Tenant Zara (GF-104): suhu AC 28 C" · lokasi GF Luxury Wing Unit GF-104 · sumber WhatsApp Tenant · kamera CAM-14
 
 ```mermaid
 sequenceDiagram
-  participant TEN as Tenant Support & SLA
-  participant TIC as Ticketing & Incident Ops
-  participant BMS as Facility & BMS Control
-  participant ENE as Energy & Utility Audit
-  participant O360 as Owner 360 - Commercial & Finance
+  participant TEN as Layanan Tenant & SLA
+  participant TIC as Tiket & Insiden
+  participant BMS as Fasilitas & BMS
+  participant ENE as Energi & Utilitas
+  participant O360 as Komersial & Keuangan
   TEN->>TEN: T+0 EVT-TENANT-MSG: Pesan tenant masuk, NLP kategori HVAC, sub-meter menunjukkan
   TEN->>TIC: T+2 EVT-TICKET-CREATED: Konversi chat ke tiket, anchor tenant -> P2
   TIC->>BMS: T+4 EVT-BMS-ALARM: Cek AHU-LUX-01: damper VAV zona fitting room macet 20%
@@ -380,24 +380,24 @@ sequenceDiagram
 **Verifikasi penutupan:** Tenant konfirmasi selesai + CSAT terisi.
 
 ### UC-04
-#### Kebakaran Dapur F&B (Code Red)
+#### Kebakaran dapur F&B (Code Red)
 
 - **Trigger:** FACP smoke+heat detector dapur Food Court 3F + thermal CCTV
-- **Prioritas:** P1 · **Dashboard utama:** CCTV & Security Feeds · **Terkait:** TIC, BMS, TEN, PARK, ANL, O360
+- **Prioritas:** P1 · **Dashboard utama:** CCTV & Keamanan · **Terkait:** TIC, BMS, TEN, PARK, ANL, O360
 - **SOP acuan:** SOP-SEC-01, SOP-CC-03
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), ERT (Emergency Response Team (ERT)), BMSO (Operator BMS), TRO (Tenant Relation Officer), PKR (Koordinator Parkir), GM (General Manager Mall), BOD (Direksi / Owner), HSE (HSE Officer)
 - **Kriteria sukses:** Api padam / evakuasi zona < 15 menit, 0 korban, owner terinformasi detik pertama
-- **Tiket:** "Alarm Kebakaran Dapur F&B Food Court 3F" · lokasi 3F Food Court - Dapur Unit L3-22 · sumber FACP Zone 3F-FC-07 + Thermal CAM-08 · kamera CAM-08
+- **Tiket:** "Alarm kebakaran dapur F&B Food Court 3F" · lokasi 3F Food Court - Dapur Unit L3-22 · sumber FACP Zone 3F-FC-07 + Thermal CAM-08 · kamera CAM-08
 
 ```mermaid
 sequenceDiagram
-  participant BMS as Facility & BMS Control
-  participant CCTV as CCTV & Security Feeds
-  participant TIC as Ticketing & Incident Ops
-  participant O360 as Owner 360 - Commercial & Finance
-  participant TEN as Tenant Support & SLA
-  participant PARK as Parking & Mobility
-  participant ANL as Analytics & Executive Reports
+  participant BMS as Fasilitas & BMS
+  participant CCTV as CCTV & Keamanan
+  participant TIC as Tiket & Insiden
+  participant O360 as Komersial & Keuangan
+  participant TEN as Layanan Tenant & SLA
+  participant PARK as Parkir & Mobilitas
+  participant ANL as Analitik & Laporan
   BMS->>CCTV: T+0 EVT-FACP-FIRE: FACP zone 3F-FC-07 aktif, kamera thermal CAM-08 otomatis tam
   CCTV->>TIC: T+0:40 EVT-CAM-AI: Titik api terkonfirmasi visual, tiket P1 CODE RED
   TIC->>O360: T+1 EVT-ESCALATION: Notifikasi WhatsApp/Call prioritas ke GM & Owner (detik ke-1
@@ -430,21 +430,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Damkar menyatakan aman; sistem fire di-reset.
 
 ### UC-05
-#### Orang Dalam Pengawasan & Barang Tak Bertuan
+#### Orang dalam pengawasan & barang tak bertuan
 
 - **Trigger:** AI Face Recognition watchlist #WL-402 di Atrium GF + objek tak bertuan di Koridor 2F
-- **Prioritas:** P2 · **Dashboard utama:** CCTV & Security Feeds · **Terkait:** TIC, TEN, ANL
+- **Prioritas:** P2 · **Dashboard utama:** CCTV & Keamanan · **Terkait:** TIC, TEN, ANL
 - **SOP acuan:** SOP-SEC-04, SOP-SEC-03
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), QRT (Security Quick Response Team), TRO (Tenant Relation Officer), CS (Customer Service / Information Desk)
 - **Kriteria sukses:** Intersep <= 5 menit; objek diklarifikasi <= 15 menit
-- **Tiket:** "Deteksi Orang Dalam Pengawasan (#WL-402) Atrium GF" · lokasi GF Atrium dekat Rolex · sumber AI FR CAM-01 · kamera CAM-01
+- **Tiket:** "Deteksi orang dalam pengawasan (#WL-402) Atrium GF" · lokasi GF Atrium dekat Rolex · sumber AI FR CAM-01 · kamera CAM-01
 
 ```mermaid
 sequenceDiagram
-  participant CCTV as CCTV & Security Feeds
-  participant TIC as Ticketing & Incident Ops
-  participant TEN as Tenant Support & SLA
-  participant ANL as Analytics & Executive Reports
+  participant CCTV as CCTV & Keamanan
+  participant TIC as Tiket & Insiden
+  participant TEN as Layanan Tenant & SLA
+  participant ANL as Analitik & Laporan
   CCTV->>CCTV: T+0 EVT-CAM-AI: AI FR akurasi 94.2% -> target No.WL-402 di CAM-01
   CCTV->>TIC: T+1 EVT-TICKET-CREATED: Tiket P2 + rekomendasi regu terdekat (Bravo Pos 1)
   TIC->>CCTV: T+2 EVT-TICKET-STATUS: Kirim intersep, tracking multi-kamera CAM-01 -> CAM-14
@@ -472,28 +472,28 @@ sequenceDiagram
 **Verifikasi penutupan:** Pelaku diamankan/diserahkan ke Polisi atau alarm diklarifikasi.
 
 ### UC-06
-#### Antrean Gate Parkir Utama > 8 Mobil
+#### Antrean gate parkir utama > 8 mobil
 
 - **Trigger:** ANPR queue alert gate P1 Utara saat jam makan siang akhir pekan
-- **Prioritas:** P3 · **Dashboard utama:** Parking & Mobility · **Terkait:** TIC, CCTV, ANL
+- **Prioritas:** P3 · **Dashboard utama:** Parkir & Mobilitas · **Terkait:** TIC, CCTV, ANL
 - **SOP acuan:** SOP-PRK-01
 - **Aktor:** PKR (Koordinator Parkir), CCO (Operator Command Center (Dispatcher)), QRT (Security Quick Response Team)
 - **Kriteria sukses:** Antrean terurai <= 10 menit tanpa meluber ke jalan raya
-- **Tiket:** "Antrean Gate Masuk P1 Utara 11 Mobil" · lokasi Gate Masuk P1 Utara · sumber ANPR CAM-61 · kamera CAM-61
+- **Tiket:** "Antrean gate masuk P1 Utara 11 mobil" · lokasi Gate Masuk P1 Utara · sumber ANPR CAM-61 · kamera CAM-61
 
 ```mermaid
 sequenceDiagram
-  participant PARK as Parking & Mobility
-  participant CCTV as CCTV & Security Feeds
-  participant TIC as Ticketing & Incident Ops
-  participant ANL as Analytics & Executive Reports
+  participant PARK as Parkir & Mobilitas
+  participant CCTV as CCTV & Keamanan
+  participant TIC as Tiket & Insiden
+  participant ANL as Analitik & Laporan
   PARK->>PARK: T+0 EVT-PARK-QUEUE: Antrean 11 mobil, waktu proses 22 detik/mobil (reader e-mone
   PARK->>PARK: T+1 EVT-PARK-QUEUE: Gate tambahan G2 (reversible) dibuka otomatis
   PARK->>CCTV: T+2 EVT-CAM-VERIFY: CAM-61 menunjukkan antrean mendekati bahu jalan raya
   PARK->>TIC: T+3 EVT-TICKET-CREATED: Tiket P3 + dispatch petugas handheld QRIS
   TIC->>PARK: T+5 EVT-TICKET-STATUS: Petugas manual tapping, reader G1 di-restart
   PARK->>PARK: T+11 EVT-PARK-QUEUE: Antrean < 4 mobil, G1 normal
-  TIC->>ANL: T+20 EVT-KPI-UPDATE: Waktu antrean gate masuk KPI Parking (warning)
+  TIC->>ANL: T+20 EVT-KPI-UPDATE: Waktu antrean gate masuk KPI parkir (warning)
 ```
 
 | # | T+ | Dari → Ke | Event | Aktor | Aksi | Data |
@@ -504,7 +504,7 @@ sequenceDiagram
 | 4 | T+3 | PARK → TIC | `EVT-TICKET-CREATED` | CCO | Tiket P3 + dispatch petugas handheld QRIS | ticket |
 | 5 | T+5 | TIC → PARK | `EVT-TICKET-STATUS` | PKR | Petugas manual tapping; reader G1 di-restart | - |
 | 6 | T+11 | PARK | `EVT-PARK-QUEUE` | PKR | Antrean < 4 mobil; G1 normal | - |
-| 7 | T+20 | TIC → ANL | `EVT-KPI-UPDATE` | PKR | Waktu antrean gate masuk KPI Parking (warning) | - |
+| 7 | T+20 | TIC → ANL | `EVT-KPI-UPDATE` | PKR | Waktu antrean gate masuk KPI parkir (warning) | - |
 
 **Titik keputusan & eskalasi**
 
@@ -514,21 +514,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Antrean < 4 mobil selama 15 menit.
 
 ### UC-07
-#### Peak Load WBP & Peak Shaving Otomatis
+#### Peak load WBP & peak shaving otomatis
 
 - **Trigger:** Prediksi beban 15.6 MW mendekati batas kontrak 16.5 MVA pukul 18:30
-- **Prioritas:** P3 · **Dashboard utama:** Energy & Utility Audit · **Terkait:** BMS, TEN, ANL, O360
+- **Prioritas:** P3 · **Dashboard utama:** Energi & Utilitas · **Terkait:** BMS, TEN, ANL, O360
 - **SOP acuan:** SOP-BMS-04
 - **Aktor:** ENM (Energy Manager), BMSO (Operator BMS), TRO (Tenant Relation Officer), FIN (Finance AR & Billing)
 - **Kriteria sukses:** Beban < 85% kontrak sepanjang WBP; hemat biaya >= Rp 18 Jt/sesi
-- **Tiket:** "Prediksi Peak Load WBP 18:00-22:00" · lokasi Gardu Induk B1 · sumber Smart Power Meter PLN
+- **Tiket:** "Prediksi peak load WBP 18:00-22:00" · lokasi Gardu Induk B1 · sumber Smart Power Meter PLN
 
 ```mermaid
 sequenceDiagram
-  participant ENE as Energy & Utility Audit
-  participant BMS as Facility & BMS Control
-  participant TEN as Tenant Support & SLA
-  participant O360 as Owner 360 - Commercial & Finance
+  participant ENE as Energi & Utilitas
+  participant BMS as Fasilitas & BMS
+  participant TEN as Layanan Tenant & SLA
+  participant O360 as Komersial & Keuangan
   ENE->>ENE: T-30 EVT-ENERGY-ANOMALY: Model memprediksi beban 15.6 MW (94% kontrak) pukul 18:30
   ENE->>BMS: T-15 EVT-ENERGY-ANOMALY: Perintah peak shaving: BESS 1.5 MWh discharge, CHW setpoint 
   BMS->>BMS: T+0 EVT-BMS-ALARM: DALI dimming parkir 40%, eskalator slow-speed
@@ -554,23 +554,23 @@ sequenceDiagram
 **Verifikasi penutupan:** Beban < 85% batas kontrak.
 
 ### UC-08
-#### Pemadaman PLN & Genset Gagal Sinkron
+#### Pemadaman PLN & genset gagal sinkron
 
 - **Trigger:** Tegangan PLN 20 kV hilang, ATS transfer, Genset 03 gagal sinkron
-- **Prioritas:** P2 · **Dashboard utama:** Facility & BMS Control · **Terkait:** TIC, CCTV, ENE, TEN, O360, ANL
+- **Prioritas:** P2 · **Dashboard utama:** Fasilitas & BMS · **Terkait:** TIC, CCTV, ENE, TEN, O360, ANL
 - **SOP acuan:** SOP-BMS-03, SOP-BMS-05, SOP-CC-03
 - **Aktor:** BMSO (Operator BMS), CCO (Operator Command Center (Dispatcher)), MEP (Teknisi MEP Siaga), QRT (Security Quick Response Team), CENG (Chief Engineering), TRO (Tenant Relation Officer), GM (General Manager Mall)
 - **Kriteria sukses:** Daya kritikal pulih <= 30 menit; tidak ada penumpang lift terjebak > 15 menit
-- **Tiket:** "Pemadaman PLN - Genset 03 Gagal Sinkron" · lokasi Gardu Trafo B1 / Genset Room · sumber ATS & Genset Controller · kamera CAM-88
+- **Tiket:** "Pemadaman PLN, Genset 03 gagal sinkron" · lokasi Gardu Trafo B1 / Genset Room · sumber ATS & Genset Controller · kamera CAM-88
 
 ```mermaid
 sequenceDiagram
-  participant BMS as Facility & BMS Control
-  participant TIC as Ticketing & Incident Ops
-  participant CCTV as CCTV & Security Feeds
-  participant TEN as Tenant Support & SLA
-  participant O360 as Owner 360 - Commercial & Finance
-  participant ENE as Energy & Utility Audit
+  participant BMS as Fasilitas & BMS
+  participant TIC as Tiket & Insiden
+  participant CCTV as CCTV & Keamanan
+  participant TEN as Layanan Tenant & SLA
+  participant O360 as Komersial & Keuangan
+  participant ENE as Energi & Utilitas
   BMS->>BMS: T+0 EVT-BMS-ALARM: PLN loss, ATS transfer 11 detik, GEN-03 fail-to-sync
   BMS->>TIC: T+1 EVT-BMS-ALARM: Tiket P2, instruksi cek lift terjebak
   TIC->>CCTV: T+2 EVT-TICKET-STATUS: Cek kabin lift via kamera & intercom: 1 kabin L-03 berhenti 
@@ -600,19 +600,19 @@ sequenceDiagram
 **Verifikasi penutupan:** Suplai normal (PLN/genset) & seluruh sistem kritikal online.
 
 ### UC-09
-#### Toilet Bau (NH3) & Feedback QR Pengunjung
+#### Toilet bau (NH3) & feedback QR pengunjung
 
 - **Trigger:** Sensor NH3 toilet 2F > 25 ppm + 3 scan QR 'bau'
-- **Prioritas:** P4 · **Dashboard utama:** Ticketing & Incident Ops · **Terkait:** CCTV, ANL
+- **Prioritas:** P4 · **Dashboard utama:** Tiket & Insiden · **Terkait:** CCTV, ANL
 - **SOP acuan:** SOP-SEC-07, SOP-VIS-03
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), HK (Supervisor Housekeeping), CS (Customer Service / Information Desk)
 - **Kriteria sukses:** Respons <= 15 menit, resolusi <= 45 menit, auto-close saat sensor normal
-- **Tiket:** "Toilet Pria 2F Bau (NH3 32 ppm) & Tisu Habis" · lokasi Toilet Pria 2F Timur · sumber Smart Toilet NH3 + QR
+- **Tiket:** "Toilet pria 2F bau (NH3 32 ppm) & tisu habis" · lokasi Toilet Pria 2F Timur · sumber Smart Toilet NH3 + QR
 
 ```mermaid
 sequenceDiagram
-  participant TIC as Ticketing & Incident Ops
-  participant ANL as Analytics & Executive Reports
+  participant TIC as Tiket & Insiden
+  participant ANL as Analitik & Laporan
   TIC->>TIC: T+0 EVT-TICKET-CREATED: Tiket P4 otomatis dari sensor + 3 feedback QR digabung
   TIC->>TIC: T+3 EVT-TICKET-STATUS: Janitorial Crew 2F menerima push
   TIC->>TIC: T+14 EVT-TICKET-STATUS: Pembersihan & isi ulang tisu, foto sesudah
@@ -633,21 +633,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Sensor NH3 normal / area bersih kering.
 
 ### UC-10
-#### Tenant Menunggak > 60 Hari
+#### Tenant menunggak > 60 hari
 
 - **Trigger:** AR aging tenant 2F mencapai 61 hari
-- **Prioritas:** - · **Dashboard utama:** Owner 360 - Commercial & Finance · **Terkait:** TEN, BMS, ANL
+- **Prioritas:** - · **Dashboard utama:** Komersial & Keuangan · **Terkait:** TEN, BMS, ANL
 - **SOP acuan:** SOP-FIN-02
 - **Aktor:** FIN (Finance AR & Billing), TRO (Tenant Relation Officer), GM (General Manager Mall), CENG (Chief Engineering)
 - **Kriteria sukses:** Tenant melunasi / restrukturisasi; pembatasan fasilitas terkendali
-- **Tiket:** "Tunggakan > 60 Hari Unit 2F-31" · lokasi Unit 2F-31 · sumber ERP Finance AR Aging
+- **Tiket:** "Tunggakan > 60 hari unit 2F-31" · lokasi Unit 2F-31 · sumber ERP Finance AR Aging
 
 ```mermaid
 sequenceDiagram
-  participant O360 as Owner 360 - Commercial & Finance
-  participant TEN as Tenant Support & SLA
-  participant BMS as Facility & BMS Control
-  participant ANL as Analytics & Executive Reports
+  participant O360 as Komersial & Keuangan
+  participant TEN as Layanan Tenant & SLA
+  participant BMS as Fasilitas & BMS
+  participant ANL as Analitik & Laporan
   O360->>O360: H+0 EVT-AR-OVERDUE: AR aging 61 hari, Rp 384 Jt
   O360->>TEN: H+0 EVT-AR-OVERDUE: SP-2 otomatis via Tenant App, jadwal kunjungan TRO
   O360->>BMS: H+1 EVT-AR-OVERDUE: Atas persetujuan GM: blokir izin overtime AC unit 2F-31
@@ -670,22 +670,22 @@ sequenceDiagram
 **Verifikasi penutupan:** Lunas / rencana cicilan disetujui.
 
 ### UC-11
-#### Izin Overtime AC & Loading Dock Tenant Malam
+#### Izin overtime AC & loading dock tenant malam
 
 - **Trigger:** Cinema XXI meminta overtime AC 00:00-03:00 & bongkar muat B2
-- **Prioritas:** P3 · **Dashboard utama:** Tenant Support & SLA · **Terkait:** BMS, CCTV, ENE, O360
+- **Prioritas:** P3 · **Dashboard utama:** Layanan Tenant & SLA · **Terkait:** BMS, CCTV, ENE, O360
 - **SOP acuan:** SOP-COM-06, SOP-COM-02
 - **Aktor:** TRO (Tenant Relation Officer), CENG (Chief Engineering), BMSO (Operator BMS), CSEC (Chief Security), FIN (Finance AR & Billing)
 - **Kriteria sukses:** Izin disetujui <= 2 jam, overtime tertagih otomatis
-- **Tiket:** "Izin Overtime AC & Loading Dock Cinema XXI" · lokasi 3F Cinema West / Dock B2 · sumber Tenant App FORM-OT-2026-884 · kamera CAM-88
+- **Tiket:** "Izin overtime AC & loading dock Cinema XXI" · lokasi 3F Cinema West / Dock B2 · sumber Tenant App FORM-OT-2026-884 · kamera CAM-88
 
 ```mermaid
 sequenceDiagram
-  participant TEN as Tenant Support & SLA
-  participant BMS as Facility & BMS Control
-  participant CCTV as CCTV & Security Feeds
-  participant ENE as Energy & Utility Audit
-  participant O360 as Owner 360 - Commercial & Finance
+  participant TEN as Layanan Tenant & SLA
+  participant BMS as Fasilitas & BMS
+  participant CCTV as CCTV & Keamanan
+  participant ENE as Energi & Utilitas
+  participant O360 as Komersial & Keuangan
   TEN->>TEN: T+0 EVT-TENANT-MSG: Form overtime diterima
   TEN->>BMS: T+30 EVT-PERMIT: Kapasitas chiller malam cukup, AHU-CIN dijadwalkan 00:00-03:
   TEN->>CCTV: T+40 EVT-PERMIT: Pos dock B2 & CAM-88 ditandai 'pekerjaan berizin'
@@ -709,21 +709,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Overtime selesai & tagihan otomatis terbit.
 
 ### UC-12
-#### Kebocoran Air Malam Hari (Flow Anomali)
+#### Kebocoran air malam hari (flow anomali)
 
 - **Trigger:** Flow meter PDAM 02:00 menunjukkan 9 m3/jam saat mall tutup (baseline 2)
-- **Prioritas:** P2 · **Dashboard utama:** Energy & Utility Audit · **Terkait:** TIC, BMS, CCTV
+- **Prioritas:** P2 · **Dashboard utama:** Energi & Utilitas · **Terkait:** TIC, BMS, CCTV
 - **SOP acuan:** SOP-BMS-02
 - **Aktor:** ENM (Energy Manager), CCO (Operator Command Center (Dispatcher)), MEP (Teknisi MEP Siaga), QRT (Security Quick Response Team)
 - **Kriteria sukses:** Sumber kebocoran ditemukan sebelum mall buka
-- **Tiket:** "Flow Air Malam Abnormal 9 m3/jam" · lokasi Riser Pipa LG Timur · sumber Smart Flow Meter FM-PDAM-01 · kamera CAM-17
+- **Tiket:** "Flow air malam abnormal 9 m3/jam" · lokasi Riser Pipa LG Timur · sumber Smart Flow Meter FM-PDAM-01 · kamera CAM-17
 
 ```mermaid
 sequenceDiagram
-  participant ENE as Energy & Utility Audit
-  participant TIC as Ticketing & Incident Ops
-  participant BMS as Facility & BMS Control
-  participant CCTV as CCTV & Security Feeds
+  participant ENE as Energi & Utilitas
+  participant TIC as Tiket & Insiden
+  participant BMS as Fasilitas & BMS
+  participant CCTV as CCTV & Keamanan
   ENE->>ENE: T+0 EVT-ENERGY-ANOMALY: Anomali flow malam 4.5x baseline
   ENE->>TIC: T+2 EVT-ENERGY-ANOMALY: Tiket P2 investigasi
   TIC->>BMS: T+10 EVT-TICKET-STATUS: Sensor akustik pipa melokalisasi riser LG Timur
@@ -747,22 +747,22 @@ sequenceDiagram
 **Verifikasi penutupan:** Pipa diperbaiki, area kering, tekanan normal.
 
 ### UC-13
-#### Kerumunan Event Atrium Melebihi Kapasitas
+#### Kerumunan event atrium melebihi kapasitas
 
 - **Trigger:** Kerapatan Atrium Utama 92% saat meet & greet artis
-- **Prioritas:** P2 · **Dashboard utama:** CCTV & Security Feeds · **Terkait:** TIC, BMS, O360, PARK
+- **Prioritas:** P2 · **Dashboard utama:** CCTV & Keamanan · **Terkait:** TIC, BMS, O360, PARK
 - **SOP acuan:** SOP-VIS-01, SOP-COM-04
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), QRT (Security Quick Response Team), BMSO (Operator BMS), MKT (Marketing & CRM), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Kepadatan < 70% <= 20 menit, 0 insiden desak-desakan
-- **Tiket:** "Kepadatan Atrium Utama 92% (Event Meet & Greet)" · lokasi GF Main Atrium · sumber AI Crowd Density CAM-01 · kamera CAM-01
+- **Tiket:** "Kepadatan Atrium Utama 92% (event meet & greet)" · lokasi GF Main Atrium · sumber AI Crowd Density CAM-01 · kamera CAM-01
 
 ```mermaid
 sequenceDiagram
-  participant CCTV as CCTV & Security Feeds
-  participant TIC as Ticketing & Incident Ops
-  participant BMS as Facility & BMS Control
-  participant PARK as Parking & Mobility
-  participant O360 as Owner 360 - Commercial & Finance
+  participant CCTV as CCTV & Keamanan
+  participant TIC as Tiket & Insiden
+  participant BMS as Fasilitas & BMS
+  participant PARK as Parkir & Mobilitas
+  participant O360 as Komersial & Keuangan
   CCTV->>CCTV: T+0 EVT-CAM-AI: Kerapatan 92%, laju +142 orang/menit
   CCTV->>TIC: T+1 EVT-TICKET-CREATED: Tiket P2 crowd control
   TIC->>CCTV: T+3 EVT-TICKET-STATUS: Regu Alpha & Bravo buka jalur alternatif, antrean berlapis
@@ -790,20 +790,20 @@ sequenceDiagram
 **Verifikasi penutupan:** Kepadatan < 70% selama 15 menit.
 
 ### UC-14
-#### Predictive Maintenance Eskalator Sebelum Akhir Pekan
+#### Predictive maintenance eskalator sebelum akhir pekan
 
 - **Trigger:** Tren getaran E-07 naik ke 2.6 mm/s (batas 2.8) hari Kamis
-- **Prioritas:** P3 · **Dashboard utama:** Facility & BMS Control · **Terkait:** TIC, ANL
+- **Prioritas:** P3 · **Dashboard utama:** Fasilitas & BMS · **Terkait:** TIC, ANL
 - **SOP acuan:** SOP-BMS-06
 - **Aktor:** BMSO (Operator BMS), CENG (Chief Engineering), MEP (Teknisi MEP Siaga)
 - **Kriteria sukses:** Perbaikan terencana malam Jumat, 0 downtime tak terencana akhir pekan
-- **Tiket:** "PM Eskalator E-07 Getaran Naik 2.6 mm/s" · lokasi 1F East E-07 · sumber Vibration IoT ESC-E07
+- **Tiket:** "PM eskalator E-07, getaran naik 2.6 mm/s" · lokasi 1F East E-07 · sumber Vibration IoT ESC-E07
 
 ```mermaid
 sequenceDiagram
-  participant BMS as Facility & BMS Control
-  participant TIC as Ticketing & Incident Ops
-  participant ANL as Analytics & Executive Reports
+  participant BMS as Fasilitas & BMS
+  participant TIC as Tiket & Insiden
+  participant ANL as Analitik & Laporan
   BMS->>BMS: T+0 EVT-BMS-ALARM: Model prediktif: probabilitas fault 7 hari 68%
   BMS->>TIC: T+30 EVT-TICKET-CREATED: Work order PM malam Jumat 23:00
   TIC->>BMS: H+1 EVT-TICKET-STATUS: Ganti bearing & pelumasan step chain
@@ -827,21 +827,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Parameter kembali di bawah ambang.
 
 ### UC-15
-#### Anak Hilang (Code Adam)
+#### Anak hilang (Code Adam)
 
 - **Trigger:** Orang tua melapor ke Info Desk GF: anak 6 tahun baju merah
-- **Prioritas:** P1 · **Dashboard utama:** Ticketing & Incident Ops · **Terkait:** CCTV, PARK, TEN
+- **Prioritas:** P1 · **Dashboard utama:** Tiket & Insiden · **Terkait:** CCTV, PARK, TEN
 - **SOP acuan:** SOP-SEC-09
 - **Aktor:** CS (Customer Service / Information Desk), CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), QRT (Security Quick Response Team), PKR (Koordinator Parkir), TRO (Tenant Relation Officer)
 - **Kriteria sukses:** Anak ditemukan <= 15 menit
-- **Tiket:** "Code Adam - Anak 6 Th Baju Merah" · lokasi 2F Kids Zone (lokasi terakhir) · sumber Info Desk GF · kamera CAM-33
+- **Tiket:** "Code Adam: anak 6 th baju merah" · lokasi 2F Kids Zone (lokasi terakhir) · sumber Info Desk GF · kamera CAM-33
 
 ```mermaid
 sequenceDiagram
-  participant TIC as Ticketing & Incident Ops
-  participant PARK as Parking & Mobility
-  participant CCTV as CCTV & Security Feeds
-  participant TEN as Tenant Support & SLA
+  participant TIC as Tiket & Insiden
+  participant PARK as Parkir & Mobilitas
+  participant CCTV as CCTV & Keamanan
+  participant TEN as Layanan Tenant & SLA
   TIC->>TIC: T+0 EVT-TICKET-CREATED: Data & foto anak diinput, Code Adam aktif
   TIC->>PARK: T+1 EVT-TICKET-STATUS: Semua pintu & gate parkir awasi anak keluar
   TIC->>CCTV: T+3 EVT-CAM-AI: AI attribute search 'baju merah, anak' -> CAM-33 2F 4 menit 
@@ -866,21 +866,21 @@ sequenceDiagram
 **Verifikasi penutupan:** Anak diserahkan ke orang tua dengan verifikasi identitas.
 
 ### UC-16
-#### Laporan BOD Bulanan Terintegrasi
+#### Laporan BOD bulanan gabungan
 
 - **Trigger:** Akhir bulan / permintaan Direksi
-- **Prioritas:** - · **Dashboard utama:** Analytics & Executive Reports · **Terkait:** O360, TIC, BMS, ENE, TEN, CCTV, PARK
+- **Prioritas:** - · **Dashboard utama:** Analitik & Laporan · **Terkait:** O360, TIC, BMS, ENE, TEN, CCTV, PARK
 - **SOP acuan:** SOP-FIN-04, SOP-FIN-03
 - **Aktor:** FIN (Finance AR & Billing), GM (General Manager Mall), BOD (Direksi / Owner)
 - **Kriteria sukses:** Paket laporan BOD terbit <= H+5
-- **Tiket:** "Generate Laporan BOD Bulanan" · lokasi Command Center · sumber Generator Laporan
+- **Tiket:** "Susun laporan BOD bulanan" · lokasi Command Center · sumber Generator Laporan
 
 ```mermaid
 sequenceDiagram
-  participant TIC as Ticketing & Incident Ops
-  participant ANL as Analytics & Executive Reports
-  participant ENE as Energy & Utility Audit
-  participant O360 as Owner 360 - Commercial & Finance
+  participant TIC as Tiket & Insiden
+  participant ANL as Analitik & Laporan
+  participant ENE as Energi & Utilitas
+  participant O360 as Komersial & Keuangan
   TIC->>ANL: H+1 EVT-KPI-UPDATE: Tarik KPI tiket: total, breach, MTTR, eskalasi
   ENE->>ANL: H+1 EVT-KPI-UPDATE: Tarik IKE, biaya energi, penghematan, ESG
   O360->>ANL: H+1 EVT-KPI-UPDATE: Tarik okupansi, OCR, AR aging, NOI
@@ -903,10 +903,10 @@ sequenceDiagram
 **Verifikasi penutupan:** BOD menyetujui laporan.
 
 ### UC-17
-#### Hari-H Acara Atrium: Indikasi Tiket Palsu & Lonjakan Check-in
+#### Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in
 
 - **Trigger:** >= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Main Atrium
-- **Prioritas:** P2 · **Dashboard utama:** Event Ticketing & Check-in · **Terkait:** TIC, CCTV, PARK, ANL
+- **Prioritas:** P2 · **Dashboard utama:** Pemantauan Event · **Terkait:** TIC, CCTV, PARK, ANL
 - **SOP acuan:** SOP-EVT-03, SOP-EVT-01
 - **Aktor:** GTE (Petugas Gate Check-in (Usher)), EO (Event Officer / Panitia Acara), CCO (Operator Command Center (Dispatcher)), QRT (Security Quick Response Team), CSEC (Chief Security), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali
@@ -914,11 +914,11 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant EVT as Event Ticketing & Check-in
-  participant TIC as Ticketing & Incident Ops
-  participant CCTV as CCTV & Security Feeds
-  participant PARK as Parking & Mobility
-  participant ANL as Analytics & Executive Reports
+  participant EVT as Pemantauan Event
+  participant TIC as Tiket & Insiden
+  participant CCTV as CCTV & Keamanan
+  participant PARK as Parkir & Mobilitas
+  participant ANL as Analitik & Laporan
   EVT->>EVT: T+0 EVT-EVENT-CHECKIN: Gate A: 3 QR TIDAK VALID (tanda tangan tidak cocok) & 1 SUDA
   EVT->>TIC: T+2 EVT-TICKET-CREATED: Petugas gate/pengelola melapor ke Command Center, operator C
   TIC->>CCTV: T+5 EVT-CAM-VERIFY: CAM-01 diarahkan ke Gate A, pelaku penjual QR hasil tangkapa
@@ -931,7 +931,7 @@ sequenceDiagram
 | # | T+ | Dari → Ke | Event | Aktor | Aksi | Data |
 |---|---|---|---|---|---|---|
 | 1 | T+0 | EVT | `EVT-EVENT-CHECKIN` | GTE | Gate A: 3 QR TIDAK VALID (tanda tangan tidak cocok) & 1 SUDAH DIGUNAKAN dalam 8 menit | gate=A, invalid=3, used=1 |
-| 2 | T+2 | EVT → TIC | `EVT-TICKET-CREATED` | CCO | Petugas gate/pengelola melapor ke Command Center; operator CC membuat tiket insiden P2 indikasi tiket palsu/calo dari Event 360 → Gate & Keamanan | ticket |
+| 2 | T+2 | EVT → TIC | `EVT-TICKET-CREATED` | CCO | Petugas gate/pengelola melapor ke Command Center; operator CC membuat tiket insiden P2 indikasi tiket palsu/calo dari Pemantauan Event → Gate & Keamanan | ticket |
 | 3 | T+5 | TIC → CCTV | `EVT-CAM-VERIFY` | QRT | CAM-01 diarahkan ke Gate A; pelaku penjual QR hasil tangkapan layar teridentifikasi | - |
 | 4 | T+7 | TIC | `EVT-TICKET-STATUS` | QRT | Regu Bravo tiba di Gate A, pelaku diamankan ke pos keamanan | - |
 | 5 | T+10 | EVT → PARK | `EVT-PARK-QUEUE` | PKR | Antrean gate acara > 15 menit: buka gate parkir tambahan & arahkan drop-off | - |
@@ -946,10 +946,10 @@ sequenceDiagram
 **Verifikasi penutupan:** Gate normal 15 menit & pelaku tertangani.
 
 ### UC-18
-#### Rebutan Kursi & Pembayaran Gagal saat Penjualan Dibuka
+#### Rebutan kursi & pembayaran gagal saat penjualan dibuka
 
 - **Trigger:** Penjualan konser dibuka: dua pembeli memilih kursi VIP yang sama pada detik yang sama; gateway sandbox menolak sebagian pembayaran
-- **Prioritas:** P3 · **Dashboard utama:** Event Ticketing & Check-in · **Terkait:** TIC, O360, ANL
+- **Prioritas:** P3 · **Dashboard utama:** Pemantauan Event · **Terkait:** TIC, O360, ANL
 - **SOP acuan:** SOP-EVT-02, SOP-EVT-04
 - **Aktor:** EO (Event Officer / Panitia Acara), IT (IT/OT Engineer), CCO (Operator Command Center (Dispatcher)), FIN (Finance AR & Billing), CS (Customer Service / Information Desk)
 - **Kriteria sukses:** 0 kursi terjual ganda; pembeli gagal bayar mendapat kursi kembali atau dikabari via daftar tunggu
@@ -957,9 +957,9 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-  participant EVT as Event Ticketing & Check-in
-  participant TIC as Ticketing & Incident Ops
-  participant O360 as Owner 360 - Commercial & Finance
+  participant EVT as Pemantauan Event
+  participant TIC as Tiket & Insiden
+  participant O360 as Komersial & Keuangan
   EVT->>EVT: T+0 EVT-EVENT-SALE: Pembeli A & B menekan kursi A5 bersamaan, commit A diterima,
   EVT->>TIC: T+10 EVT-TICKET-CREATED: Tingkat gagal bayar 18% dalam 10 menit -> tiket P3 ke IT
   TIC->>TIC: T+20 EVT-TICKET-STATUS: IT cek log callback sandbox, callback idempoten, tidak ada t
@@ -982,30 +982,30 @@ sequenceDiagram
 
 **Verifikasi penutupan:** Tidak ada pesanan konflik & seluruh keluhan pembeli dijawab.
 
-## 7. Kamus Event Integrasi
+## 7. Kamus event integrasi
 
 | Event | Nama | Producer | Consumers | Payload | Protokol |
 |---|---|---|---|---|---|
 | `EVT-BMS-ALARM` | Alarm SCADA/BMS | BMS | TIC, CCTV, TEN, ENE | asset_id, alarm_code, severity, zone, value, threshold, ts | BACnet/Modbus -> MQTT |
-| `EVT-FACP-FIRE` | Alarm Kebakaran FACP | BMS | TIC, CCTV, TEN, PARK, ANL | detector_id, zone, type(smoke/heat), interlock_state, ts | Dry Contact/BACnet |
-| `EVT-CAM-AI` | Deteksi AI Video | CCTV | TIC, ANL | cam_id, class(crowd/object/intrusion/fall/fire), confidence, bbox_snapshot, ts | ONVIF/RTSP + Webhook |
-| `EVT-CAM-VERIFY` | Verifikasi Visual Operator | CCTV | TIC | ticket_id, cam_id, verdict(true/false alarm), clip_url | Internal |
-| `EVT-TICKET-CREATED` | Tiket Dibuat | TIC | TEN, ANL, O360 | ticket_id, priority, category, zone, tenant_id, source, sop_id, sla_due | Internal Bus |
-| `EVT-TICKET-STATUS` | Perubahan Status Tiket | TIC | TEN, ANL | ticket_id, status, team, eta, evidence | Internal Bus |
+| `EVT-FACP-FIRE` | Alarm kebakaran FACP | BMS | TIC, CCTV, TEN, PARK, ANL | detector_id, zone, type(smoke/heat), interlock_state, ts | Dry Contact/BACnet |
+| `EVT-CAM-AI` | Deteksi AI video | CCTV | TIC, ANL | cam_id, class(crowd/object/intrusion/fall/fire), confidence, bbox_snapshot, ts | ONVIF/RTSP + Webhook |
+| `EVT-CAM-VERIFY` | Verifikasi visual operator | CCTV | TIC | ticket_id, cam_id, verdict(true/false alarm), clip_url | Internal |
+| `EVT-TICKET-CREATED` | Tiket dibuat | TIC | TEN, ANL, O360 | ticket_id, priority, category, zone, tenant_id, source, sop_id, sla_due | Internal Bus |
+| `EVT-TICKET-STATUS` | Perubahan status tiket | TIC | TEN, ANL | ticket_id, status, team, eta, evidence | Internal Bus |
 | `EVT-ESCALATION` | Eskalasi | TIC | O360, ANL | ticket_id, level, recipient, channel, ack_ts | WhatsApp API / Call |
-| `EVT-TENANT-MSG` | Pesan / Komplain Tenant | TEN | TIC | tenant_id, unit, channel, text, category_nlp | WhatsApp Business API / App |
-| `EVT-TENANT-BROADCAST` | Broadcast ke Tenant | TEN | - | zone, tenants[], template, text | App Push / WhatsApp |
-| `EVT-PERMIT` | Izin Kerja/Overtime Disetujui | TEN | BMS, CCTV, ENE | permit_id, tenant_id, type, start, end, zone_ahu | Internal |
-| `EVT-ENERGY-ANOMALY` | Anomali Energi/Air | ENE | BMS, TIC, TEN | meter_id, kind(peak/leak/waste), kw_or_m3, baseline, cost_impact | Modbus/LoRaWAN |
-| `EVT-PARK-QUEUE` | Antrean / Pelanggaran Parkir | PARK | TIC, CCTV | gate_id, queue_len, wait_s, plate, ts | REST / ANPR |
-| `EVT-AR-OVERDUE` | Tunggakan Tenant | O360 | TEN, BMS | tenant_id, aging_days, amount, sp_level | ISO 20022 / ERP |
+| `EVT-TENANT-MSG` | Pesan / komplain tenant | TEN | TIC | tenant_id, unit, channel, text, category_nlp | WhatsApp Business API / App |
+| `EVT-TENANT-BROADCAST` | Broadcast ke tenant | TEN | - | zone, tenants[], template, text | App Push / WhatsApp |
+| `EVT-PERMIT` | Izin kerja/overtime disetujui | TEN | BMS, CCTV, ENE | permit_id, tenant_id, type, start, end, zone_ahu | Internal |
+| `EVT-ENERGY-ANOMALY` | Anomali energi/air | ENE | BMS, TIC, TEN | meter_id, kind(peak/leak/waste), kw_or_m3, baseline, cost_impact | Modbus/LoRaWAN |
+| `EVT-PARK-QUEUE` | Antrean / pelanggaran parkir | PARK | TIC, CCTV | gate_id, queue_len, wait_s, plate, ts | REST / ANPR |
+| `EVT-AR-OVERDUE` | Tunggakan tenant | O360 | TEN, BMS | tenant_id, aging_days, amount, sp_level | ISO 20022 / ERP |
 | `EVT-KPI-UPDATE` | Pembaruan KPI | Semua | ANL, O360 | kpi_code, value, period, source_dashboard | Data Warehouse |
-| `EVT-EVENT-SALE` | Transaksi Tiket Acara | EVT | ANL, O360, PARK | order_id, event_id, items(type, seat), total, method, status, version, ts | REST/JSON (CAS berversi) |
-| `EVT-EVENT-CHECKIN` | Pindaian Check-in Gate | EVT | TIC, CCTV, ANL | ticket_id, event_id, gate, result(VALID/USED/INVALID), reason, ts | REST/JSON (transaksi atomik) |
+| `EVT-EVENT-SALE` | Transaksi tiket acara | EVT | ANL, O360, PARK | order_id, event_id, items(type, seat), total, method, status, version, ts | REST/JSON (CAS berversi) |
+| `EVT-EVENT-CHECKIN` | Pindaian check-in gate | EVT | TIC, CCTV, ANL | ticket_id, event_id, gate, result(VALID/USED/INVALID), reason, ts | REST/JSON (transaksi atomik) |
 
-## 8. Lampiran: Role & Kontak
+## 8. Lampiran: role & kontak
 
-| Kode | Role | Kanal Radio |
+| Kode | Role | Kanal radio |
 |---|---|---|
 | CCO | Operator Command Center (Dispatcher) | - |
 | SL | Shift Lead Ops Command Center | - |

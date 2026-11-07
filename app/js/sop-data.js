@@ -3,97 +3,97 @@ window.SMICC_REF = {
  "mall": "Summarecon Mall",
  "mallSub": "Integrated Command Center",
  "system": "Summarecon Mall Integrated Command Center Ticketing System (SMICC-TS)",
- "generated": "2026-11-07",
+ "generated": "2026-11-08",
  "dashboards": [
   {
    "code": "TIC",
-   "name": "Ticketing & Incident Ops",
+   "name": "Tiket & Insiden",
    "route": "ticketing",
    "pillar": "Lintas Pilar (Hub)",
-   "purpose": "Pusat seluruh tiket insiden: triage P1-P4, dispatch tim, SLA countdown, eskalasi & penutupan.",
+   "purpose": "Pusat semua tiket insiden: triage P1-P4, dispatch tim, hitung mundur SLA, eskalasi, dan penutupan.",
    "users": "Operator Command Center, Shift Lead, Supervisor Lapangan",
    "sources": "Semua dashboard (event producer), Radio/HT GPS, Patroli App",
-   "widgets": "Antrian tiket real-time, Inspector tiket + SOP checklist, Kesiapan tim, Tenant SLA watchlist, Distribusi domain"
+   "widgets": "Antrean tiket, inspector tiket + checklist SOP, kesiapan tim, watchlist SLA tenant, distribusi domain"
   },
   {
    "code": "BMS",
-   "name": "Facility & BMS Control",
+   "name": "Fasilitas & BMS",
    "route": "bms",
    "pillar": "3. Smart BMS & Engineering",
-   "purpose": "Monitoring & kontrol MEP: chiller, AHU, lift/eskalator, trafo, genset, plumbing.",
+   "purpose": "Pemantauan dan kontrol MEP: chiller, AHU, lift/eskalator, trafo, genset, plumbing.",
    "users": "Chief Engineering, Teknisi MEP, Operator BMS",
    "sources": "BMS SCADA (BACnet/Modbus), PLC Lift/Eskalator, FACP interlock, Smart Power Meter",
-   "widgets": "Status chiller plant, AHU zona, armada transport vertikal, gardu trafo, genset, log diagnostik"
+   "widgets": "Status chiller plant, AHU zona, transport vertikal, gardu trafo, genset, log diagnostik"
   },
   {
    "code": "TEN",
-   "name": "Tenant Support & SLA",
+   "name": "Layanan Tenant & SLA",
    "route": "tenant",
    "pillar": "1. Commercial & Tenant Mix",
-   "purpose": "Helpdesk tenant omnichannel: komplain, izin kerja/fit-out, overtime, kepatuhan regulasi gedung.",
+   "purpose": "Helpdesk tenant lewat semua kanal: komplain, izin kerja/fit-out, overtime, kepatuhan regulasi gedung.",
    "users": "Tenant Relation Officer, Customer Service, Leasing",
    "sources": "Tenant App, WhatsApp Business API, PMS (SAP/Yardi), Sub-meter IoT tenant",
-   "widgets": "Daftar permintaan tenant, Tenant profile inspector, Kepatuhan regulasi, Log percakapan terpadu"
+   "widgets": "Daftar permintaan tenant, inspector profil tenant, kepatuhan regulasi, log percakapan semua kanal"
   },
   {
    "code": "CCTV",
-   "name": "CCTV & Security Feeds",
+   "name": "CCTV & Keamanan",
    "route": "cctv",
    "pillar": "5. Security, Safety & HSE",
-   "purpose": "Video wall AI analytics, verifikasi visual insiden, kontrol PTZ, regu patroli & bukti video.",
+   "purpose": "Video wall dengan AI analytics, verifikasi visual insiden, kontrol PTZ, regu patroli, dan bukti video.",
    "users": "Chief Security, Operator CCTV, Security Quick Response",
    "sources": "VMS IP CCTV + AI Video Analytics (ONVIF/RTSP), ANPR, Guard Tour NFC, FACP",
-   "widgets": "Grid kamera, Security feed alerts, Kontroler PTZ, Regu patroli, Timeline playback & ekspor bukti"
+   "widgets": "Grid kamera, alert keamanan, kontroler PTZ, regu patroli, timeline playback & ekspor bukti"
   },
   {
    "code": "ENE",
-   "name": "Energy & Utility Audit",
+   "name": "Energi & Utilitas",
    "route": "energy",
    "pillar": "3. Smart BMS & Engineering / 6. Finance",
    "purpose": "Audit konsumsi listrik/air, tarif WBP/LWBP, peak shaving, PLTS & ESG, sub-metering tenant.",
    "users": "Energy Manager, Chief Engineering, Finance",
    "sources": "Smart Digital Power Meter (Modbus/LoRaWAN), Flow meter air, BESS, PLTS inverter",
-   "widgets": "Profil beban 24 jam, Telemetri chiller COP, Neraca air & STP, Sub-meter tenant, Anomali AI"
+   "widgets": "Profil beban 24 jam, telemetri COP chiller, neraca air & STP, sub-meter tenant, anomali AI"
   },
   {
    "code": "ANL",
-   "name": "Analytics & Executive Reports",
+   "name": "Analitik & Laporan",
    "route": "analytics",
    "pillar": "Lintas Pilar (Executive)",
    "purpose": "Konsolidasi KPI lintas departemen, tren SLA, pareto root-cause, generator laporan BOD.",
    "users": "General Manager, Direksi/Owner, Head of Departments",
    "sources": "Data warehouse seluruh dashboard, ERP Finance",
-   "widgets": "Scorecard KPI, Tren SLA multi-departemen, Breakdown biaya per zona, Pareto insiden, Rekomendasi AI"
+   "widgets": "Scorecard KPI, tren SLA per departemen, rincian biaya per zona, pareto insiden, rekomendasi AI"
   },
   {
    "code": "PARK",
-   "name": "Parking & Mobility",
+   "name": "Parkir & Mobilitas",
    "route": "parking",
    "pillar": "4. Parking & Mobility",
    "purpose": "Okupansi parkir per zona, antrean gate ANPR, drop-off lobi/valet, EV charger, rekonsiliasi QRIS.",
    "users": "Koordinator Parkir, Security Lobi, Finance Parkir",
    "sources": "Ultrasonic Bay Sensor, LPR/ANPR Camera, Parking Management System, EVSE (OCPP)",
-   "widgets": "Okupansi per zona, Status gate & antrean, Drop-off lobi, EV charger, Pendapatan parkir"
+   "widgets": "Okupansi per zona, status gate & antrean, drop-off lobi, EV charger, pendapatan parkir"
   },
   {
    "code": "O360",
-   "name": "Owner 360 - Commercial & Finance",
+   "name": "Komersial & Keuangan",
    "route": "owner360",
    "pillar": "1. Commercial / 2. Visitor / 6. Finance",
-   "purpose": "Pandangan 360 pemilik mall: okupansi NLA, produktivitas tenant/OCR, footfall & CSAT, AR aging, P&L/NOI.",
+   "purpose": "Ringkasan bisnis untuk pemilik mall: okupansi NLA, produktivitas tenant/OCR, footfall & CSAT, AR aging, P&L/NOI.",
    "users": "Owner/Direksi, GM, Leasing, Finance, Marketing",
    "sources": "ERP Property (SAP/Yardi), POS Aggregator, 3D People Counter & Wi-Fi, CRM App, VA Bank",
-   "widgets": "Executive KPI scorecard, Zonasi lantai & OCR, Footfall & heatmap, AR aging, Tren NOI"
+   "widgets": "Scorecard KPI eksekutif, zonasi lantai & OCR, footfall & heatmap, AR aging, tren NOI"
   },
   {
    "code": "EVT",
-   "name": "Event Ticketing & Check-in",
+   "name": "Pemantauan Event",
    "route": "event",
    "pillar": "2. Visitor & Experience",
-   "purpose": "Tiket acara di Summarecon Mall Bandung dalam 3 path: /pengunjung (beli tiket: denah kursi, hold & anti double-booking, bayar sandbox, e-ticket QR), /pengelola (EO: tambah/hapus/batalkan acara, tiket, harga, kuota, denah, peserta, refund, check-in, waitlist) dan Command Center Event 360 (manajemen mall: portofolio acara, dampak operasional, keamanan gate → tiket insiden; hanya baca).",
-   "users": "Event Officer/Panitia (Konsol Pengelola), Petugas Gate, Manajemen Mall & Ops Command Center (Event 360), Marketing, Finance, Security",
+   "purpose": "Tiket acara di Summarecon Mall Bandung lewat 3 path: /pengunjung (beli tiket: denah kursi, hold & anti double-booking, bayar sandbox, e-ticket QR), /pengelola (EO: tambah/hapus/batalkan acara, tiket, harga, kuota, denah, peserta, refund, check-in, waitlist), dan Pemantauan Event di Command Center (manajemen mall, hanya baca: portofolio acara, dampak operasional, keamanan gate → tiket insiden).",
+   "users": "Event Officer/Panitia (Konsol Pengelola), Petugas Gate, Manajemen Mall & Ops Command Center (Pemantauan Event), Marketing, Finance, Security",
    "sources": "Event Ticketing Engine (server LAN, transaksi berversi), Payment Gateway Sandbox, Scanner QR gate (kamera ponsel), Notifikasi Email/WhatsApp (simulasi)",
-   "widgets": "Pengelola: Daftar acara (tambah/publikasi/batal/hapus), Kelola acara/tiket/kuota, Denah kursi, Peserta & transaksi + CSV, Check-in QR, Notifikasi & waitlist · Command Center: Portofolio Event 360, Detail acara, Denah live, Gate & keamanan, Transaksi (hanya baca)"
+   "widgets": "Pengelola: daftar acara (tambah/publikasi/batal/hapus), kelola acara/tiket/kuota, denah kursi, peserta & transaksi + CSV, check-in QR, notifikasi & waitlist. Command Center: portofolio event, detail acara, denah langsung, gate & keamanan, transaksi (hanya baca)"
   }
  ],
  "roles": {
@@ -126,48 +126,48 @@ window.SMICC_REF = {
   {
    "level": "P1",
    "label": "CRITICAL",
-   "category": "Keselamatan Jiwa & Kebakaran",
-   "example": "Titik api di dapur F&B, Gempa bumi, Ancaman teror/keamanan",
+   "category": "Keselamatan jiwa & kebakaran",
+   "example": "Titik api di dapur F&B, gempa bumi, ancaman teror/keamanan",
    "trigger": "FACP Fire Alarm, Thermal CCTV, Panic Button",
    "respond": 2,
    "resolve": 15,
-   "resolveText": "< 15 Menit (Evakuasi)",
+   "resolveText": "< 15 menit (evakuasi)",
    "pic": "Chief Security, ERT (Emergency Team) & Damkar",
-   "escalation": "Real-time (Detik ke-1 via WhatsApp/Call Prioritas)"
+   "escalation": "Langsung, detik ke-1 via WhatsApp/call prioritas"
   },
   {
    "level": "P2",
    "label": "HIGH",
-   "category": "Kegagalan Utilitas Utama",
-   "example": "Pemadaman PLN (Genset gagal sinkron), Chiller utama trip, Pipa utama pecah",
+   "category": "Kegagalan utilitas utama",
+   "example": "Pemadaman PLN (genset gagal sinkron), chiller utama trip, pipa utama pecah",
    "trigger": "BMS SCADA Critical Alert & Smart Power Meter",
    "respond": 5,
    "resolve": 30,
-   "resolveText": "< 30 Menit",
+   "resolveText": "< 30 menit",
    "pic": "Chief Engineering & Teknisi MEP Siaga",
    "escalation": "Jika belum pulih dalam 15 menit"
   },
   {
    "level": "P3",
    "label": "MEDIUM",
-   "category": "Gangguan Operasional Area",
-   "example": "Eskalator berhenti, Antrean gate parkir macet >10 mobil, Lift macet",
+   "category": "Gangguan operasional area",
+   "example": "Eskalator berhenti, antrean gate parkir macet >10 mobil, lift macet",
    "trigger": "PLC Fault Code, ANPR Camera Queue Alert",
    "respond": 10,
    "resolve": 120,
-   "resolveText": "< 2 Jam",
+   "resolveText": "< 2 jam",
    "pic": "Supervisor Teknisi / Koordinator Parkir",
    "escalation": "Laporan rekap harian (kecuali viral di medsos)"
   },
   {
    "level": "P4",
    "label": "LOW",
-   "category": "Kenyamanan & Kebersihan",
-   "example": "Toilet bau/tisu habis, Tumpahan minuman di koridor, Suhu zona agak panas",
+   "category": "Kenyamanan & kebersihan",
+   "example": "Toilet bau/tisu habis, tumpahan minuman di koridor, suhu zona agak panas",
    "trigger": "Smart Toilet Sensor (NH3), QR Code Visitor, Patroli App",
    "respond": 15,
    "resolve": 45,
-   "resolveText": "< 45 Menit",
+   "resolveText": "< 45 menit",
    "pic": "Tim Housekeeping & Teknisi Zona",
    "escalation": "Rekap bulanan evaluasi vendor"
   }
@@ -211,7 +211,7 @@ window.SMICC_REF = {
   },
   {
    "level": "P1",
-   "stage": "L4 Komunikasi Publik",
+   "stage": "L4 Komunikasi publik",
    "t": 30,
    "to": "GM -> PR",
    "channel": "Holding statement medsos & media",
@@ -301,7 +301,7 @@ window.SMICC_REF = {
   },
   {
    "level": "P4",
-   "stage": "L2 Vendor Review",
+   "stage": "L2 Review vendor",
    "t": 43200,
    "to": "SL -> GM (rekap bulanan)",
    "channel": "Laporan evaluasi vendor",
@@ -312,7 +312,7 @@ window.SMICC_REF = {
  "sops": [
   {
    "id": "SOP-CC-01",
-   "title": "Triage, Klasifikasi Severity & Pembuatan Tiket",
+   "title": "Triage, klasifikasi severity & pembuatan tiket",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "Semua node Level-3 (sumber event)",
@@ -326,7 +326,7 @@ window.SMICC_REF = {
    "kpi": "% tiket terklasifikasi benar (target >= 98%), waktu pembuatan tiket < 60 detik",
    "evidence": "Tiket ID #TCK, snapshot sumber (alarm/foto/chat)",
    "closure": "Tiket memiliki kategori, prioritas, zona, PIC & SOP terkait",
-   "auto_action": "Tiket otomatis dibuat untuk alarm terintegrasi; operator hanya validasi",
+   "auto_action": "Alarm dari sistem yang tersambung langsung membuat tiket; operator hanya memvalidasi",
    "steps": [
     {
      "phase": "1-Deteksi",
@@ -388,7 +388,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-CC-02",
-   "title": "Dispatch & Penugasan Tim Lapangan",
+   "title": "Dispatch & penugasan tim lapangan",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "Guard Tour NFC, HT GPS Tracker",
@@ -407,7 +407,7 @@ window.SMICC_REF = {
     {
      "phase": "4-Dispatch",
      "role": "CCO",
-     "action": "Lihat panel 'Kesiapan Tim Reaksi Cepat'; pilih tim terdekat dengan skill sesuai (MEP/Security/HK/Parkir).",
+     "action": "Lihat panel kesiapan tim reaksi cepat; pilih tim terdekat dengan skill sesuai (MEP/Security/HK/Parkir).",
      "dashboard": "TIC",
      "target": "T+0",
      "output": "Tim terpilih"
@@ -456,7 +456,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-CC-03",
-   "title": "Matriks Eskalasi Berjenjang & Komunikasi Krisis",
+   "title": "Matriks eskalasi berjenjang & komunikasi krisis",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "Tiket Komplain SLA < 15 Menit",
@@ -524,7 +524,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-CC-04",
-   "title": "Penutupan Tiket, Verifikasi Bukti & Root Cause Analysis",
+   "title": "Penutupan tiket, verifikasi bukti & root cause analysis",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "Tiket Komplain SLA < 15 Menit",
@@ -584,7 +584,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-CC-05",
-   "title": "Serah Terima Shift (Shift Handover) Command Center",
+   "title": "Serah terima shift (shift handover) Command Center",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "Zone Telemetry, IoT Grid Nodes",
@@ -636,7 +636,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-CC-06",
-   "title": "Mode Degradasi: Sensor / Sistem Offline",
+   "title": "Mode degradasi: sensor / sistem offline",
    "pillar": "0. Command Center (Lintas Pilar)",
    "subdomain": "Core Ticketing",
    "nodes": "IoT Grid Nodes, Core Mesh Latency",
@@ -696,7 +696,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-01",
-   "title": "Notifikasi Kontrak Jatuh Tempo & Renewal Tenant",
+   "title": "Notifikasi kontrak jatuh tempo & renewal tenant",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "Leasing & Occupancy",
    "nodes": "Kontrak Expired, Leased vs Vacant, Anchor vs Regular",
@@ -715,7 +715,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "LSG",
-     "action": "Sistem menampilkan daftar kontrak jatuh tempo bucket <12/<6/<3 bulan di Owner 360.",
+     "action": "Sistem menampilkan daftar kontrak jatuh tempo bucket <12/<6/<3 bulan di Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "Harian",
      "output": "Daftar kontrak"
@@ -764,7 +764,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-02",
-   "title": "Monitoring Fit-Out & Izin Kerja Tenant",
+   "title": "Pemantauan fit-out & izin kerja tenant",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "Leasing & Occupancy",
    "nodes": "Jadwal Fit-Out",
@@ -832,7 +832,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-03",
-   "title": "Evaluasi Produktivitas POS & Occupancy Cost Ratio",
+   "title": "Evaluasi produktivitas POS & occupancy cost ratio",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "POS Revenue Share",
    "nodes": "Omzet per Tenant, Revenue Share, Occupancy Cost Ratio (OCR %)",
@@ -884,7 +884,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-04",
-   "title": "Monetisasi Non-Sewa: Atrium, Kiosk, LED & Naming Rights",
+   "title": "Monetisasi non-sewa: atrium, kiosk, LED & naming rights",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "Monetisasi Non-Sewa",
    "nodes": "Sewa Atrium/Kiosk, LED Indoor/Fasad, Naming Rights",
@@ -944,7 +944,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-05",
-   "title": "Penanganan Permintaan & Komplain Tenant (Tenant Helpdesk)",
+   "title": "Penanganan permintaan & komplain tenant (tenant helpdesk)",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "Tenant Support",
    "nodes": "Anchor vs Regular, Komplain AC/Bau",
@@ -963,7 +963,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "TRO",
-     "action": "Pesan tenant masuk ke Log Percakapan Terpadu; bot mengklasifikasikan kategori (HVAC, listrik, kebersihan, izin).",
+     "action": "Pesan tenant masuk ke log percakapan tenant; bot mengklasifikasikan kategori (HVAC, listrik, kebersihan, izin).",
      "dashboard": "TEN",
      "target": "T+0",
      "output": "Kategori awal"
@@ -971,7 +971,7 @@ window.SMICC_REF = {
     {
      "phase": "2-Verifikasi",
      "role": "TRO",
-     "action": "Cek data pendukung: sub-meter IoT unit (suhu, beban kW, tekanan air) di Tenant Profile Inspector.",
+     "action": "Cek data pendukung: sub-meter IoT unit (suhu, beban kW, tekanan air) di inspector profil tenant.",
      "dashboard": "TEN",
      "target": "T+2",
      "output": "Data sensor"
@@ -1012,7 +1012,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-COM-06",
-   "title": "Izin Overtime AC & Loading Dock Tenant",
+   "title": "Izin overtime AC & loading dock tenant",
    "pillar": "1. Commercial & Tenant Mix",
    "subdomain": "Tenant Support",
    "nodes": "Jadwal Fit-Out, Smart Sub-Meter",
@@ -1072,7 +1072,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-VIS-01",
-   "title": "Respons Kepadatan Pengunjung & Crowd Flow",
+   "title": "Respons kepadatan pengunjung & crowd flow",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Footfall & Crowd Flow",
    "nodes": "Traffic per Pintu, Pergerakan Lantai, Deteksi Kerumunan",
@@ -1140,7 +1140,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-VIS-02",
-   "title": "Aktivasi Dead-Zone & Evaluasi ROI Event Atrium",
+   "title": "Aktivasi dead-zone & evaluasi ROI event atrium",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Heatmap & Zoning",
    "nodes": "Deteksi Dead-Zone, Dwell Time (Menit), ROI Event Atrium",
@@ -1192,7 +1192,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-VIS-03",
-   "title": "Omnichannel Feedback Pengunjung (QR Toilet, App, Review)",
+   "title": "Feedback pengunjung omnichannel (QR toilet, app, review)",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Omnichannel Feedback",
    "nodes": "QR Code Toilet, Komplain AC/Bau, Review Medsos",
@@ -1252,7 +1252,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-VIS-04",
-   "title": "Krisis Sentimen Medsos / Isu Viral",
+   "title": "Krisis sentimen medsos / isu viral",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Sentimen & CSAT",
    "nodes": "Review Medsos",
@@ -1312,7 +1312,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-VIS-05",
-   "title": "Program Loyalty, Konversi & Basket Size Member",
+   "title": "Program loyalty, konversi & basket size member",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Loyalty & CRM",
    "nodes": "Akuisisi Member, Basket Size Struk, Konversi per Jam",
@@ -1372,7 +1372,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-01",
-   "title": "Anomali HVAC & Chiller (Trip, Suhu Zona, CO2)",
+   "title": "Anomali HVAC & chiller (trip, suhu zona, CO2)",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "HVAC & Chiller Plant",
    "nodes": "Suhu/Kelembaban, Beban kW/TR, Sensor CO2 Udara",
@@ -1391,7 +1391,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "BMSO",
-     "action": "Alarm BMS: chiller trip/COP drop/suhu atau CO2 zona di luar ambang muncul di Facility & BMS Control.",
+     "action": "Alarm BMS: chiller trip/COP drop/suhu atau CO2 zona di luar ambang muncul di Fasilitas & BMS.",
      "dashboard": "BMS",
      "target": "T+0",
      "output": "Alarm BMS"
@@ -1448,7 +1448,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-02",
-   "title": "Kebocoran Pipa & Genangan Air (Chiller, PDAM, Malam Hari)",
+   "title": "Kebocoran pipa & genangan air (chiller, PDAM, malam hari)",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Water & Waste Management",
    "nodes": "Debit PDAM/Sumur, Air & Lingkungan",
@@ -1524,7 +1524,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-03",
-   "title": "Pemadaman PLN & Kegagalan Sinkronisasi Genset",
+   "title": "Pemadaman PLN & kegagalan sinkronisasi genset",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Smart Energy & Power",
    "nodes": "Status Genset/PV, Peak Load (kVA)",
@@ -1608,7 +1608,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-04",
-   "title": "Peak Load / Load Shedding Waktu Beban Puncak (WBP)",
+   "title": "Peak load / load shedding waktu beban puncak (WBP)",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Smart Energy & Power",
    "nodes": "Peak Load (kVA), Smart Sub-Meter",
@@ -1659,7 +1659,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "ENM",
-     "action": "Laporan penghematan WBP & biaya ke Analytics.",
+     "action": "Laporan penghematan WBP & biaya ke Analitik & Laporan.",
      "dashboard": "ANL",
      "target": "Harian",
      "output": "Laporan"
@@ -1668,7 +1668,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-05",
-   "title": "Gangguan Lift & Eskalator (Trip / Penumpang Terjebak)",
+   "title": "Gangguan lift & eskalator (trip / penumpang terjebak)",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Vertical Transport",
    "nodes": "Uptime Lift/Eskalator",
@@ -1744,7 +1744,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-06",
-   "title": "Predictive Maintenance Transport Vertikal (Getaran Motor)",
+   "title": "Predictive maintenance transport vertikal (getaran motor)",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Vertical Transport",
    "nodes": "Sensor Getaran Motor, Uptime Lift/Eskalator",
@@ -1787,7 +1787,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "CENG",
-     "action": "Validasi parameter normal 48 jam & update MTBF di Analytics.",
+     "action": "Validasi parameter normal 48 jam & update MTBF di Analitik & Laporan.",
      "dashboard": "ANL",
      "target": "+48 jam",
      "output": "Validasi"
@@ -1796,7 +1796,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-BMS-07",
-   "title": "Kualitas Efluen STP/IPAL & Pengelolaan Sampah",
+   "title": "Kualitas efluen STP/IPAL & pengelolaan sampah",
    "pillar": "3. Smart BMS & Engineering",
    "subdomain": "Water & Waste Management",
    "nodes": "Kualitas Air IPAL, Tonase Sampah",
@@ -1848,7 +1848,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-01",
-   "title": "Antrean Gate Parkir Masuk > 8 Mobil",
+   "title": "Antrean gate parkir masuk > 8 mobil",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Gate & Cashless Revenue",
    "nodes": "Kecepatan Masuk, Rekonsiliasi QRIS",
@@ -1867,7 +1867,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "PKR",
-     "action": "Alert antrean dari ANPR tampil di Parking & Mobility.",
+     "action": "Alert antrean dari ANPR tampil di Parkir & Mobilitas.",
      "dashboard": "PARK",
      "target": "T+0",
      "output": "Alert antrean"
@@ -1916,7 +1916,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-06",
-   "title": "Smart Parking Guidance & Optimasi Turnover Slot",
+   "title": "Smart parking guidance & optimasi turnover slot",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Smart Parking Guidance",
    "nodes": "Slot Kosong/Zona, Durasi & Turnover, Parkir VIP & EV",
@@ -1967,7 +1967,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "FIN",
-     "action": "Evaluasi tarif progresif/VIP & EV untuk menaikkan turnover; laporan ke Owner 360.",
+     "action": "Evaluasi tarif progresif/VIP & EV untuk menaikkan turnover; laporan ke Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "Bulanan",
      "output": "Rekomendasi tarif"
@@ -1976,7 +1976,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-02",
-   "title": "Kendaraan Menghalangi Jalur Darurat / Difabel / Damkar",
+   "title": "Kendaraan menghalangi jalur darurat / difabel / damkar",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Smart Parking Guidance",
    "nodes": "Slot Kosong/Zona, Parkir VIP & EV",
@@ -2036,7 +2036,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-03",
-   "title": "Kepadatan Drop-off Lobi, Valet & Taksi",
+   "title": "Kepadatan drop-off lobi, valet & taksi",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Drop-off & Valet / Taxi",
    "nodes": "Antrean Drop-off Lobi & Valet, Taksi & Ride-Hail (Waiting Time)",
@@ -2096,7 +2096,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-04",
-   "title": "Rekonsiliasi Pendapatan Parkir & QRIS/e-Money",
+   "title": "Rekonsiliasi pendapatan parkir & QRIS/e-money",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Gate & Cashless Revenue",
    "nodes": "Rekonsiliasi QRIS",
@@ -2131,7 +2131,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "FIN",
-     "action": "Jurnal koreksi & laporan ke Owner 360.",
+     "action": "Jurnal koreksi & laporan ke Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "+1 hari",
      "output": "Jurnal"
@@ -2140,7 +2140,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-PRK-05",
-   "title": "Gangguan EV Charger (OCPP) & Shuttle/Feeder",
+   "title": "Gangguan EV charger (OCPP) & shuttle/feeder",
    "pillar": "4. Parking & Mobility",
    "subdomain": "Integrasi Transit",
    "nodes": "EV Charger (OCPP), Feeder/Shuttle",
@@ -2184,7 +2184,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-01",
-   "title": "Kebakaran / Fire Alarm (Code Red) & Evakuasi",
+   "title": "Kebakaran / fire alarm (Code Red) & evakuasi",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Fire & Life Safety",
    "nodes": "Status Smoke/Heat, Tekanan Hydrant",
@@ -2284,7 +2284,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-02",
-   "title": "Kebocoran Gas Dapur F&B",
+   "title": "Kebocoran gas dapur F&B",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Fire & Life Safety",
    "nodes": "Gas Leak Detector (Dapur F&B)",
@@ -2344,7 +2344,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-03",
-   "title": "Barang Tertinggal / Mencurigakan (Unattended Object)",
+   "title": "Barang tertinggal / mencurigakan (unattended object)",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Surveillance & AI Video",
    "nodes": "Barang Tertinggal",
@@ -2363,7 +2363,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "CCO",
-     "action": "Alert 'Objek Tak Bertuan' + timer di Security Feed Alerts.",
+     "action": "Alert objek tak bertuan + timer di panel alert keamanan.",
      "dashboard": "CCTV",
      "target": "T+0",
      "output": "Alert"
@@ -2412,7 +2412,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-04",
-   "title": "Intrusi Area Terbatas (Server/Kas) & Pencurian",
+   "title": "Intrusi area terbatas (server/kas) & pencurian",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Surveillance & AI Video",
    "nodes": "Intrusion Alert",
@@ -2480,7 +2480,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-05",
-   "title": "Kerumunan Abnormal / Ancaman Keamanan / Teror",
+   "title": "Kerumunan abnormal / ancaman keamanan / teror",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Surveillance & AI Video",
    "nodes": "Deteksi Kerumunan",
@@ -2515,7 +2515,7 @@ window.SMICC_REF = {
     {
      "phase": "3-Tiket & Klasifikasi",
      "role": "CCO",
-     "action": "Tiket P1; eskalasi GM/Owner real-time; hubungi Polisi 110.",
+     "action": "Tiket P1; eskalasi langsung ke GM/Owner; hubungi Polisi 110.",
      "dashboard": "TIC",
      "target": "T+1",
      "output": "Tiket + eskalasi"
@@ -2556,7 +2556,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-06",
-   "title": "Guard Tour & Kepatuhan Patroli Security",
+   "title": "Guard tour & kepatuhan patroli security",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Guard Tour & Housekeeping",
    "nodes": "Guard Tour NFC",
@@ -2600,7 +2600,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-07",
-   "title": "Kebersihan & Sanitasi (Smart Toilet NH3, Tumpahan)",
+   "title": "Kebersihan & sanitasi (smart toilet NH3, tumpahan)",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Guard Tour & Housekeeping",
    "nodes": "Smart Toilet (NH3), Tiket Komplain SLA < 15 Menit",
@@ -2652,7 +2652,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-08",
-   "title": "Gempa Bumi / Bencana Alam",
+   "title": "Gempa bumi / bencana alam",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Fire & Life Safety",
    "nodes": "Status Smoke/Heat, Tekanan Hydrant",
@@ -2720,7 +2720,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-09",
-   "title": "Anak / Orang Hilang (Code Adam)",
+   "title": "Anak / orang hilang (Code Adam)",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Surveillance & AI Video",
    "nodes": "Deteksi Kerumunan, Traffic per Pintu",
@@ -2780,7 +2780,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-SEC-10",
-   "title": "Medical Emergency Pengunjung (Code Blue)",
+   "title": "Medical emergency pengunjung (Code Blue)",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Guard Tour & Housekeeping",
    "nodes": "Tiket Komplain SLA < 15 Menit",
@@ -2840,7 +2840,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-FIN-01",
-   "title": "Billing Otomatis & Collection Tenant",
+   "title": "Billing otomatis & collection tenant",
    "pillar": "6. Finance & Asset Value",
    "subdomain": "Billing & Collection",
    "nodes": "Auto-Invoicing, Aging Piutang",
@@ -2875,7 +2875,7 @@ window.SMICC_REF = {
     {
      "phase": "2-Verifikasi",
      "role": "FIN",
-     "action": "Auto-recon VA harian; update AR aging di Owner 360.",
+     "action": "Auto-recon VA harian; update AR aging di Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "Harian",
      "output": "AR aging"
@@ -2892,7 +2892,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-FIN-02",
-   "title": "Tunggakan Tenant > 30/60/90 Hari & Pembatasan Fasilitas",
+   "title": "Tunggakan tenant > 30/60/90 hari & pembatasan fasilitas",
    "pillar": "6. Finance & Asset Value",
    "subdomain": "Billing & Collection",
    "nodes": "Aging Piutang, Denda Otomatis",
@@ -2952,7 +2952,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-FIN-03",
-   "title": "Kontrol Opex vs Budget & P&L Harian",
+   "title": "Kontrol opex vs budget & P&L harian",
    "pillar": "6. Finance & Asset Value",
    "subdomain": "Real-time P&L & Cashflow",
    "nodes": "Daily Revenue, Opex vs Budget, EBITDA Harian",
@@ -2971,7 +2971,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "FIN",
-     "action": "Alert varians opex (energi, vendor, perbaikan) di Owner 360.",
+     "action": "Alert varians opex (energi, vendor, perbaikan) di Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "Harian",
      "output": "Alert"
@@ -2996,7 +2996,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-FIN-04",
-   "title": "Pelaporan BOD, Proyeksi Dividen & Capex",
+   "title": "Pelaporan BOD, proyeksi dividen & capex",
    "pillar": "6. Finance & Asset Value",
    "subdomain": "Valuasi & Capex",
    "nodes": "ROI Renovasi, Cost per m2, Proyeksi Dividen Pemilik Mall",
@@ -3048,7 +3048,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-EVT-01",
-   "title": "Setup Acara, Jenis Tiket, Kuota & Denah Kursi",
+   "title": "Setup acara, jenis tiket, kuota & denah kursi",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Event Ticketing",
    "nodes": "ROI Event Atrium",
@@ -3067,7 +3067,7 @@ window.SMICC_REF = {
     {
      "phase": "1-Deteksi",
      "role": "EO",
-     "action": "Terima brief acara (jadwal, venue, kapasitas, kategori harga) & buat acara berstatus Draft di Konsol Pengelola (/pengelola → Daftar Acara → Acara baru, pilih templat venue).",
+     "action": "Terima brief acara (jadwal, venue, kapasitas, kategori harga) & buat acara berstatus Draft di Konsol Pengelola (/pengelola → Daftar acara → Acara baru, pilih templat venue).",
      "dashboard": "EVT",
      "target": "H-21",
      "output": "Acara Draft"
@@ -3107,7 +3107,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "EO",
-     "action": "Publikasikan acara di Konsol Pengelola; manajemen mall memantau di Command Center Event 360 (pre-cooling BMS & antisipasi parkir PARK sesuai prediksi pengunjung).",
+     "action": "Publikasikan acara di Konsol Pengelola; manajemen mall memantau di Pemantauan Event, Command Center (pre-cooling BMS & antisipasi parkir PARK sesuai prediksi pengunjung).",
      "dashboard": "EVT",
      "target": "H-14",
      "output": "Acara live"
@@ -3116,7 +3116,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-EVT-02",
-   "title": "Penjualan Tiket, Hold Kursi & Pencegahan Double-Booking",
+   "title": "Penjualan tiket, hold kursi & pencegahan double-booking",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Event Ticketing",
    "nodes": "ROI Event Atrium",
@@ -3137,7 +3137,7 @@ window.SMICC_REF = {
      "role": "EO",
      "action": "Pantau ringkasan: kursi sedang dipesan, pesanan menunggu bayar, pembayaran gagal, konversi.",
      "dashboard": "EVT",
-     "target": "Real-time",
+     "target": "Kontinu",
      "output": "Dashboard penjualan"
     },
     {
@@ -3175,7 +3175,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "EO",
-     "action": "Kirim laporan penjualan harian ke Marketing & Owner 360.",
+     "action": "Kirim laporan penjualan harian ke Marketing dan Komersial & Keuangan.",
      "dashboard": "O360",
      "target": "Harian",
      "output": "Laporan penjualan"
@@ -3184,7 +3184,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-EVT-03",
-   "title": "Check-in Gate QR & Penanganan Tiket Palsu/Calo",
+   "title": "Check-in gate QR & penanganan tiket palsu/calo",
    "pillar": "5. Security, Safety & HSE",
    "subdomain": "Event Ticketing",
    "nodes": "Traffic per Pintu, ROI Event Atrium",
@@ -3219,7 +3219,7 @@ window.SMICC_REF = {
     {
      "phase": "3-Tiket & Klasifikasi",
      "role": "CCO",
-     "action": "Anomali >= 3 per gate/10 menit -> tiket insiden P2 'Indikasi tiket palsu/calo' dari Command Center Event 360 → Gate & Keamanan.",
+     "action": "Anomali >= 3 per gate/10 menit -> tiket insiden P2 'Indikasi tiket palsu/calo' dari Pemantauan Event → Gate & Keamanan di Command Center.",
      "dashboard": "TIC",
      "target": "T+2",
      "output": "Tiket P2"
@@ -3252,7 +3252,7 @@ window.SMICC_REF = {
   },
   {
    "id": "SOP-EVT-04",
-   "title": "Pembatalan, Refund, Perubahan Data Peserta & Daftar Tunggu",
+   "title": "Pembatalan, refund, perubahan data peserta & daftar tunggu",
    "pillar": "2. Visitor & Experience",
    "subdomain": "Event Ticketing",
    "nodes": "ROI Event Atrium",
@@ -3303,7 +3303,7 @@ window.SMICC_REF = {
     {
      "phase": "8-Penutupan & Pelaporan",
      "role": "EO",
-     "action": "Kabari daftar tunggu bahwa kursi tersedia & kirim konfirmasi ke peserta. Acara batal: 'Batalkan acara' di Daftar Acara (refund otomatis semua pesanan lunas); hapus hanya untuk acara tanpa transaksi.",
+     "action": "Kabari daftar tunggu bahwa kursi tersedia & kirim konfirmasi ke peserta. Acara batal: 'Batalkan acara' di daftar acara (refund otomatis semua pesanan lunas); hapus hanya untuk acara tanpa transaksi.",
      "dashboard": "EVT",
      "target": "T+5 menit",
      "output": "Notifikasi terkirim"
@@ -3314,7 +3314,7 @@ window.SMICC_REF = {
  "usecases": [
   {
    "id": "UC-01",
-   "name": "Kebocoran Pipa Chiller & Genangan di Atrium",
+   "name": "Kebocoran pipa chiller & genangan di atrium",
    "trigger": "Sensor tekanan CHW turun + laporan genangan di UG Main Atrium",
    "primary": "BMS",
    "related": "TIC, CCTV, TEN, ENE, ANL",
@@ -3323,7 +3323,7 @@ window.SMICC_REF = {
    "actors": "BMSO, CCO, MEP, HK, TRO, ENM",
    "goal": "Kebocoran terisolasi <= 10 menit, tanpa pengunjung terpeleset, tenant sekitar terinformasi",
    "ticket": {
-    "title": "Kebocoran Pipa Chiller & Genangan Air",
+    "title": "Kebocoran pipa chiller & genangan air",
     "priority": "P2",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "LG",
@@ -3429,7 +3429,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-02",
-   "name": "Eskalator Trip (Comb-Plate) di Area Ramai",
+   "name": "Eskalator trip (comb-plate) di area ramai",
    "trigger": "PLC fault code comb-plate eskalator E-04 West Atrium",
    "primary": "BMS",
    "related": "TIC, CCTV, ANL",
@@ -3438,7 +3438,7 @@ window.SMICC_REF = {
    "actors": "BMSO, CCO, QRT, MEP, CENG",
    "goal": "Area aman <= 3 menit, tidak ada korban, eskalator kembali beroperasi <= 2 jam",
    "ticket": {
-    "title": "Eskalator E-04 Mati Mendadak (Emergency Trip)",
+    "title": "Eskalator E-04 mati mendadak (emergency trip)",
     "priority": "P3",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "2F",
@@ -3524,7 +3524,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-03",
-   "name": "Komplain Suhu Tenant Anchor (Zara GF-104)",
+   "name": "Komplain suhu tenant anchor (Zara GF-104)",
    "trigger": "Store manager mengirim komplain suhu fitting room 28 C via WhatsApp",
    "primary": "TEN",
    "related": "TIC, BMS, ENE, O360",
@@ -3533,7 +3533,7 @@ window.SMICC_REF = {
    "actors": "TRO, CCO, MEP, BMSO, ENM",
    "goal": "Suhu kembali <= 24 C <= 30 menit, tenant memberikan CSAT",
    "ticket": {
-    "title": "Tenant Zara (GF-104) AC Suhu 28 C",
+    "title": "Tenant Zara (GF-104): suhu AC 28 C",
     "priority": "P2",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "GF",
@@ -3629,7 +3629,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-04",
-   "name": "Kebakaran Dapur F&B (Code Red)",
+   "name": "Kebakaran dapur F&B (Code Red)",
    "trigger": "FACP smoke+heat detector dapur Food Court 3F + thermal CCTV",
    "primary": "CCTV",
    "related": "TIC, BMS, TEN, PARK, ANL, O360",
@@ -3638,7 +3638,7 @@ window.SMICC_REF = {
    "actors": "CCO, CSEC, ERT, BMSO, TRO, PKR, GM, BOD, HSE",
    "goal": "Api padam / evakuasi zona < 15 menit, 0 korban, owner terinformasi detik pertama",
    "ticket": {
-    "title": "Alarm Kebakaran Dapur F&B Food Court 3F",
+    "title": "Alarm kebakaran dapur F&B Food Court 3F",
     "priority": "P1",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "3F",
@@ -3744,7 +3744,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-05",
-   "name": "Orang Dalam Pengawasan & Barang Tak Bertuan",
+   "name": "Orang dalam pengawasan & barang tak bertuan",
    "trigger": "AI Face Recognition watchlist #WL-402 di Atrium GF + objek tak bertuan di Koridor 2F",
    "primary": "CCTV",
    "related": "TIC, TEN, ANL",
@@ -3753,7 +3753,7 @@ window.SMICC_REF = {
    "actors": "CCO, CSEC, QRT, TRO, CS",
    "goal": "Intersep <= 5 menit; objek diklarifikasi <= 15 menit",
    "ticket": {
-    "title": "Deteksi Orang Dalam Pengawasan (#WL-402) Atrium GF",
+    "title": "Deteksi orang dalam pengawasan (#WL-402) Atrium GF",
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
@@ -3839,7 +3839,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-06",
-   "name": "Antrean Gate Parkir Utama > 8 Mobil",
+   "name": "Antrean gate parkir utama > 8 mobil",
    "trigger": "ANPR queue alert gate P1 Utara saat jam makan siang akhir pekan",
    "primary": "PARK",
    "related": "TIC, CCTV, ANL",
@@ -3848,7 +3848,7 @@ window.SMICC_REF = {
    "actors": "PKR, CCO, QRT",
    "goal": "Antrean terurai <= 10 menit tanpa meluber ke jalan raya",
    "ticket": {
-    "title": "Antrean Gate Masuk P1 Utara 11 Mobil",
+    "title": "Antrean gate masuk P1 Utara 11 mobil",
     "priority": "P3",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "BASEMENT",
@@ -3925,7 +3925,7 @@ window.SMICC_REF = {
      "to": "ANL",
      "event": "EVT-KPI-UPDATE",
      "actor": "PKR",
-     "action": "Waktu antrean gate masuk KPI Parking (warning)",
+     "action": "Waktu antrean gate masuk KPI parkir (warning)",
      "data": "",
      "t": "T+20",
      "fx": "status:RESOLVED"
@@ -3934,7 +3934,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-07",
-   "name": "Peak Load WBP & Peak Shaving Otomatis",
+   "name": "Peak load WBP & peak shaving otomatis",
    "trigger": "Prediksi beban 15.6 MW mendekati batas kontrak 16.5 MVA pukul 18:30",
    "primary": "ENE",
    "related": "BMS, TEN, ANL, O360",
@@ -3943,7 +3943,7 @@ window.SMICC_REF = {
    "actors": "ENM, BMSO, TRO, FIN",
    "goal": "Beban < 85% kontrak sepanjang WBP; hemat biaya >= Rp 18 Jt/sesi",
    "ticket": {
-    "title": "Prediksi Peak Load WBP 18:00-22:00",
+    "title": "Prediksi peak load WBP 18:00-22:00",
     "priority": "P3",
     "category": "Energi & Utilitas",
     "zone": "ALL",
@@ -4019,7 +4019,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-08",
-   "name": "Pemadaman PLN & Genset Gagal Sinkron",
+   "name": "Pemadaman PLN & genset gagal sinkron",
    "trigger": "Tegangan PLN 20 kV hilang, ATS transfer, Genset 03 gagal sinkron",
    "primary": "BMS",
    "related": "TIC, CCTV, ENE, TEN, O360, ANL",
@@ -4028,7 +4028,7 @@ window.SMICC_REF = {
    "actors": "BMSO, CCO, MEP, QRT, CENG, TRO, GM",
    "goal": "Daya kritikal pulih <= 30 menit; tidak ada penumpang lift terjebak > 15 menit",
    "ticket": {
-    "title": "Pemadaman PLN - Genset 03 Gagal Sinkron",
+    "title": "Pemadaman PLN, Genset 03 gagal sinkron",
     "priority": "P2",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "ALL",
@@ -4124,7 +4124,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-09",
-   "name": "Toilet Bau (NH3) & Feedback QR Pengunjung",
+   "name": "Toilet bau (NH3) & feedback QR pengunjung",
    "trigger": "Sensor NH3 toilet 2F > 25 ppm + 3 scan QR 'bau'",
    "primary": "TIC",
    "related": "CCTV, ANL",
@@ -4133,7 +4133,7 @@ window.SMICC_REF = {
    "actors": "CCO, HK, CS",
    "goal": "Respons <= 15 menit, resolusi <= 45 menit, auto-close saat sensor normal",
    "ticket": {
-    "title": "Toilet Pria 2F Bau (NH3 32 ppm) & Tisu Habis",
+    "title": "Toilet pria 2F bau (NH3 32 ppm) & tisu habis",
     "priority": "P4",
     "category": "Kebersihan & Sanitasi",
     "zone": "2F",
@@ -4189,7 +4189,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-10",
-   "name": "Tenant Menunggak > 60 Hari",
+   "name": "Tenant menunggak > 60 hari",
    "trigger": "AR aging tenant 2F mencapai 61 hari",
    "primary": "O360",
    "related": "TEN, BMS, ANL",
@@ -4198,7 +4198,7 @@ window.SMICC_REF = {
    "actors": "FIN, TRO, GM, CENG",
    "goal": "Tenant melunasi / restrukturisasi; pembatasan fasilitas terkendali",
    "ticket": {
-    "title": "Tunggakan > 60 Hari Unit 2F-31",
+    "title": "Tunggakan > 60 hari unit 2F-31",
     "priority": "P4",
     "category": "Tenant Fit-Out & Kasir IT",
     "zone": "2F",
@@ -4264,7 +4264,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-11",
-   "name": "Izin Overtime AC & Loading Dock Tenant Malam",
+   "name": "Izin overtime AC & loading dock tenant malam",
    "trigger": "Cinema XXI meminta overtime AC 00:00-03:00 & bongkar muat B2",
    "primary": "TEN",
    "related": "BMS, CCTV, ENE, O360",
@@ -4273,7 +4273,7 @@ window.SMICC_REF = {
    "actors": "TRO, CENG, BMSO, CSEC, FIN",
    "goal": "Izin disetujui <= 2 jam, overtime tertagih otomatis",
    "ticket": {
-    "title": "Izin Overtime AC & Loading Dock Cinema XXI",
+    "title": "Izin overtime AC & loading dock Cinema XXI",
     "priority": "P3",
     "category": "Tenant Fit-Out & Kasir IT",
     "zone": "3F",
@@ -4339,7 +4339,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-12",
-   "name": "Kebocoran Air Malam Hari (Flow Anomali)",
+   "name": "Kebocoran air malam hari (flow anomali)",
    "trigger": "Flow meter PDAM 02:00 menunjukkan 9 m3/jam saat mall tutup (baseline 2)",
    "primary": "ENE",
    "related": "TIC, BMS, CCTV",
@@ -4348,7 +4348,7 @@ window.SMICC_REF = {
    "actors": "ENM, CCO, MEP, QRT",
    "goal": "Sumber kebocoran ditemukan sebelum mall buka",
    "ticket": {
-    "title": "Flow Air Malam Abnormal 9 m3/jam",
+    "title": "Flow air malam abnormal 9 m3/jam",
     "priority": "P2",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "LG",
@@ -4414,7 +4414,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-13",
-   "name": "Kerumunan Event Atrium Melebihi Kapasitas",
+   "name": "Kerumunan event atrium melebihi kapasitas",
    "trigger": "Kerapatan Atrium Utama 92% saat meet & greet artis",
    "primary": "CCTV",
    "related": "TIC, BMS, O360, PARK",
@@ -4423,7 +4423,7 @@ window.SMICC_REF = {
    "actors": "CCO, CSEC, QRT, BMSO, MKT, PKR",
    "goal": "Kepadatan < 70% <= 20 menit, 0 insiden desak-desakan",
    "ticket": {
-    "title": "Kepadatan Atrium Utama 92% (Event Meet & Greet)",
+    "title": "Kepadatan Atrium Utama 92% (event meet & greet)",
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
@@ -4509,7 +4509,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-14",
-   "name": "Predictive Maintenance Eskalator Sebelum Akhir Pekan",
+   "name": "Predictive maintenance eskalator sebelum akhir pekan",
    "trigger": "Tren getaran E-07 naik ke 2.6 mm/s (batas 2.8) hari Kamis",
    "primary": "BMS",
    "related": "TIC, ANL",
@@ -4518,7 +4518,7 @@ window.SMICC_REF = {
    "actors": "BMSO, CENG, MEP",
    "goal": "Perbaikan terencana malam Jumat, 0 downtime tak terencana akhir pekan",
    "ticket": {
-    "title": "PM Eskalator E-07 Getaran Naik 2.6 mm/s",
+    "title": "PM eskalator E-07, getaran naik 2.6 mm/s",
     "priority": "P3",
     "category": "Fasilitas MEP, AC & Plumbing",
     "zone": "1F",
@@ -4584,7 +4584,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-15",
-   "name": "Anak Hilang (Code Adam)",
+   "name": "Anak hilang (Code Adam)",
    "trigger": "Orang tua melapor ke Info Desk GF: anak 6 tahun baju merah",
    "primary": "TIC",
    "related": "CCTV, PARK, TEN",
@@ -4593,7 +4593,7 @@ window.SMICC_REF = {
    "actors": "CS, CCO, CSEC, QRT, PKR, TRO",
    "goal": "Anak ditemukan <= 15 menit",
    "ticket": {
-    "title": "Code Adam - Anak 6 Th Baju Merah",
+    "title": "Code Adam: anak 6 th baju merah",
     "priority": "P1",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "2F",
@@ -4659,7 +4659,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-16",
-   "name": "Laporan BOD Bulanan Terintegrasi",
+   "name": "Laporan BOD bulanan gabungan",
    "trigger": "Akhir bulan / permintaan Direksi",
    "primary": "ANL",
    "related": "O360, TIC, BMS, ENE, TEN, CCTV, PARK",
@@ -4668,7 +4668,7 @@ window.SMICC_REF = {
    "actors": "FIN, GM, BOD",
    "goal": "Paket laporan BOD terbit <= H+5",
    "ticket": {
-    "title": "Generate Laporan BOD Bulanan",
+    "title": "Susun laporan BOD bulanan",
     "priority": "P4",
     "category": "Tenant Fit-Out & Kasir IT",
     "zone": "ALL",
@@ -4734,7 +4734,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-17",
-   "name": "Hari-H Acara Atrium: Indikasi Tiket Palsu & Lonjakan Check-in",
+   "name": "Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in",
    "trigger": ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Main Atrium",
    "primary": "EVT",
    "related": "TIC, CCTV, PARK, ANL",
@@ -4770,7 +4770,7 @@ window.SMICC_REF = {
      "to": "TIC",
      "event": "EVT-TICKET-CREATED",
      "actor": "CCO",
-     "action": "Petugas gate/pengelola melapor ke Command Center; operator CC membuat tiket insiden P2 indikasi tiket palsu/calo dari Event 360 → Gate & Keamanan",
+     "action": "Petugas gate/pengelola melapor ke Command Center; operator CC membuat tiket insiden P2 indikasi tiket palsu/calo dari Pemantauan Event → Gate & Keamanan",
      "data": "ticket",
      "t": "T+2",
      "fx": "ticket"
@@ -4829,7 +4829,7 @@ window.SMICC_REF = {
   },
   {
    "id": "UC-18",
-   "name": "Rebutan Kursi & Pembayaran Gagal saat Penjualan Dibuka",
+   "name": "Rebutan kursi & pembayaran gagal saat penjualan dibuka",
    "trigger": "Penjualan konser dibuka: dua pembeli memilih kursi VIP yang sama pada detik yang sama; gateway sandbox menolak sebagian pembayaran",
    "primary": "EVT",
    "related": "TIC, O360, ANL",
@@ -4927,7 +4927,7 @@ window.SMICC_REF = {
   {
    "frm": "BMS",
    "to": "ANL",
-   "data": "Uptime, MTTR, downtime aset -> KPI Facility & tren SLA MEP"
+   "data": "Uptime, MTTR, downtime aset -> KPI fasilitas & tren SLA MEP"
   },
   {
    "frm": "CCTV",
@@ -4952,7 +4952,7 @@ window.SMICC_REF = {
   {
    "frm": "CCTV",
    "to": "ANL",
-   "data": "Jumlah insiden keamanan, false alarm, respons -> KPI Keamanan & K3"
+   "data": "Jumlah insiden keamanan, false alarm, respons -> KPI keamanan & K3"
   },
   {
    "frm": "TEN",
@@ -5047,7 +5047,7 @@ window.SMICC_REF = {
   {
    "frm": "PARK",
    "to": "ANL",
-   "data": "Turnover, waktu antrean gate -> KPI Parking"
+   "data": "Turnover, waktu antrean gate -> KPI parkir"
   },
   {
    "frm": "O360",
@@ -5131,7 +5131,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-FACP-FIRE",
-   "name": "Alarm Kebakaran FACP",
+   "name": "Alarm kebakaran FACP",
    "producer": "BMS",
    "consumers": "TIC, CCTV, TEN, PARK, ANL",
    "payload": "detector_id, zone, type(smoke/heat), interlock_state, ts",
@@ -5139,7 +5139,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-CAM-AI",
-   "name": "Deteksi AI Video",
+   "name": "Deteksi AI video",
    "producer": "CCTV",
    "consumers": "TIC, ANL",
    "payload": "cam_id, class(crowd/object/intrusion/fall/fire), confidence, bbox_snapshot, ts",
@@ -5147,7 +5147,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-CAM-VERIFY",
-   "name": "Verifikasi Visual Operator",
+   "name": "Verifikasi visual operator",
    "producer": "CCTV",
    "consumers": "TIC",
    "payload": "ticket_id, cam_id, verdict(true/false alarm), clip_url",
@@ -5155,7 +5155,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-TICKET-CREATED",
-   "name": "Tiket Dibuat",
+   "name": "Tiket dibuat",
    "producer": "TIC",
    "consumers": "TEN, ANL, O360",
    "payload": "ticket_id, priority, category, zone, tenant_id, source, sop_id, sla_due",
@@ -5163,7 +5163,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-TICKET-STATUS",
-   "name": "Perubahan Status Tiket",
+   "name": "Perubahan status tiket",
    "producer": "TIC",
    "consumers": "TEN, ANL",
    "payload": "ticket_id, status, team, eta, evidence",
@@ -5179,7 +5179,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-TENANT-MSG",
-   "name": "Pesan / Komplain Tenant",
+   "name": "Pesan / komplain tenant",
    "producer": "TEN",
    "consumers": "TIC",
    "payload": "tenant_id, unit, channel, text, category_nlp",
@@ -5187,7 +5187,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-TENANT-BROADCAST",
-   "name": "Broadcast ke Tenant",
+   "name": "Broadcast ke tenant",
    "producer": "TEN",
    "consumers": "-",
    "payload": "zone, tenants[], template, text",
@@ -5195,7 +5195,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-PERMIT",
-   "name": "Izin Kerja/Overtime Disetujui",
+   "name": "Izin kerja/overtime disetujui",
    "producer": "TEN",
    "consumers": "BMS, CCTV, ENE",
    "payload": "permit_id, tenant_id, type, start, end, zone_ahu",
@@ -5203,7 +5203,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-ENERGY-ANOMALY",
-   "name": "Anomali Energi/Air",
+   "name": "Anomali energi/air",
    "producer": "ENE",
    "consumers": "BMS, TIC, TEN",
    "payload": "meter_id, kind(peak/leak/waste), kw_or_m3, baseline, cost_impact",
@@ -5211,7 +5211,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-PARK-QUEUE",
-   "name": "Antrean / Pelanggaran Parkir",
+   "name": "Antrean / pelanggaran parkir",
    "producer": "PARK",
    "consumers": "TIC, CCTV",
    "payload": "gate_id, queue_len, wait_s, plate, ts",
@@ -5219,7 +5219,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-AR-OVERDUE",
-   "name": "Tunggakan Tenant",
+   "name": "Tunggakan tenant",
    "producer": "O360",
    "consumers": "TEN, BMS",
    "payload": "tenant_id, aging_days, amount, sp_level",
@@ -5235,7 +5235,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-EVENT-SALE",
-   "name": "Transaksi Tiket Acara",
+   "name": "Transaksi tiket acara",
    "producer": "EVT",
    "consumers": "ANL, O360, PARK",
    "payload": "order_id, event_id, items(type, seat), total, method, status, version, ts",
@@ -5243,7 +5243,7 @@ window.SMICC_REF = {
   },
   {
    "code": "EVT-EVENT-CHECKIN",
-   "name": "Pindaian Check-in Gate",
+   "name": "Pindaian check-in gate",
    "producer": "EVT",
    "consumers": "TIC, CCTV, ANL",
    "payload": "ticket_id, event_id, gate, result(VALID/USED/INVALID), reason, ts",

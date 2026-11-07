@@ -175,20 +175,20 @@ def cover(wb, title, purpose, sheets):
     ws.column_dimensions["A"].width = 30
     ws.column_dimensions["B"].width = 100
     r = 4
-    for k, v in [("Mall", f"{MALL_NAME} - {MALL_SUB}"), ("Tujuan Dokumen", purpose),
-                 ("Sumber Turunan", "Super_Mall_Command_Center_Blueprint.xlsx (KPI, Hirarki Data, Matriks SLA P1-P4); "
+    for k, v in [("Mall", f"{MALL_NAME} - {MALL_SUB}"), ("Tujuan dokumen", purpose),
+                 ("Sumber turunan", "Super_Mall_Command_Center_Blueprint.xlsx (KPI, Hirarki Data, Matriks SLA P1-P4); "
                                     "Mindmap_Super_Mall_Ticketing_system.drawio (6 pilar & data point Level-3); "
                                     "Desain Stitch 'Aegis Command' (6 dashboard)"),
                  ("Generator", "tools/build_docs.py (single source of truth: tools/sop_data.py & tools/usecase_data.py). "
                                "Ubah data di file Python lalu jalankan ulang agar Excel, Runbook & prototype tetap sinkron."),
-                 ("Legenda Prioritas", "P1 Critical (merah) | P2 High (oranye) | P3 Medium (kuning) | P4 Low (hijau) | '-' = SOP proses bisnis terjadwal (non-insiden)")]:
+                 ("Legenda prioritas", "P1 Critical (merah) | P2 High (oranye) | P3 Medium (kuning) | P4 Low (hijau) | '-' = SOP proses bisnis terjadwal (non-insiden)")]:
         ws.cell(r, 1, k).font = Font(name=FONT, bold=True, size=10)
         ws.cell(r, 2, v).font = Font(name=FONT, size=10)
         ws.cell(r, 2).alignment = Alignment(wrap_text=True, vertical="top")
         ws.row_dimensions[r].height = 32
         r += 1
     r += 1
-    ws.cell(r, 1, "Daftar Sheet").font = Font(name=FONT, bold=True, size=11, color="1E3A5F")
+    ws.cell(r, 1, "Daftar sheet").font = Font(name=FONT, bold=True, size=11, color="1E3A5F")
     r += 1
     for name, desc in sheets:
         ws.cell(r, 1, name).font = Font(name=FONT, size=10, bold=True)
@@ -218,7 +218,7 @@ def build_sop_xlsx():
         ("7_Ringkasan_Pilar", "Ringkasan jumlah SOP & langkah per pilar (formula COUNTIF)"),
         ("8_Roles", "Kamus role / PIC"),
     ]
-    cover(wb, f"SOP DRILL-DOWN - {MALL_NAME.upper()} INTEGRATED COMMAND CENTER",
+    cover(wb, f"SOP drill-down {MALL_NAME} Integrated Command Center",
           "Drill-down seluruh SOP Command Center: dari matriks SLA & automated action blueprint menjadi langkah eksekusi "
           "per role & dashboard, lengkap dengan eskalasi, RACI dan traceability ke mindmap data.", sheets)
 
@@ -227,7 +227,7 @@ def build_sop_xlsx():
     cols = ["Level", "Label", "Kategori Insiden", "Contoh Kejadian di Lapangan", "Trigger Deteksi di Command Center",
             "Target Respons (Menit)", "Target Resolusi (Menit)", "Target Resolusi (Teks)", "PIC Eksekutor Utama",
             "Eskalasi ke Owner / Direksi", "Jumlah SOP yang Mencakup Level (formula)", "Warning SLA At-Risk (80% Resolusi, Menit)"]
-    title_block(ws, "MATRIKS SLA INSIDEN COMMAND CENTER (DRILL-DOWN)", "Sumber: Blueprint sheet 4_BMS_Utility_SLA_Matrix", len(cols))
+    title_block(ws, "Matriks SLA insiden Command Center (drill-down)", "Sumber: Blueprint sheet 4_BMS_Utility_SLA_Matrix", len(cols))
     header(ws, 4, cols, [7, 11, 24, 36, 32, 12, 12, 16, 28, 30, 12, 16])
     for i, s in enumerate(SLA):
         r = 5 + i
@@ -245,7 +245,7 @@ def build_sop_xlsx():
     # 2 Eskalasi
     ws = wb.create_sheet("2_Eskalasi")
     cols = ["Prioritas", "Tahap Eskalasi", "T+ (Menit)", "Dari -> Ke", "Kanal", "Kondisi Pemicu", "Isi Pesan Minimum"]
-    title_block(ws, "MATRIKS ESKALASI BERJENJANG", "Drill dari kolom 'Eskalasi ke Owner / Direksi' pada blueprint", len(cols))
+    title_block(ws, "Matriks eskalasi berjenjang", "Drill dari kolom 'Eskalasi ke Owner / Direksi' pada blueprint", len(cols))
     header(ws, 4, cols, [10, 20, 10, 30, 32, 42, 42])
     for i, e in enumerate(ESCALATION):
         r = 5 + i
@@ -262,7 +262,7 @@ def build_sop_xlsx():
             "Trigger", "Sumber Data / Sensor", "Protokol", "Dashboard Utama", "Dashboard Terkait",
             "PIC (Accountable)", "Target Respons (Menit)", "Target Resolusi (Menit)", "Automated Action (Blueprint)",
             "KPI SOP", "Bukti Wajib", "Kriteria Penutupan", "Jumlah Langkah", "Use Case Terkait", "Level Tercakup"]
-    title_block(ws, "KATALOG SOP COMMAND CENTER", f"{len(SOPS)} SOP lintas 6 pilar + Command Center umum", len(cols))
+    title_block(ws, "Katalog SOP Command Center", f"{len(SOPS)} SOP lintas 6 pilar + Command Center umum", len(cols))
     header(ws, 4, cols, [12, 34, 22, 20, 28, 10, 34, 28, 16, 18, 18, 22, 11, 11, 34, 32, 26, 30, 9, 16, 14])
     uc_by_sop = defaultdict(list)
     for u in USECASES:
@@ -291,7 +291,7 @@ def build_sop_xlsx():
     ws = wb.create_sheet("4_SOP_Langkah")
     cols = ["SOP ID", "Judul SOP", "No", "Fase", "Role", "Nama Role", "Aksi / Instruksi Kerja", "Dashboard",
             "Target Waktu", "Output / Bukti", "Selesai? (Y/N)"]
-    title_block(ws, "DRILL-DOWN LANGKAH SOP", "Satu baris = satu langkah eksekusi. Kolom 'Selesai?' dapat dipakai sebagai checklist drill/audit.", len(cols))
+    title_block(ws, "Drill-down langkah SOP", "Satu baris = satu langkah eksekusi. Kolom 'Selesai?' dapat dipakai sebagai checklist drill/audit.", len(cols))
     header(ws, 4, cols, [12, 30, 5, 18, 8, 26, 60, 22, 14, 24, 10])
     r = 5
     dv = DataValidation(type="list", formula1='"Y,N"', allow_blank=True)
@@ -315,7 +315,7 @@ def build_sop_xlsx():
     ws = wb.create_sheet("5_RACI")
     rk = list(ROLES.keys())
     cols = ["SOP ID", "Judul SOP"] + rk
-    title_block(ws, "MATRIKS RACI SOP x ROLE", "A = Accountable (PIC) | R = Responsible (eksekutor langkah) | I = Informed (GM/BOD untuk P1-P2)", len(cols))
+    title_block(ws, "Matriks RACI SOP x role", "A = Accountable (PIC) | R = Responsible (eksekutor langkah) | I = Informed (GM/BOD untuk P1-P2)", len(cols))
     header(ws, 4, cols, [12, 34] + [6] * len(rk))
     fills = {"A": "1E3A5F", "R": "38BDF8", "I": "E2E8F0"}
     for i, s in enumerate(SOPS):
@@ -351,7 +351,7 @@ def build_sop_xlsx():
     # 6 Trace mindmap
     ws = wb.create_sheet("6_Trace_Mindmap")
     cols = ["Level 0: Core", "Level 1: Pilar", "Level 2: Sub-Domain", "Level 3: Data Point", "SOP Terkait", "Dashboard Utama SOP", "Status Cakupan"]
-    title_block(ws, "TRACEABILITY MINDMAP -> SOP -> DASHBOARD", "Setiap node Level-3 pada Mindmap_Super_Mall_Ticketing_system.drawio", len(cols))
+    title_block(ws, "Traceability mindmap -> SOP -> dashboard", "Setiap node Level-3 pada Mindmap_Super_Mall_Ticketing_system.drawio", len(cols))
     header(ws, 4, cols, [30, 28, 24, 32, 30, 34, 14])
     for i, m in enumerate(MINDMAP):
         r = 5 + i
@@ -372,7 +372,7 @@ def build_sop_xlsx():
     # 7 Ringkasan pilar
     ws = wb.create_sheet("7_Ringkasan_Pilar")
     cols = ["Pilar", "Jumlah SOP", "Jumlah Langkah", "Rata-rata Langkah / SOP", "SOP Prioritas P1 (mengandung P1)"]
-    title_block(ws, "RINGKASAN SOP PER PILAR", "Semua angka adalah formula ke 3_SOP_Master & 4_SOP_Langkah", len(cols))
+    title_block(ws, "Ringkasan SOP per pilar", "Semua angka adalah formula ke 3_SOP_Master & 4_SOP_Langkah", len(cols))
     header(ws, 4, cols, [36, 14, 14, 18, 22])
     pillars = list(OrderedDict.fromkeys(s["pillar"] for s in SOPS))
     for i, p in enumerate(pillars):
@@ -398,7 +398,7 @@ def build_sop_xlsx():
     # 8 Roles
     ws = wb.create_sheet("8_Roles")
     cols = ["Kode", "Role / Jabatan", "Jumlah SOP sebagai PIC", "Jumlah Langkah sebagai Eksekutor"]
-    title_block(ws, "KAMUS ROLE / PIC", "", len(cols))
+    title_block(ws, "Kamus role / PIC", "", len(cols))
     header(ws, 4, cols, [10, 40, 18, 22])
     for i, (k, v) in enumerate(ROLES.items()):
         r = 5 + i
@@ -426,7 +426,7 @@ def build_uc_xlsx():
         ("6_Trace_UC_Dashboard", "Matriks use case x dashboard: jumlah langkah yang menyentuh tiap dashboard (formula COUNTIFS)"),
         ("7_Event_Dictionary", "Kamus event integrasi (producer, consumer, payload, protokol)"),
     ]
-    cover(wb, f"USE CASE RELASI ANTAR DASHBOARD - {MALL_NAME.upper()}",
+    cover(wb, f"Use case relasi antar dashboard {MALL_NAME}",
           f"Mendefinisikan bagaimana {len(DASHBOARDS)} dashboard Command Center saling bertukar data & memicu aksi pada setiap skenario operasional. "
           "Pendamping dari RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md dan simulator use case di prototype.", sheets)
     codes = list(DB.keys())
@@ -435,7 +435,7 @@ def build_uc_xlsx():
     ws = wb.create_sheet("1_Katalog_Dashboard")
     cols = ["Kode", "Dashboard", "Route Prototype", "Pilar Mindmap", "Tujuan", "Pengguna Utama", "Sumber Data Utama",
             "Widget Kunci", "Relasi Keluar (formula)", "Relasi Masuk (formula)", "Langkah Use Case Menyentuh (formula)"]
-    title_block(ws, "KATALOG DASHBOARD", f"{MALL_NAME} {MALL_SUB}", len(cols))
+    title_block(ws, "Katalog dashboard", f"{MALL_NAME} {MALL_SUB}", len(cols))
     header(ws, 4, cols, [8, 28, 14, 26, 42, 30, 38, 46, 11, 11, 13])
     for i, d in enumerate(DASHBOARDS):
         r = 5 + i
@@ -450,7 +450,7 @@ def build_uc_xlsx():
 
     # 2 Matriks
     ws = wb.create_sheet("2_Matriks_Relasi")
-    title_block(ws, "MATRIKS RELASI DASHBOARD (BARIS = DARI, KOLOM = KE)", "Isi sel = data/aksi yang mengalir", len(codes) + 1)
+    title_block(ws, "Matriks relasi dashboard (baris = dari, kolom = ke)", "Isi sel = data/aksi yang mengalir", len(codes) + 1)
     header(ws, 4, ["Dari \\ Ke"] + [f"{c}\n{DBN[c]}" for c in codes], [24] + [30] * len(codes))
     rel = {(a, b): t for a, b, t in RELATIONS}
     for i, a in enumerate(codes):
@@ -474,7 +474,7 @@ def build_uc_xlsx():
     # 3 Daftar relasi
     ws = wb.create_sheet("3_Daftar_Relasi")
     cols = ["Dari (Kode)", "Dari Dashboard", "Ke (Kode)", "Ke Dashboard", "Data / Aksi yang Mengalir", "Dipakai di Use Case"]
-    title_block(ws, "DAFTAR RELASI ANTAR DASHBOARD", f"{len(RELATIONS)} relasi", len(cols))
+    title_block(ws, "Daftar relasi antar dashboard", f"{len(RELATIONS)} relasi", len(cols))
     header(ws, 4, cols, [10, 28, 10, 28, 64, 30])
     for i, (a, b, t) in enumerate(RELATIONS):
         r = 5 + i
@@ -489,7 +489,7 @@ def build_uc_xlsx():
     cols = ["UC ID", "Nama Use Case", "Trigger", "Dashboard Utama", "Dashboard Terkait", "SOP Terkait", "Prioritas",
             "Aktor (Role)", "Tujuan / Kriteria Sukses", "Judul Tiket", "Lokasi", "Kamera", "Jumlah Langkah (formula)",
             "Jumlah Dashboard Disentuh"]
-    title_block(ws, "DAFTAR USE CASE RELASI DASHBOARD", f"{len(USECASES)} use case", len(cols))
+    title_block(ws, "Daftar use case relasi dashboard", f"{len(USECASES)} use case", len(cols))
     header(ws, 4, cols, [8, 34, 40, 22, 26, 26, 9, 30, 40, 34, 26, 10, 11, 12])
     for i, u in enumerate(USECASES):
         r = 5 + i
@@ -508,7 +508,7 @@ def build_uc_xlsx():
     ws = wb.create_sheet("5_Alur_UseCase")
     cols = ["UC ID", "Nama Use Case", "Langkah", "Dari (Kode)", "Dari Dashboard", "Ke (Kode)", "Ke Dashboard", "Event",
             "Aktor", "Aksi / Respons Sistem", "Data / Payload", "Waktu (T+)"]
-    title_block(ws, "ALUR LANGKAH USE CASE ANTAR DASHBOARD", "Baris dengan Dari = Ke adalah aksi internal dashboard", len(cols))
+    title_block(ws, "Alur langkah use case antar dashboard", "Baris dengan Dari = Ke adalah aksi internal dashboard", len(cols))
     header(ws, 4, cols, [8, 30, 7, 8, 24, 8, 24, 22, 8, 56, 22, 10])
     r = 5
     for u in USECASES:
@@ -526,7 +526,7 @@ def build_uc_xlsx():
     # 6 Trace
     ws = wb.create_sheet("6_Trace_UC_Dashboard")
     cols = ["UC ID", "Nama Use Case"] + codes + ["Total Lintas Dashboard"]
-    title_block(ws, "TRACEABILITY USE CASE x DASHBOARD", "Angka = jumlah langkah yang berasal dari atau menuju dashboard (formula COUNTIFS ke 5_Alur_UseCase)", len(cols))
+    title_block(ws, "Traceability use case x dashboard", "Angka = jumlah langkah yang berasal dari atau menuju dashboard (formula COUNTIFS ke 5_Alur_UseCase)", len(cols))
     header(ws, 4, cols, [8, 36] + [9] * len(codes) + [12])
     for i, u in enumerate(USECASES):
         r = 5 + i
@@ -558,7 +558,7 @@ def build_uc_xlsx():
     # 7 Events
     ws = wb.create_sheet("7_Event_Dictionary")
     cols = ["Kode Event", "Nama", "Producer", "Consumers", "Payload", "Protokol", "Dipakai di Langkah (formula)"]
-    title_block(ws, "KAMUS EVENT INTEGRASI", "Event bus antar dashboard", len(cols))
+    title_block(ws, "Kamus event integrasi", "Event bus antar dashboard", len(cols))
     header(ws, 4, cols, [22, 28, 12, 28, 56, 26, 14])
     for i, e in enumerate(EVENTS):
         r = 5 + i
@@ -576,34 +576,34 @@ def build_uc_xlsx():
 def build_runbook():
     L = []
     w = L.append
-    w(f"# Runbook Relasi Antar Dashboard — {MALL_NAME} Integrated Command Center")
+    w(f"# Runbook relasi antar dashboard {MALL_NAME} Integrated Command Center")
     w("")
     w(f"> **Sistem:** {SYSTEM_NAME}  ")
     w(f"> **Versi:** {TODAY} · dihasilkan oleh `tools/build_docs.py` (sumber data `tools/sop_data.py` & `tools/usecase_data.py`)  ")
     w("> **Pendamping:** `docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `app/index.html` (menu *Simulator Use Case*)")
     w("")
-    w("## Daftar Isi")
-    w("1. [Tujuan & Ruang Lingkup](#1-tujuan--ruang-lingkup)")
-    w("2. [Peta Dashboard & Relasi](#2-peta-dashboard--relasi)")
-    w("3. [Prinsip Operasi Lintas Dashboard](#3-prinsip-operasi-lintas-dashboard)")
-    w("4. [Matriks SLA & Eskalasi](#4-matriks-sla--eskalasi)")
-    w("5. [Prosedur Rutin Command Center](#5-prosedur-rutin-command-center)")
-    w("6. [Runbook per Use Case](#6-runbook-per-use-case)")
-    w("7. [Kamus Event Integrasi](#7-kamus-event-integrasi)")
-    w("8. [Lampiran: Role & Kontak](#8-lampiran-role--kontak)")
+    w("## Daftar isi")
+    w("1. [Tujuan & ruang lingkup](#1-tujuan--ruang-lingkup)")
+    w("2. [Peta dashboard & relasi](#2-peta-dashboard--relasi)")
+    w("3. [Prinsip operasi lintas dashboard](#3-prinsip-operasi-lintas-dashboard)")
+    w("4. [Matriks SLA & eskalasi](#4-matriks-sla--eskalasi)")
+    w("5. [Prosedur rutin Command Center](#5-prosedur-rutin-command-center)")
+    w("6. [Runbook per use case](#6-runbook-per-use-case)")
+    w("7. [Kamus event integrasi](#7-kamus-event-integrasi)")
+    w("8. [Lampiran: role & kontak](#8-lampiran-role--kontak)")
     w("")
-    w("## 1. Tujuan & Ruang Lingkup")
+    w("## 1. Tujuan & ruang lingkup")
     w("")
-    w(f"Runbook ini menjadi panduan operasional bagi Operator, Shift Lead, dan PIC lapangan {MALL_NAME} dalam menjalankan "
+    w(f"Runbook ini menjadi panduan operasional bagi operator, Shift Lead, dan PIC lapangan {MALL_NAME} dalam menjalankan "
       "skenario yang melibatkan **lebih dari satu dashboard**. Setiap use case menjelaskan siapa melakukan apa, di dashboard mana, "
-      "data apa yang berpindah, dan kapan harus eskalasi. Detail langkah per SOP ada di Excel SOP Drill-down.")
+      "data apa yang berpindah, dan kapan harus eskalasi. Detail langkah per SOP ada di Excel SOP drill-down.")
     w("")
     w(f"**Ruang lingkup:** {len(DASHBOARDS)} dashboard, "
       f"{len(USECASES)} use case lintas dashboard, {len(SOPS)} SOP, {len(RELATIONS)} relasi data, dan {len(EVENTS)} jenis event integrasi.")
     w("")
-    w("## 2. Peta Dashboard & Relasi")
+    w("## 2. Peta dashboard & relasi")
     w("")
-    w("| Kode | Dashboard | Route Prototype | Tujuan | Pengguna Utama |")
+    w("| Kode | Dashboard | Route prototype | Tujuan | Pengguna utama |")
     w("|---|---|---|---|---|")
     for d in DASHBOARDS:
         w(f"| **{d[0]}** | {d[1]} | `#/{d[2]}` | {d[4]} | {d[5]} |")
@@ -619,8 +619,8 @@ def build_runbook():
     w("  class TIC hub;")
     w("```")
     w("")
-    w("**Ticketing & Incident Ops (TIC)** adalah *hub*: setiap event dari BMS, CCTV, Tenant, Energy dan Parking yang memerlukan tindakan manusia "
-      "**wajib** berakhir sebagai tiket agar SLA, eskalasi, dan pelaporan Analytics terukur.")
+    w(f"**{DBN['TIC']} (TIC)** adalah *hub*: setiap event dari BMS, CCTV, TEN, ENE, dan PARK yang memerlukan tindakan manusia "
+      f"**wajib** berakhir sebagai tiket agar SLA, eskalasi, dan pelaporan {DBN['ANL']} terukur.")
     w("")
     w("### Matriks relasi ringkas")
     w("")
@@ -633,16 +633,16 @@ def build_runbook():
     w("")
     w("● = ada aliran data/aksi. Detail isi tiap relasi: sheet `2_Matriks_Relasi` dan `3_Daftar_Relasi`.")
     w("")
-    w("## 3. Prinsip Operasi Lintas Dashboard")
+    w("## 3. Prinsip operasi lintas dashboard")
     w("")
     for p in [
         "**Satu insiden = satu tiket.** Alarm dari beberapa sumber (BMS + CCTV + chat tenant) untuk lokasi & kejadian sama digabung (merge) ke tiket induk.",
         "**Verifikasi visual sebelum dispatch P1/P2.** Operator membuka kamera terdekat (CCTV) maksimal 60 detik; tidak boleh menunda dispatch P1 lebih dari itu.",
-        "**Dashboard pemilik aset melakukan mitigasi teknis**, dashboard Ticketing mencatat status. Contoh: start chiller standby dilakukan di BMS, status DISPATCHED/RESOLVED di TIC.",
-        "**Tenant selalu diberi tahu** bila zona tenant terdampak (TEN broadcast) — paling lambat T+10 untuk P2 dan T+3 untuk P1.",
+        "**Dashboard pemilik aset melakukan mitigasi teknis**, dashboard TIC mencatat status. Contoh: start chiller standby dilakukan di BMS, status DISPATCHED/RESOLVED di TIC.",
+        "**Tenant selalu diberi tahu** bila zona tenant terdampak (TEN broadcast), paling lambat T+10 untuk P2 dan T+3 untuk P1.",
         "**Tidak ada tiket ditutup tanpa bukti**: foto sesudah, sensor normal (BMS/ENE), atau kamera aman (CCTV).",
-        "**Analytics hanya membaca** (consumer). Semua KPI dihitung dari event; tidak ada input manual angka KPI.",
-        "**Owner 360 menerima eskalasi P1 otomatis** (detik ke-1) dan P2 bila melewati 15 menit.",
+        f"**{DBN['ANL']} hanya membaca** (consumer). Semua KPI dihitung dari event; tidak ada input manual angka KPI.",
+        f"**{DBN['O360']} menerima eskalasi P1 otomatis** (detik ke-1) dan P2 bila melewati 15 menit.",
     ]:
         w(f"- {p}")
     w("")
@@ -653,9 +653,9 @@ def build_runbook():
     w("                 \\-> ESCALATED (paralel, tidak menghentikan siklus)")
     w("```")
     w("")
-    w("## 4. Matriks SLA & Eskalasi")
+    w("## 4. Matriks SLA & eskalasi")
     w("")
-    w("| Level | Kategori | Contoh | Respons | Resolusi | PIC | Eskalasi Owner |")
+    w("| Level | Kategori | Contoh | Respons | Resolusi | PIC | Eskalasi owner |")
     w("|---|---|---|---|---|---|---|")
     for s in SLA:
         w(f"| **{s[0]} {s[1]}** | {s[2]} | {s[3]} | {s[5]} menit | {s[7]} | {s[8]} | {s[9]} |")
@@ -668,20 +668,20 @@ def build_runbook():
         t = "Bulanan" if e[2] >= 43200 else f"{e[2]} mnt"
         w(f"| {e[0]} | {e[1]} | {t} | {e[3]} | {e[4]} | {e[5]} |")
     w("")
-    w("## 5. Prosedur Rutin Command Center")
+    w("## 5. Prosedur rutin Command Center")
     w("")
     for sid in ("SOP-CC-05", "SOP-CC-01", "SOP-CC-02", "SOP-CC-03", "SOP-CC-04", "SOP-CC-06"):
         s = SOPI[sid]
-        w(f"### {s['id']} — {s['title']}")
+        w(f"### {s['id']}: {s['title']}")
         w("")
         w(f"*Trigger:* {s['trigger']} · *PIC:* {ROLES[s['pic']]} · *KPI:* {s['kpi']}")
         w("")
         for n, st in enumerate(s["steps"], 1):
             w(f"{n}. **[{st['role']} · {st['dashboard']} · {st['target']}]** {st['action']} → _{st['output']}_")
         w("")
-    w("## 6. Runbook per Use Case")
+    w("## 6. Runbook per use case")
     w("")
-    w("| UC | Nama | Prioritas | Dashboard Utama | Dashboard Terkait | SOP |")
+    w("| UC | Nama | Prioritas | Dashboard utama | Dashboard terkait | SOP |")
     w("|---|---|---|---|---|---|")
     for u in USECASES:
         w(f"| [{u['id']}](#{u['id'].lower()}) | {u['name']} | {u['priority']} | {u['primary']} | {u['related']} | {u['sops']} |")
@@ -738,16 +738,16 @@ def build_runbook():
         w("")
         w("**Verifikasi penutupan:** " + "; ".join(SOPI[x.strip()]["closure"] for x in u["sops"].split(",")[:1]) + ".")
         w("")
-    w("## 7. Kamus Event Integrasi")
+    w("## 7. Kamus event integrasi")
     w("")
     w("| Event | Nama | Producer | Consumers | Payload | Protokol |")
     w("|---|---|---|---|---|---|")
     for e in EVENTS:
         w(f"| `{e[0]}` | {e[1]} | {e[2]} | {e[3]} | {e[4]} | {e[5]} |")
     w("")
-    w("## 8. Lampiran: Role & Kontak")
+    w("## 8. Lampiran: role & kontak")
     w("")
-    w("| Kode | Role | Kanal Radio |")
+    w("| Kode | Role | Kanal radio |")
     w("|---|---|---|")
     radio = {"CSEC": "CH-01", "QRT": "CH-01", "ERT": "CH-01", "CENG": "CH-02", "MEP": "CH-02", "BMSO": "CH-02",
              "HK": "CH-03", "PKR": "CH-04"}

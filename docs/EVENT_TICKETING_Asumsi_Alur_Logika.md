@@ -1,4 +1,4 @@
-# Event Ticketing System · Summarecon Mall Bandung
+# Sistem event ticketing Summarecon Mall Bandung
 Bahan deck Bandung Build Challenge 2026: asumsi, alur, logika pemilihan kursi, dan validasi tiket pada prototype.
 
 ## 0. Tiga path (pemisahan peran)
@@ -6,7 +6,7 @@ Bahan deck Bandung Build Challenge 2026: asumsi, alur, logika pemilihan kursi, d
 |---|---|---|
 | `/pengunjung` (`app/pengunjung.html`) | Pengunjung | Membeli tiket, melihat e-ticket & kotak masuk |
 | `/pengelola` (`app/pengelola.html`) + `/checkin` | Pengelola acara (panitia/EO) & petugas gate | Kendali penuh atas acaranya: tambah, publikasikan, batalkan, hapus, kelola tiket/denah/peserta/refund, check-in, lapor anomali |
-| `/command-center` (`app/index.html` → Event 360) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
+| `/command-center` (`app/index.html` → Pemantauan Event) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
 
 Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` memakai PIN command-center, `/pengunjung` terbuka. PIN diverifikasi `server.py` (hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali salah). Detail di README.
 
@@ -17,7 +17,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 | Acara contoh | EVT-01 Konser Akustik (hari ini, untuk demo check-in), EVT-02 Demo Day & Awarding 15 Nov 2026 (gratis, registrasi, baris A-B undangan), EVT-03 Stand-Up Comedy 28 Nov 2026 (penjualan belum dibuka). |
 | Kategori & harga | VIP Rp750.000 (A-B), Gold Rp450.000 (C-F), Silver Rp250.000 (G-L), Festival Rp150.000 (kuota). Biaya layanan Rp5.000/tiket berbayar. |
 | Aturan pesanan | Maks 4 tiket per pesanan (2 untuk Demo Day); kursi ditahan **8 menit** saat dipilih; batas bayar **15 menit** setelah pesanan dibuat. |
-| Pembayaran | Simulasi sandbox (QRIS, VA, e-wallet, kartu). Tidak ada data kartu/rekening yang diminta; tombol “berhasil/gagal” mensimulasikan callback gateway. |
+| Pembayaran | Simulasi sandbox (QRIS, VA, e-wallet, kartu). Tidak ada data kartu/rekening yang diminta; tombol "berhasil/gagal" mensimulasikan callback gateway. |
 | Notifikasi | Email & WhatsApp disimulasikan sebagai outbox (kotak masuk pengunjung & tab Notifikasi panitia). |
 | Data | Data contoh (`@example.com`, nomor `0812-0000-xxxx`), bukan data pribadi nyata. |
 | Infrastruktur | Berjalan di jaringan lokal tanpa internet: `server.py` (Python standar) sebagai sumber kebenaran bersama. Produksi: database transaksional + payment gateway + layanan pesan. |
@@ -42,23 +42,23 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Denah kursi live**: detail pemesan per kursi, mode blokir kursi (kamera/FOH/kursi roda), uji rebutan kursi.
 - **Kelola acara**: nama, jadwal, gate, venue, status (Draft/Dipublikasikan/Ditutup), periode jual, durasi hold, maks per pesanan; jenis tiket, harga, kuota, dijual/undangan.
 - **Peserta & transaksi**: pencarian, filter status, ubah data peserta, kirim ulang e-ticket, batal, refund; ekspor CSV peserta (per tiket) & transaksi.
-- **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log real-time.
+- **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log pindaian langsung.
 - **Anomali gate**: tombol **Laporkan ke Command Center** (konsol & ponsel gate). Statusnya tampil "menunggu CC" lalu "Ditangani TCK-…".
 - **Notifikasi & waitlist**: outbox, kirim pengingat massal, kabari daftar tunggu.
 
-## 3b. Command Center · Event 360 (`/command-center`, manajemen mall, hanya baca)
+## 3b. Pemantauan Event di Command Center (`/command-center`, manajemen mall, hanya baca)
 - **Portofolio Event 360**:
   - acara aktif, tiket terjual, pendapatan event, check-in hari ini, anomali gate, laporan lapangan;
   - tabel semua acara (okupansi, kehadiran, status gate);
-  - proyeksi dampak 30 hari: kendaraan → Parking, kepadatan → CCTV, pre-cooling → BMS, kebutuhan personel keamanan.
-- **Detail acara & Denah live**: KPI, komposisi kategori, dan denah tanpa tombol ubah.
+  - proyeksi dampak 30 hari: kendaraan → Parkir, kepadatan → CCTV, pre-cooling → BMS, kebutuhan personel keamanan.
+- **Detail acara & denah langsung**: KPI, komposisi kategori, dan denah tanpa tombol ubah.
 - **Gate & Keamanan**:
   - anomali dan laporan dari pengelola;
-  - **Buat Tiket Insiden** P2 (SOP-EVT-03) ke Ticketing Command Center;
+  - **Buat tiket insiden** P2 (SOP-EVT-03) ke Tiket & Insiden di Command Center;
   - log pindaian per gate.
 - **Transaksi**: lihat dan ekspor; refund dan perubahan data hanya oleh pengelola.
 
-## 3c. Sinkronisasi real-time
+## 3c. Sinkronisasi antarperangkat
 - **Mode server** (`python3 server.py`): setiap halaman menarik perubahan tiap ~1 detik, serta saat tab kembali aktif atau mendapat fokus. Server dideteksi hingga 3 kali percobaan agar Wi-Fi lambat tidak membuat halaman jatuh ke mode lokal.
 - **Mode lokal** (file dibuka langsung atau server statis biasa):
   - data hanya di satu browser;
@@ -69,16 +69,16 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 ## 4. Logika pemilihan kursi & pencegahan pemesanan ganda
 Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (SOLD)`. Kursi kembali `TERSEDIA` bila hold/pembayaran kedaluwarsa, pesanan dibatalkan, atau refund.
 
-1. **Hold saat dipilih.** Kursi langsung terkunci untuk keranjang pembeli (8 menit) dan tampil “sedang dipesan” di semua perangkat.
+1. **Hold saat dipilih.** Kursi langsung terkunci untuk keranjang pembeli (8 menit) dan tampil "sedang dipesan" di semua perangkat.
 2. **Transaksi berversi (optimistic concurrency).** Setiap perubahan dikirim sebagai `commit(base = versi yang dibaca, state baru)`. Server menerimanya hanya bila versi masih sama (compare-and-swap di bawah satu lock).
    - Pembeli yang kalah balapan mendapat `409`, membaca ulang state terbaru, lalu aturan dijalankan ulang.
-   - Karena kursinya sudah `HELD` milik orang lain, permintaan ditolak dengan pesan “Kursi sedang dipesan pengunjung lain”.
+   - Karena kursinya sudah `HELD` milik orang lain, permintaan ditolak dengan pesan "Kursi sedang dipesan pengunjung lain".
 3. **Verifikasi ulang saat bayar.** Pembayaran hanya diterima bila semua kursi masih ditahan untuk pesanan itu dan belum kedaluwarsa. Callback **idempoten**: bayar dua kali tidak menerbitkan tiket ganda.
 4. **Kedaluwarsa otomatis.** Hold/pesanan yang lewat batas waktu dilepas pada transaksi berikutnya, dan tampilan menghitung status secara langsung.
 
 **Bukti uji:**
 - Uji tekan 25 pembeli serentak pada satu kursi lewat API server: **1 berhasil, 24 ditolak**, 6 konflik versi tertangani, dan pemegang akhir = pemenang.
-- Tombol *“Jalankan simulasi rebutan kursi”* di tab Denah Kursi memperagakan hal yang sama.
+- Tombol *"Jalankan simulasi rebutan kursi"* di tab Denah Kursi memperagakan hal yang sama.
 
 ## 5. Validasi QR saat check-in
 - **Isi QR:** `SMB1|<ID tiket>|<ID acara>|<kursi>|<tanda tangan>`. Tanda tangan dihitung dari ID tiket, acara, dan kursi dengan kunci rahasia (prototype: hash; produksi: HMAC-SHA256 di server).
@@ -98,7 +98,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 - **VALID**: tiket ditandai hadir. Check-in juga transaksi atomik, sehingga dua gate yang memindai bersamaan menghasilkan 1 VALID + 1 SUDAH DIGUNAKAN.
 - **Anomali**: ≥3 pindaian gagal/duplikat per gate dalam 10 menit memunculkan peringatan. Dari situ:
   - Pengelola (konsol) atau petugas gate (ponsel) mengirim **laporan ke Command Center**.
-  - Operator Command Center membuat **tiket insiden P2 (SOP-EVT-03)** dari Event 360 → Gate & Keamanan. Nomor tiket tampil kembali di konsol pengelola.
+  - Operator Command Center membuat **tiket insiden P2 (SOP-EVT-03)** dari Pemantauan Event → Gate & Keamanan. Nomor tiket tampil kembali di konsol pengelola.
 
 ## 6. Integrasi Command Center
 - **SOP baru:**
