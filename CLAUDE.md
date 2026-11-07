@@ -23,8 +23,15 @@ npx tailwindcss@3 -c tools/tailwind/tailwind.config.js -i tools/tailwind/input.c
 python tools/vendor_fonts.py          # re-download fonts (needs internet once)
 ```
 
-There are no tests, linter or package manager. Check changes by running `server.py` and opening
-the pages in a browser.
+There is no linter or package manager. The Event Ticketing engine has dependency-free Node tests
+(Node 20+, no npm install), which load `app/js/evt/engine.js` unchanged in a `vm` sandbox in local
+mode (`tools/tests/harness.mjs`):
+
+```sh
+node --test "tools/tests/*.test.mjs"   # the glob is needed on Windows; a bare folder path fails
+```
+
+UI changes still have to be checked by running `server.py` and opening the pages in a browser.
 
 - Rebuild `app/vendor/tailwind.css` whenever you use a Tailwind class that isn't already in it.
   The content globs are `index.html`, `app/*.html` and `app/js/**/*.js`. Theme "Papan Petunjuk":

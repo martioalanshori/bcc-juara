@@ -109,6 +109,7 @@
           <div class="grid grid-cols-2 gap-2 mt-3 font-label-md text-label-md"><span>Terjual <b>${s.sold}</b></span><span class="text-amber-300">Dipesan <b>${s.held}</b></span><span class="text-emerald-300">Tersedia <b>${s.available}</b></span><span class="text-on-surface-variant">Tidak dijual <b>${s.blocked}</b></span></div></section>
         ${isMgr() ? `<section class="card p-5">${UI.h('Uji anti double-booking', 'Dua pembeli menekan kursi yang sama pada detik yang sama', '', 'sync_lock')}
           <button class="btn w-full justify-center" id="race">${icon('bolt')} Jalankan simulasi rebutan kursi</button>
+          <button class="btn-ghost w-full justify-center mt-2" id="stress">${icon('groups')} Uji tekan 25 pembeli${sel && Evt.seatStatus(e.id, sel, null) === 'available' ? ' di kursi ' + sel : ''}</button>
           ${ui.race ? `<ol class="mt-3 flex flex-col gap-1.5 font-body-sm text-body-sm list-decimal pl-5">${ui.race.map((l) => `<li>${esc(l)}</li>`).join('')}</ol>` : `<p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Mekanisme: hold kursi + transaksi berversi (compare-and-swap) di server LAN. Commit yang datang belakangan ditolak lalu diperiksa ulang, sehingga tidak ada dua pesanan sah untuk satu kursi.</p>`}</section>` : ''}
       </div></div>`;
   }
@@ -408,6 +409,14 @@
       if (!free.length) return UI.toast('Tidak ada kursi tersedia untuk demo', 'P3');
       const seat = free[Math.floor(Math.random() * free.length)];
       const log = await act(() => Evt.raceDemo(e.id, seat)); if (log) { ui.race = log; ui.seatSel = seat; redraw(); }
+    });
+    const stress = el.querySelector('#stress'); if (stress) stress.addEventListener('click', async () => {
+      const seat = ui.seatSel && Evt.seatStatus(e.id, ui.seatSel, null) === 'available' ? ui.seatSel : Evt.allSeats(e).find((x) => Evt.seatStatus(e.id, x, null) === 'available');
+      if (!seat) return UI.toast('Tidak ada kursi tersedia untuk uji tekan', 'P3');
+      stress.disabled = true;
+      const r = await act(() => Evt.stressTest(e.id, seat, 25));
+      stress.disabled = false;
+      if (r) { ui.race = r.log; ui.seatSel = seat; redraw(); UI.toast(`Uji tekan: ${r.n - r.rejected} berhasil, ${r.rejected} ditolak`, 'P4'); }
     });
     // kelola
     const fe = el.querySelector('#f-ev'); if (fe) fe.addEventListener('submit', (ev) => {

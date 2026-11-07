@@ -335,7 +335,7 @@
 
   // ------------------------------------------------------------------ aksi publik
   const A = {
-    holdSeat(evId, seat, cart) {
+    holdSeat(evId, seat, cart, opts) {
       return tx((d, t) => {
         const e = d.events[evId];
         if (!saleState(e, t).open) fail('Penjualan tiket belum dibuka atau sudah ditutup.');
@@ -351,7 +351,7 @@
         Object.values(d.seats[evId]).forEach((y) => { if (y.st === 'HELD' && y.cart === cart && !y.order) y.until = until; });
         d.qholds[evId].forEach((h) => { if (h.cart === cart && !h.order) h.until = until; });
         return until;
-      });
+      }, opts);
     },
     releaseSeat(evId, seat, cart) { return tx((d) => { const x = d.seats[evId][seat]; if (x && x.st === 'HELD' && x.cart === cart && !x.order) delete d.seats[evId][seat]; }); },
     setQty(evId, typeId, qty, cart) {
@@ -527,6 +527,28 @@
       log.push('Hasil: hanya 1 hold yang sah, tidak ada double-booking. Hold demo dilepas otomatis setelah ' + e.holdMin + ' menit.');
       emit();
       return log;
+    },
+    // Uji tekan: n pembeli menekan kursi yang sama dalam satu tick (semua berangkat dari versi state yang sama).
+    // Tiap pembeli memakai jalur transaksi asli (holdSeat), jadi yang kalah balapan menerima 409 lalu ditolak aturan.
+    async stressTest(evId, seat, n) {
+      n = n || 25;
+      if (!ev(evId) || seatStatus(evId, seat, null) !== 'available') fail('Pilih kursi yang masih tersedia untuk uji tekan.');
+      if (!saleState(ev(evId)).open) fail('Penjualan acara ini sedang tidak dibuka. Uji tekan butuh penjualan aktif, pilih acara lain atau buka penjualannya.');
+      const base = version, t0 = Date.now();
+      let conflicts = 0;
+      const carts = Array.from({ length: n }, (_, i) => 'UJI-' + String(i + 1).padStart(2, '0'));
+      const res = await Promise.allSettled(carts.map((c) => A.holdSeat(evId, seat, c, { onConflict: () => conflicts++ })));
+      const ok = res.map((r, i) => (r.status === 'fulfilled' ? carts[i] : null)).filter(Boolean);
+      const winner = ok[0] || null;
+      const ms = Date.now() - t0;
+      if (winner) await A.releaseCart(evId, winner);
+      const log = [
+        `${n} pembeli membaca state versi ${base} dan menekan kursi ${seat} bersamaan.`,
+        winner ? `Pembeli ${winner} berhasil memegang kursi ${seat}.` : `Tidak ada pembeli yang berhasil (kursi ${seat} diambil pihak lain).`,
+        `${n - ok.length} pembeli ditolak setelah ${conflicts} konflik versi (409) dan pemeriksaan ulang aturan. Selesai dalam ${ms} ms.`,
+        `Kursi ${seat} dilepas kembali setelah uji.`,
+      ];
+      return { seat, n, winner, rejected: n - ok.length, conflicts, ms, log };
     },
   };
 

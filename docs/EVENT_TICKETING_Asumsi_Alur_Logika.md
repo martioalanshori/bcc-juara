@@ -79,6 +79,8 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 **Bukti uji:**
 - Uji tekan 25 pembeli serentak pada satu kursi lewat API server: **1 berhasil, 24 ditolak**, 6 konflik versi tertangani, dan pemegang akhir = pemenang.
 - Tombol *"Jalankan simulasi rebutan kursi"* di tab Denah Kursi memperagakan hal yang sama.
+- Tombol *"Uji tekan 25 pembeli"* di tab Denah Kursi (`Evt.stressTest(evId, kursi, 25)`) menjalankan uji tekan itu langsung dari konsol: 25 keranjang `UJI-01` sampai `UJI-25` memanggil `holdSeat` dalam satu tick sehingga semuanya berangkat dari versi state yang sama. Yang kalah menerima 409, membaca ulang, lalu ditolak aturan "kursi sedang dipesan". Hasil yang diharapkan: 1 berhasil, 24 ditolak. Hold pemenang langsung dilepas setelah uji. Uji ditolak bila kursi tidak tersedia atau penjualan acara sedang tidak dibuka.
+- Test otomatis engine: `node --test "tools/tests/*.test.mjs"` (Node 20 ke atas, tanpa npm).
 
 ## 5. Validasi QR saat check-in
 - **Isi QR:** `SMB1|<ID tiket>|<ID acara>|<kursi>|<tanda tangan>`. Tanda tangan dihitung dari ID tiket, acara, dan kursi dengan kunci rahasia (prototype: hash; produksi: HMAC-SHA256 di server).
