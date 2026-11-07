@@ -29,3 +29,24 @@ test('uji tekan saat penjualan ditutup: pesan jelas, bukan 25 penolakan diam-dia
   await Evt.updateEvent('EVT-01', { status: 'CLOSED' });
   await assert.rejects(Evt.stressTest('EVT-01', seat, 25), /penjualan/i);
 });
+
+// ------------------------------------------------------------------ Task 2: uji 2 gate serentak
+test('2 gate memindai tiket yang sama bersamaan: 1 VALID + 1 USED', async () => {
+  const { Evt } = await loadEvt();
+  const r = await Evt.dualGateTest('EVT-01');
+  assert.deepEqual([...r.results].map((x) => x.result).sort(), ['USED', 'VALID']); // salin: array dari realm vm
+  assert.notEqual(r.results[0].gate, r.results[1].gate);
+  assert.ok(Evt.s.tickets[r.ticket].checkedInAt);
+});
+
+test('acara dengan 1 gate memakai label perangkat 2', async () => {
+  const { Evt } = await loadEvt();
+  await Evt.updateEvent('EVT-01', { gates: ['Gate A (Lobby Utama)'] });
+  const r = await Evt.dualGateTest('EVT-01');
+  assert.ok(r.results.some((x) => x.gate === 'Gate A (Lobby Utama) (perangkat 2)'));
+});
+
+test('tanpa tiket belum check-in: ditolak dengan pesan jelas', async () => {
+  const { Evt } = await loadEvt();
+  await assert.rejects(Evt.dualGateTest('EVT-03'), /Tidak ada tiket aktif yang belum check-in/);
+});

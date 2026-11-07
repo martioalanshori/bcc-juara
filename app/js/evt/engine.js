@@ -550,6 +550,17 @@
       ];
       return { seat, n, winner, rejected: n - ok.length, conflicts, ms, log };
     },
+    // Uji check-in serentak: dua gate memindai QR yang sama pada tick yang sama -> satu VALID, satu USED.
+    // Tiket contoh yang dipakai benar-benar tercatat check-in (kembalikan dengan Reset).
+    async dualGateTest(evId) {
+      const e = ev(evId); if (!e) fail('Acara tidak ditemukan.');
+      const tk = Object.values(state.tickets).find((x) => x.ev === evId && x.status === 'ACTIVE' && !x.checkedInAt);
+      if (!tk) fail('Tidak ada tiket aktif yang belum check-in untuk uji ini.');
+      const g1 = e.gates[0] || 'Gate 1', g2 = e.gates[1] || g1 + ' (perangkat 2)';
+      const code = qrText(tk);
+      const res = await Promise.all([A.checkIn(code, evId, g1), A.checkIn(code, evId, g2)]);
+      return { ticket: tk.id, results: [{ gate: g1, result: res[0].result, reason: res[0].reason }, { gate: g2, result: res[1].result, reason: res[1].reason }] };
+    },
   };
 
   // Normalisasi hasil pindaian: pemindai HID/keyboard bisa mengubah huruf besar-kecil atau pemisah '|'

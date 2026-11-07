@@ -177,6 +177,10 @@
         ${EvtCheckin.panel()}</section>
       <div class="2xl:col-span-7 flex flex-col gap-5">
         <section class="card p-5"><div id="ck-stats">${ckStats(e)}</div></section>
+        <section class="card p-5">${UI.h('Uji check-in serentak', 'Dua gate memindai QR yang sama pada detik yang sama', '', 'sync_lock')}
+          <button class="btn w-full justify-center" id="dual">${icon('qr_code_scanner')} Jalankan uji 2 gate</button>
+          ${ui.dual && ui.dual.ev === e.id ? `<div class="flex flex-col gap-2 mt-3">${ui.dual.results.map((x) => `<div class="inner px-3 py-2 font-body-sm text-body-sm"><div class="flex justify-between gap-2"><span>${esc(x.gate)}</span><b class="${x.result === 'VALID' ? 'text-emerald-300' : x.result === 'USED' ? 'text-amber-300' : 'text-rose-300'}">${x.result === 'VALID' ? 'VALID' : x.result === 'USED' ? 'SUDAH DIGUNAKAN' : 'TIDAK VALID'}</b></div><div class="text-on-surface-variant">${esc(x.reason)}</div></div>`).join('')}<div class="font-label-sm text-label-sm text-on-surface-variant">Tiket ${esc(ui.dual.ticket)}: hanya satu gate yang menerima.</div></div>` : ''}
+          <p class="font-body-sm text-body-sm text-on-surface-variant mt-3">Satu tiket contoh akan tercatat sudah check-in. Gunakan Reset untuk mengembalikan data.</p></section>
         <section class="card p-5">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div></div>`;
   }
 
@@ -447,6 +451,12 @@
     // check-in
     const g = el.querySelector('#gate'); if (g) g.addEventListener('change', () => (ui.gate = g.value));
     if (ui.tab === 'checkin') EvtCheckin.mount(el, () => ui.ev, () => ui.gate);
+    const dual = el.querySelector('#dual'); if (dual) dual.addEventListener('click', async () => {
+      dual.disabled = true;
+      const r = await act(() => Evt.dualGateTest(e.id));
+      dual.disabled = false;
+      if (r) { ui.dual = Object.assign({ ev: e.id }, r); EvtCheckin.stopCam(); redraw(); }
+    });
     // notifikasi
     el.querySelectorAll('[data-ch]').forEach((b) => b.addEventListener('click', () => { ui.ch = b.dataset.ch; redraw(); }));
     const rm = el.querySelector('#remind'); if (rm) rm.addEventListener('click', async () => { const n = await act(() => Evt.sendReminders(e.id)); if (n != null) UI.toast('Pengingat dikirim ke ' + n + ' pemesan (email dan WhatsApp, simulasi)', 'P4'); });

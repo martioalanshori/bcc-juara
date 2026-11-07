@@ -97,7 +97,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
   - Kode booking `BK-…`: men-check-in tiket berikutnya yang belum masuk (1/2, 2/2, …).
   - Input manual tidak membawa tanda tangan, jadi petugas wajib mencocokkan nama pemegang.
 - **SUDAH DIGUNAKAN** bila tiket pernah check-in. Sistem menampilkan jam dan gate check-in sebelumnya.
-- **VALID**: tiket ditandai hadir. Check-in juga transaksi atomik, sehingga dua gate yang memindai bersamaan menghasilkan 1 VALID + 1 SUDAH DIGUNAKAN.
+- **VALID**: tiket ditandai hadir. Check-in juga transaksi atomik, sehingga dua gate yang memindai bersamaan menghasilkan 1 VALID + 1 SUDAH DIGUNAKAN. Tombol *"Jalankan uji 2 gate"* di tab Check-in QR (`Evt.dualGateTest(evId)`) memperagakannya: tiket aktif pertama yang belum check-in dipindai di gate pertama dan kedua pada tick yang sama (acara dengan satu gate memakai "<gate> (perangkat 2)"). Tiket itu benar-benar tercatat check-in; kembalikan dengan Reset.
 - **Anomali**: ≥3 pindaian gagal/duplikat per gate dalam 10 menit memunculkan peringatan. Dari situ:
   - Pengelola (konsol) atau petugas gate (ponsel) mengirim **laporan ke Command Center**.
   - Operator Command Center membuat **tiket insiden P2 (SOP-EVT-03)** dari Pemantauan Event → Gate & Keamanan. Nomor tiket tampil kembali di konsol pengelola.
