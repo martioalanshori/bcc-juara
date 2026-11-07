@@ -75,3 +75,10 @@ Unduh ulang font: `python3 tools/vendor_fonts.py`
 1. Edit `tools/sop_data.py` atau `tools/usecase_data.py`.
 2. `python3 tools/build_docs.py` (validasi relasi + generate ulang Excel, runbook, dan data aplikasi).
 3. Buka file Excel di Microsoft Excel dan simpan sekali agar nilai formula terhitung ulang.
+
+## Deploy Vercel
+
+Produksi: https://smiccts.vercel.app — otomatis dideploy setiap push ke `main` (repo GitHub `martioalanshori/bcc-juara`).
+Backend serverless ada di `api/index.js` (padanan `server.py`), state event disimpan di Upstash Redis.
+Environment variable di Vercel: `PIN_PENGELOLA`, `PIN_COMMAND_CENTER`, `SESSION_SECRET`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
+Ganti PIN: ubah env di dashboard Vercel lalu Redeploy. Versi LAN (`python server.py`) tetap berjalan seperti biasa.
