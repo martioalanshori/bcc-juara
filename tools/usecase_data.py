@@ -1,0 +1,351 @@
+# -*- coding: utf-8 -*-
+"""
+Use case relasi antar dashboard SMICC-TS (Summarecon Mall).
+Setiap langkah = perpindahan informasi/aksi dari satu dashboard ke dashboard lain.
+fx = efek simulasi di prototype (dibaca app/js/sim.js):
+  ticket            -> buat tiket dari definisi 'ticket' use case
+  status:<STATUS>   -> ubah status tiket use case
+  device:<ID>:<ST>  -> ubah status aset BMS/Parkir (FAULT, TRIP, LEAK, STANDBY, RUNNING, NORMAL, OPEN)
+  cam:<ID>          -> tandai kamera sebagai insiden aktif
+  escalate:<LEVEL>  -> catat eskalasi
+  tenant:<TEXT>     -> pesan broadcast tenant
+  kpi:<TEXT>        -> catat dampak KPI di Analytics
+"""
+
+# ---------------------------------------------------------------- relasi matriks (dari -> ke : data)
+RELATIONS = [
+    ("BMS", "TIC", "Alarm SCADA kritikal -> tiket otomatis (P2/P3) dengan aset, kode fault, zona"),
+    ("BMS", "CCTV", "Lokasi aset alarm -> auto-open kamera terdekat untuk verifikasi visual"),
+    ("BMS", "TEN", "Gangguan HVAC/listrik/air zona -> daftar tenant terdampak & notifikasi"),
+    ("BMS", "ENE", "Status chiller, VFD, setpoint -> perhitungan COP, kWh & biaya"),
+    ("BMS", "ANL", "Uptime, MTTR, downtime aset -> KPI Facility & tren SLA MEP"),
+    ("CCTV", "TIC", "Alert AI (kerumunan, objek, intrusi, api thermal) -> tiket P1/P2 + klip bukti"),
+    ("CCTV", "BMS", "Konfirmasi visual kebakaran -> verifikasi interlock FACP/AHU/fire curtain"),
+    ("CCTV", "PARK", "ANPR & kamera lobi -> antrean gate, pelanggaran jalur darurat"),
+    ("CCTV", "TEN", "Pencurian/insiden di depan unit -> info ke tenant terkait"),
+    ("CCTV", "ANL", "Jumlah insiden keamanan, false alarm, respons -> KPI Keamanan & K3"),
+    ("TEN", "TIC", "Chat/komplain tenant -> tiket (anchor +1 prioritas)"),
+    ("TEN", "BMS", "Izin overtime AC / hot work -> jadwal AHU & isolasi detektor"),
+    ("TEN", "CCTV", "Izin kerja & loading dock -> akses pos security & pemantauan"),
+    ("TEN", "ENE", "Unit tenant -> sub-meter kWh & tagihan overtime"),
+    ("TEN", "O360", "CSAT, kepatuhan & riwayat komplain tenant -> evaluasi renewal"),
+    ("TIC", "TEN", "Progres & penutupan tiket -> update chat tenant & survei CSAT"),
+    ("TIC", "CCTV", "Dispatch tim -> pelacakan rute tim & verifikasi area aman"),
+    ("TIC", "BMS", "Tiket MEP -> work order & validasi sensor normal sebelum close"),
+    ("TIC", "ANL", "Data tiket (respons, resolusi, breach, eskalasi) -> tren SLA & pareto"),
+    ("TIC", "O360", "Eskalasi P1/P2 -> notifikasi owner & dampak bisnis"),
+    ("ENE", "BMS", "Prediksi peak load / anomali COP -> perintah peak shaving & setpoint"),
+    ("ENE", "TEN", "Top konsumen sub-meter -> himbauan hemat & tagihan"),
+    ("ENE", "TIC", "Anomali konsumsi (beban liar, kebocoran air) -> tiket investigasi"),
+    ("ENE", "O360", "Biaya energi & recovery utilitas -> Opex & NOI"),
+    ("ENE", "ANL", "IKE, penghematan, ESG -> laporan BOD"),
+    ("PARK", "TIC", "Antrean > 8 mobil / pelanggaran jalur -> tiket P2/P3"),
+    ("PARK", "CCTV", "Plat nomor & lokasi bay -> verifikasi kamera & pencarian kendaraan"),
+    ("PARK", "O360", "Pendapatan & rekonsiliasi QRIS -> revenue non-sewa"),
+    ("PARK", "ANL", "Turnover, waktu antrean gate -> KPI Parking"),
+    ("O360", "TEN", "Kontrak jatuh tempo, AR aging -> tindak lanjut TRO & SP"),
+    ("O360", "BMS", "Pembatasan fasilitas tenant menunggak -> blokir overtime AC"),
+    ("O360", "ANL", "Okupansi, OCR, footfall, NOI -> laporan BOD & proyeksi dividen"),
+    ("ANL", "O360", "Rekomendasi AI & keputusan BOD -> target KPI & capex"),
+    ("ANL", "BMS", "Rekomendasi optimasi (descaling, setpoint) -> rencana kerja engineering"),
+    ("EVT", "TIC", "Anomali check-in (QR palsu/duplikat), antrean gate, gangguan pembayaran -> tiket insiden"),
+    ("EVT", "CCTV", "Jadwal & gate acara -> preset kamera gate/venue untuk verifikasi & crowd counting"),
+    ("EVT", "PARK", "Tiket terjual & jam acara -> prediksi lonjakan kendaraan & pengaturan gate parkir"),
+    ("EVT", "BMS", "Jadwal & kapasitas acara -> pre-cooling atrium & lighting scene"),
+    ("EVT", "ANL", "Penjualan, kehadiran, no-show -> KPI event & ROI atrium"),
+    ("EVT", "O360", "Pendapatan tiket & pengunjung event -> P&L dan footfall"),
+    ("EVT", "TEN", "Prediksi lonjakan pengunjung -> info ke tenant F&B/retail sekitar venue"),
+    ("TIC", "EVT", "Insiden di venue (P1/P2) -> jeda check-in/penjualan & info ke peserta"),
+    ("CCTV", "EVT", "Kepadatan venue/gate -> buka gate tambahan atau tahan check-in")
+]
+
+# ---------------------------------------------------------------- event dictionary
+EVENTS = [
+    # kode, nama, producer, consumers, payload, protokol
+    ("EVT-BMS-ALARM", "Alarm SCADA/BMS", "BMS", "TIC, CCTV, TEN, ENE", "asset_id, alarm_code, severity, zone, value, threshold, ts", "BACnet/Modbus -> MQTT"),
+    ("EVT-FACP-FIRE", "Alarm Kebakaran FACP", "BMS", "TIC, CCTV, TEN, PARK, ANL", "detector_id, zone, type(smoke/heat), interlock_state, ts", "Dry Contact/BACnet"),
+    ("EVT-CAM-AI", "Deteksi AI Video", "CCTV", "TIC, ANL", "cam_id, class(crowd/object/intrusion/fall/fire), confidence, bbox_snapshot, ts", "ONVIF/RTSP + Webhook"),
+    ("EVT-CAM-VERIFY", "Verifikasi Visual Operator", "CCTV", "TIC", "ticket_id, cam_id, verdict(true/false alarm), clip_url", "Internal"),
+    ("EVT-TICKET-CREATED", "Tiket Dibuat", "TIC", "TEN, ANL, O360", "ticket_id, priority, category, zone, tenant_id, source, sop_id, sla_due", "Internal Bus"),
+    ("EVT-TICKET-STATUS", "Perubahan Status Tiket", "TIC", "TEN, ANL", "ticket_id, status, team, eta, evidence", "Internal Bus"),
+    ("EVT-ESCALATION", "Eskalasi", "TIC", "O360, ANL", "ticket_id, level, recipient, channel, ack_ts", "WhatsApp API / Call"),
+    ("EVT-TENANT-MSG", "Pesan / Komplain Tenant", "TEN", "TIC", "tenant_id, unit, channel, text, category_nlp", "WhatsApp Business API / App"),
+    ("EVT-TENANT-BROADCAST", "Broadcast ke Tenant", "TEN", "-", "zone, tenants[], template, text", "App Push / WhatsApp"),
+    ("EVT-PERMIT", "Izin Kerja/Overtime Disetujui", "TEN", "BMS, CCTV, ENE", "permit_id, tenant_id, type, start, end, zone_ahu", "Internal"),
+    ("EVT-ENERGY-ANOMALY", "Anomali Energi/Air", "ENE", "BMS, TIC, TEN", "meter_id, kind(peak/leak/waste), kw_or_m3, baseline, cost_impact", "Modbus/LoRaWAN"),
+    ("EVT-PARK-QUEUE", "Antrean / Pelanggaran Parkir", "PARK", "TIC, CCTV", "gate_id, queue_len, wait_s, plate, ts", "REST / ANPR"),
+    ("EVT-AR-OVERDUE", "Tunggakan Tenant", "O360", "TEN, BMS", "tenant_id, aging_days, amount, sp_level", "ISO 20022 / ERP"),
+    ("EVT-KPI-UPDATE", "Pembaruan KPI", "Semua", "ANL, O360", "kpi_code, value, period, source_dashboard", "Data Warehouse"),
+    ("EVT-EVENT-SALE", "Transaksi Tiket Acara", "EVT", "ANL, O360, PARK", "order_id, event_id, items(type, seat), total, method, status, version, ts", "REST/JSON (CAS berversi)"),
+    ("EVT-EVENT-CHECKIN", "Pindaian Check-in Gate", "EVT", "TIC, CCTV, ANL", "ticket_id, event_id, gate, result(VALID/USED/INVALID), reason, ts", "REST/JSON (transaksi atomik)")
+]
+
+# ---------------------------------------------------------------- use cases
+USECASES = []
+
+
+def uc(id, name, trigger, primary, related, sops, prio, actors, goal, ticket, steps):
+    USECASES.append(dict(id=id, name=name, trigger=trigger, primary=primary, related=related,
+                         sops=sops, priority=prio, actors=actors, goal=goal, ticket=ticket,
+                         steps=[dict(frm=s[0], to=s[1], event=s[2], actor=s[3], action=s[4],
+                                     data=s[5], t=s[6], fx=s[7] if len(s) > 7 else "") for s in steps]))
+
+
+uc("UC-01", "Kebocoran Pipa Chiller & Genangan di Atrium",
+   "Sensor tekanan CHW turun + laporan genangan di UG Main Atrium", "BMS", "TIC, CCTV, TEN, ENE, ANL",
+   "SOP-BMS-02, SOP-BMS-01, SOP-CC-02", "P2", "BMSO, CCO, MEP, HK, TRO, ENM",
+   "Kebocoran terisolasi <= 10 menit, tanpa pengunjung terpeleset, tenant sekitar terinformasi",
+   dict(title="Kebocoran Pipa Chiller & Genangan Air", priority="P2", category="Fasilitas MEP, AC & Plumbing",
+        zone="LG", location="LG Main Atrium", source="BMS SCADA #BMS-CH-04", sop="SOP-BMS-02", cam="CAM-17",
+        tenant="", team="MEP Alpha"),
+   [("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "Alarm tekanan loop CHW Chiller-04 turun 12% & delta T abnormal", "asset=CH-04, P=3.1 bar", "T+0", "device:CH-04:LEAK"),
+    ("BMS", "TIC", "EVT-BMS-ALARM", "CCO", "Tiket P2 dibuat otomatis, SLA respons 5 menit aktif", "ticket, aset, zona LG", "T+0:30", "ticket"),
+    ("TIC", "CCTV", "EVT-CAM-VERIFY", "CCO", "Kamera CAM-17 LG Atrium dibuka otomatis, genangan terkonfirmasi", "cam=CAM-17", "T+1", "cam:CAM-17"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CCO", "Dispatch MEP Alpha + Janitorial Bravo (yellow cone & wet vac)", "team, ETA 3 menit", "T+2", "status:DISPATCHED"),
+    ("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "Chiller-05 standby di-start, valve isolasi segmen CH-04 ditutup", "CH-05 RUNNING", "T+5", "device:CH-05:RUNNING"),
+    ("TIC", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Notifikasi tenant LG Atrium: area basah, rute memutar, suhu dapat naik sementara", "zone=LG", "T+6", "tenant:Area LG Atrium sedang penanganan kebocoran pipa. Mohon arahkan pengunjung memutar."),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "MEP", "Tim on-site, pipa di-clamp, area dikeringkan", "foto sesudah", "T+12", "status:RESOLVED"),
+    ("BMS", "ENE", "EVT-ENERGY-ANOMALY", "ENM", "Hitung kehilangan air 3.2 m3 & dampak COP sementara", "m3, kWh", "T+30", ""),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "SL", "MTTR & SLA P2 tercatat; RCA dijadwalkan (tiket berulang)", "mttr=12m", "T+60", "kpi:MTTR P2 = 12 menit (SLA < 30 menit tercapai)")])
+
+uc("UC-02", "Eskalator Trip (Comb-Plate) di Area Ramai",
+   "PLC fault code comb-plate eskalator E-04 West Atrium", "BMS", "TIC, CCTV, ANL",
+   "SOP-BMS-05, SOP-CC-02", "P3", "BMSO, CCO, QRT, MEP, CENG",
+   "Area aman <= 3 menit, tidak ada korban, eskalator kembali beroperasi <= 2 jam",
+   dict(title="Eskalator E-04 Mati Mendadak (Emergency Trip)", priority="P3", category="Fasilitas MEP, AC & Plumbing",
+        zone="2F", location="2F West Atrium E-04", source="PLC Fault Code ESC-E04", sop="SOP-BMS-05", cam="CAM-29",
+        tenant="", team="MEP Bravo"),
+   [("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "E-04 TRIP: sensor comb-plate kanan bawah, motor berhenti 0.32 detik", "fault=CP-R", "T+0", "device:ESC-E04:TRIP"),
+    ("BMS", "TIC", "EVT-BMS-ALARM", "CCO", "Tiket P3 otomatis", "ticket", "T+0:20", "ticket"),
+    ("TIC", "CCTV", "EVT-CAM-VERIFY", "CCO", "CAM-29 diverifikasi: tidak ada korban, antrean menumpuk di landing", "cam=CAM-29", "T+1", "cam:CAM-29"),
+    ("CCTV", "TIC", "EVT-TICKET-STATUS", "QRT", "Regu Bravo barikade & arahkan ke E-03/lift", "team", "T+3", "status:DISPATCHED"),
+    ("TIC", "BMS", "EVT-TICKET-STATUS", "MEP", "Teknisi bersihkan benda asing di comb-plate, reset & uji jalan", "uji 10 menit", "T+40", "device:ESC-E04:RUNNING"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CCO", "Tiket resolved dengan validasi sensor normal", "", "T+55", "status:RESOLVED"),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "CENG", "Downtime 55 menit masuk KPI uptime transport vertikal", "downtime", "T+60", "kpi:Uptime eskalator bulan berjalan 99.7%")])
+
+uc("UC-03", "Komplain Suhu Tenant Anchor (Zara GF-104)",
+   "Store manager mengirim komplain suhu fitting room 28 C via WhatsApp", "TEN", "TIC, BMS, ENE, O360",
+   "SOP-COM-05, SOP-BMS-01", "P2", "TRO, CCO, MEP, BMSO, ENM",
+   "Suhu kembali <= 24 C <= 30 menit, tenant memberikan CSAT",
+   dict(title="Tenant Zara (GF-104) AC Suhu 28 C", priority="P2", category="Fasilitas MEP, AC & Plumbing",
+        zone="GF", location="GF Luxury Wing Unit GF-104", source="WhatsApp Tenant", sop="SOP-COM-05", cam="CAM-14",
+        tenant="Zara Flagship Store", team="MEP Bravo"),
+   [("TEN", "TEN", "EVT-TENANT-MSG", "TRO", "Pesan tenant masuk; NLP kategori HVAC; sub-meter menunjukkan 24.8 C (+3.8 delta)", "tenant=GF-104", "T+0", ""),
+    ("TEN", "TIC", "EVT-TICKET-CREATED", "TRO", "Konversi chat ke tiket; anchor tenant -> P2", "ticket", "T+2", "ticket"),
+    ("TIC", "BMS", "EVT-BMS-ALARM", "BMSO", "Cek AHU-LUX-01: damper VAV zona fitting room macet 20%", "AHU-LUX", "T+4", "device:AHU-LUX:FAULT"),
+    ("TIC", "TEN", "EVT-TICKET-STATUS", "CCO", "Template 'Konfirmasi Jadwal MEP' terkirim ke store manager (ETA 15 menit)", "", "T+5", "status:DISPATCHED"),
+    ("BMS", "BMS", "EVT-TICKET-STATUS", "MEP", "Re-kalibrasi motorized valve VAV; suhu turun bertahap", "", "T+20", "device:AHU-LUX:RUNNING"),
+    ("TIC", "TEN", "EVT-TICKET-STATUS", "TRO", "Konfirmasi tenant suhu 23.5 C; tiket ditutup; survei CSAT", "csat=5", "T+32", "status:RESOLVED"),
+    ("BMS", "ENE", "EVT-ENERGY-ANOMALY", "ENM", "Catat pemakaian sub-meter selama gangguan (tidak ditagihkan)", "", "T+60", ""),
+    ("TEN", "O360", "EVT-KPI-UPDATE", "LSG", "Riwayat SLA tenant anchor diperbarui untuk evaluasi renewal", "", "H+1", "kpi:Skor kepuasan Zara 98.2%")])
+
+uc("UC-04", "Kebakaran Dapur F&B (Code Red)",
+   "FACP smoke+heat detector dapur Food Court 3F + thermal CCTV", "CCTV", "TIC, BMS, TEN, PARK, ANL, O360",
+   "SOP-SEC-01, SOP-CC-03", "P1", "CCO, CSEC, ERT, BMSO, TRO, PKR, GM, BOD, HSE",
+   "Api padam / evakuasi zona < 15 menit, 0 korban, owner terinformasi detik pertama",
+   dict(title="Alarm Kebakaran Dapur F&B Food Court 3F", priority="P1", category="Keamanan, Parkir & Crowd",
+        zone="3F", location="3F Food Court - Dapur Unit L3-22", source="FACP Zone 3F-FC-07 + Thermal CAM-08", sop="SOP-SEC-01", cam="CAM-08",
+        tenant="Food Avenue - Haidilao Hotpot", team="ERT Alpha"),
+   [("BMS", "CCTV", "EVT-FACP-FIRE", "CCO", "FACP zone 3F-FC-07 aktif; kamera thermal CAM-08 otomatis tampil fullscreen", "detector=3F-FC-07", "T+0", "cam:CAM-08"),
+    ("CCTV", "TIC", "EVT-CAM-AI", "CCO", "Titik api terkonfirmasi visual; tiket P1 CODE RED", "ticket", "T+0:40", "ticket"),
+    ("TIC", "O360", "EVT-ESCALATION", "SL", "Notifikasi WhatsApp/Call prioritas ke GM & Owner (detik ke-1)", "level=L1+L2", "T+1", "escalate:L2 GM & Owner"),
+    ("CCTV", "BMS", "EVT-FACP-FIRE", "BMSO", "Interlock: AHU-FC OFF, smoke exhaust ON, fire curtain turun, lift recall", "AHU-FC", "T+1", "device:AHU-FC:OFF"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "ERT", "ERT Alpha padamkan dengan APAR & hydrant (tekanan 7 bar)", "", "T+2", "status:DISPATCHED"),
+    ("TIC", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Broadcast darurat tenant 3F: matikan kompor & gas, evakuasi karyawan", "zone=3F", "T+3", "tenant:CODE RED 3F Food Court. Matikan gas & listrik dapur, evakuasi melalui tangga darurat terdekat."),
+    ("TIC", "PARK", "EVT-TICKET-STATUS", "PKR", "Free-exit semua gate & kosongkan jalur akses Damkar", "gate=ALL", "T+5", "device:GATE-ALL:OPEN"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CSEC", "Api padam, headcount lengkap, Damkar menyatakan aman", "", "T+13", "status:RESOLVED"),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "HSE", "Laporan insiden + RCA (exhaust hood berminyak) ke BOD", "", "H+1", "kpi:Insiden K3 P1 tertangani 13 menit (target < 15)")])
+
+uc("UC-05", "Orang Dalam Pengawasan & Barang Tak Bertuan",
+   "AI Face Recognition watchlist #WL-402 di Atrium GF + objek tak bertuan di Koridor 2F", "CCTV", "TIC, TEN, ANL",
+   "SOP-SEC-04, SOP-SEC-03", "P2", "CCO, CSEC, QRT, TRO, CS",
+   "Intersep <= 5 menit; objek diklarifikasi <= 15 menit",
+   dict(title="Deteksi Orang Dalam Pengawasan (#WL-402) Atrium GF", priority="P2", category="Keamanan, Parkir & Crowd",
+        zone="GF", location="GF Atrium dekat Rolex", source="AI FR CAM-01", sop="SOP-SEC-04", cam="CAM-01",
+        tenant="", team="Regu Bravo"),
+   [("CCTV", "CCTV", "EVT-CAM-AI", "CCO", "AI FR akurasi 94.2% -> target #WL-402 di CAM-01", "conf=0.942", "T+0", "cam:CAM-01"),
+    ("CCTV", "TIC", "EVT-TICKET-CREATED", "CCO", "Tiket P2 + rekomendasi regu terdekat (Bravo Pos 1)", "ticket", "T+1", "ticket"),
+    ("TIC", "CCTV", "EVT-TICKET-STATUS", "QRT", "Kirim intersep; tracking multi-kamera CAM-01 -> CAM-14", "", "T+2", "status:DISPATCHED"),
+    ("CCTV", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Info diskret ke tenant luxury GF untuk waspada", "zone=GF", "T+3", "tenant:Mohon waspada, tim security sedang menangani situasi di Atrium GF."),
+    ("CCTV", "TIC", "EVT-CAM-AI", "CCO", "Paralel: objek tas ransel hitam > 12 menit di CAM-33 Koridor 2F -> SOP-SEC-03", "cam=CAM-33", "T+4", "cam:CAM-33"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CSEC", "Target dikonfirmasi & diserahkan ke Polisi; tas ternyata milik pengunjung (Lost & Found)", "", "T+12", "status:RESOLVED"),
+    ("CCTV", "ANL", "EVT-KPI-UPDATE", "CSEC", "Ekspor bukti video watermark; KPI respons keamanan", "", "T+60", "kpi:Respons insiden keamanan rata-rata 2.4 menit")])
+
+uc("UC-06", "Antrean Gate Parkir Utama > 8 Mobil",
+   "ANPR queue alert gate P1 Utara saat jam makan siang akhir pekan", "PARK", "TIC, CCTV, ANL",
+   "SOP-PRK-01", "P3", "PKR, CCO, QRT",
+   "Antrean terurai <= 10 menit tanpa meluber ke jalan raya",
+   dict(title="Antrean Gate Masuk P1 Utara 11 Mobil", priority="P3", category="Keamanan, Parkir & Crowd",
+        zone="BASEMENT", location="Gate Masuk P1 Utara", source="ANPR CAM-61", sop="SOP-PRK-01", cam="CAM-61",
+        tenant="", team="Tim Parkir"),
+   [("PARK", "PARK", "EVT-PARK-QUEUE", "PKR", "Antrean 11 mobil, waktu proses 22 detik/mobil (reader e-money lambat)", "gate=G1", "T+0", "device:GATE-G1:FAULT"),
+    ("PARK", "PARK", "EVT-PARK-QUEUE", "PKR", "Gate tambahan G2 (reversible) dibuka otomatis", "gate=G2", "T+1", "device:GATE-G2:OPEN"),
+    ("PARK", "CCTV", "EVT-CAM-VERIFY", "CCO", "CAM-61 menunjukkan antrean mendekati bahu jalan raya", "", "T+2", "cam:CAM-61"),
+    ("PARK", "TIC", "EVT-TICKET-CREATED", "CCO", "Tiket P3 + dispatch petugas handheld QRIS", "ticket", "T+3", "ticket"),
+    ("TIC", "PARK", "EVT-TICKET-STATUS", "PKR", "Petugas manual tapping; reader G1 di-restart", "", "T+5", "status:DISPATCHED"),
+    ("PARK", "PARK", "EVT-PARK-QUEUE", "PKR", "Antrean < 4 mobil; G1 normal", "", "T+11", "device:GATE-G1:NORMAL"),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "PKR", "Waktu antrean gate masuk KPI Parking (warning)", "", "T+20", "status:RESOLVED")])
+
+uc("UC-07", "Peak Load WBP & Peak Shaving Otomatis",
+   "Prediksi beban 15.6 MW mendekati batas kontrak 16.5 MVA pukul 18:30", "ENE", "BMS, TEN, ANL, O360",
+   "SOP-BMS-04", "P3", "ENM, BMSO, TRO, FIN",
+   "Beban < 85% kontrak sepanjang WBP; hemat biaya >= Rp 18 Jt/sesi",
+   dict(title="Prediksi Peak Load WBP 18:00-22:00", priority="P3", category="Energi & Utilitas",
+        zone="ALL", location="Gardu Induk B1", source="Smart Power Meter PLN", sop="SOP-BMS-04", cam="",
+        tenant="", team="Energy Desk"),
+   [("ENE", "ENE", "EVT-ENERGY-ANOMALY", "ENM", "Model memprediksi beban 15.6 MW (94% kontrak) pukul 18:30", "kw=15600", "T-30", "ticket"),
+    ("ENE", "BMS", "EVT-ENERGY-ANOMALY", "BMSO", "Perintah peak shaving: BESS 1.5 MWh discharge, CHW setpoint +0.5 C", "", "T-15", "status:DISPATCHED"),
+    ("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "DALI dimming parkir 40%, eskalator slow-speed", "", "T+0", ""),
+    ("ENE", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Himbauan top-4 konsumen (XXI, Hypermart, Food Avenue, Zara) kurangi beban non-esensial", "", "T+0", "tenant:Himbauan hemat energi WBP 18:00-22:00: matikan beban non-esensial (display ekstra, AC gudang)."),
+    ("ENE", "ENE", "EVT-KPI-UPDATE", "ENM", "Beban terjaga 14.2 MW (86%)", "", "T+120", "status:RESOLVED"),
+    ("ENE", "O360", "EVT-KPI-UPDATE", "FIN", "Penghematan Rp 18.5 Jt masuk Opex energi & NOI", "", "H+1", "kpi:Hemat WBP Rp 18.5 Jt / sesi")])
+
+uc("UC-08", "Pemadaman PLN & Genset Gagal Sinkron",
+   "Tegangan PLN 20 kV hilang, ATS transfer, Genset 03 gagal sinkron", "BMS", "TIC, CCTV, ENE, TEN, O360, ANL",
+   "SOP-BMS-03, SOP-BMS-05, SOP-CC-03", "P2", "BMSO, CCO, MEP, QRT, CENG, TRO, GM",
+   "Daya kritikal pulih <= 30 menit; tidak ada penumpang lift terjebak > 15 menit",
+   dict(title="Pemadaman PLN - Genset 03 Gagal Sinkron", priority="P2", category="Fasilitas MEP, AC & Plumbing",
+        zone="ALL", location="Gardu Trafo B1 / Genset Room", source="ATS & Genset Controller", sop="SOP-BMS-03", cam="CAM-88",
+        tenant="", team="MEP Alpha"),
+   [("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "PLN loss; ATS transfer 11 detik; GEN-03 fail-to-sync", "", "T+0", "device:GEN-03:FAULT"),
+    ("BMS", "TIC", "EVT-BMS-ALARM", "CCO", "Tiket P2; instruksi cek lift terjebak", "ticket", "T+1", "ticket"),
+    ("TIC", "CCTV", "EVT-TICKET-STATUS", "QRT", "Cek kabin lift via kamera & intercom: 1 kabin L-03 berhenti antar lantai", "", "T+2", "cam:CAM-88"),
+    ("TIC", "BMS", "EVT-TICKET-STATUS", "MEP", "Sinkronisasi manual GEN-03; load shedding fasad & 30% AHU", "", "T+6", "status:DISPATCHED"),
+    ("TIC", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Broadcast status listrik ke seluruh tenant", "", "T+8", "tenant:Gangguan suplai PLN. Daya genset aktif; mohon kurangi beban non-esensial. Estimasi normal 30 menit."),
+    ("TIC", "O360", "EVT-ESCALATION", "CENG", "Belum pulih 15 menit -> eskalasi GM", "", "T+15", "escalate:L1 GM"),
+    ("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "PLN kembali; transfer balik; semua genset standby", "", "T+26", "device:GEN-03:STANDBY"),
+    ("BMS", "ENE", "EVT-ENERGY-ANOMALY", "ENM", "Audit solar terpakai 420 L & biaya", "", "H+1", "status:RESOLVED")])
+
+uc("UC-09", "Toilet Bau (NH3) & Feedback QR Pengunjung",
+   "Sensor NH3 toilet 2F > 25 ppm + 3 scan QR 'bau'", "TIC", "CCTV, ANL",
+   "SOP-SEC-07, SOP-VIS-03", "P4", "CCO, HK, CS",
+   "Respons <= 15 menit, resolusi <= 45 menit, auto-close saat sensor normal",
+   dict(title="Toilet Pria 2F Bau (NH3 32 ppm) & Tisu Habis", priority="P4", category="Kebersihan & Sanitasi",
+        zone="2F", location="Toilet Pria 2F Timur", source="Smart Toilet NH3 + QR", sop="SOP-SEC-07", cam="",
+        tenant="", team="Janitorial Crew"),
+   [("TIC", "TIC", "EVT-TICKET-CREATED", "CCO", "Tiket P4 otomatis dari sensor + 3 feedback QR digabung", "ticket", "T+0", "ticket"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "HK", "Janitorial Crew 2F menerima push", "", "T+3", "status:DISPATCHED"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "HK", "Pembersihan & isi ulang tisu; foto sesudah", "", "T+14", "status:RESOLVED"),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "SL", "Sensor normal 15 menit -> auto-close; skor vendor cleaning", "", "T+30", "kpi:SLA P4 kebersihan 100% bulan ini")])
+
+uc("UC-10", "Tenant Menunggak > 60 Hari",
+   "AR aging tenant 2F mencapai 61 hari", "O360", "TEN, BMS, ANL",
+   "SOP-FIN-02", "-", "FIN, TRO, GM, CENG",
+   "Tenant melunasi / restrukturisasi; pembatasan fasilitas terkendali",
+   dict(title="Tunggakan > 60 Hari Unit 2F-31", priority="P4", category="Tenant Fit-Out & Kasir IT",
+        zone="2F", location="Unit 2F-31", source="ERP Finance AR Aging", sop="SOP-FIN-02", cam="",
+        tenant="Gadget Hub 2F-31", team="Finance AR"),
+   [("O360", "O360", "EVT-AR-OVERDUE", "FIN", "AR aging 61 hari, Rp 384 Jt", "", "H+0", "ticket"),
+    ("O360", "TEN", "EVT-AR-OVERDUE", "TRO", "SP-2 otomatis via Tenant App; jadwal kunjungan TRO", "", "H+0", "tenant:SP-2: Tagihan unit 2F-31 telah melewati 60 hari. Mohon segera melakukan pelunasan."),
+    ("O360", "BMS", "EVT-AR-OVERDUE", "CENG", "Atas persetujuan GM: blokir izin overtime AC unit 2F-31", "", "H+1", "status:DISPATCHED"),
+    ("TEN", "O360", "EVT-KPI-UPDATE", "FIN", "Tenant setuju cicilan 3x; pembatasan dicabut otomatis saat pembayaran pertama", "", "H+7", "status:RESOLVED"),
+    ("O360", "ANL", "EVT-KPI-UPDATE", "FIN", "Collection ratio & AR > 60 hari diperbarui", "", "H+7", "kpi:Collection ratio 91.5% -> 92.8%")])
+
+uc("UC-11", "Izin Overtime AC & Loading Dock Tenant Malam",
+   "Cinema XXI meminta overtime AC 00:00-03:00 & bongkar muat B2", "TEN", "BMS, CCTV, ENE, O360",
+   "SOP-COM-06, SOP-COM-02", "P3", "TRO, CENG, BMSO, CSEC, FIN",
+   "Izin disetujui <= 2 jam, overtime tertagih otomatis",
+   dict(title="Izin Overtime AC & Loading Dock Cinema XXI", priority="P3", category="Tenant Fit-Out & Kasir IT",
+        zone="3F", location="3F Cinema West / Dock B2", source="Tenant App FORM-OT-2026-884", sop="SOP-COM-06", cam="CAM-88",
+        tenant="Cinema XXI & IMAX", team="Tenant Relation"),
+   [("TEN", "TEN", "EVT-TENANT-MSG", "TRO", "Form overtime diterima", "", "T+0", "ticket"),
+    ("TEN", "BMS", "EVT-PERMIT", "CENG", "Kapasitas chiller malam cukup; AHU-CIN dijadwalkan 00:00-03:00", "", "T+30", "status:DISPATCHED"),
+    ("TEN", "CCTV", "EVT-PERMIT", "CSEC", "Pos dock B2 & CAM-88 ditandai 'pekerjaan berizin'", "", "T+40", "cam:CAM-88"),
+    ("BMS", "ENE", "EVT-PERMIT", "ENM", "Sub-meter AHU-CIN dicatat 00:00-03:00 (165 kWh)", "", "H+1", "status:RESOLVED"),
+    ("ENE", "O360", "EVT-KPI-UPDATE", "FIN", "Tagihan overtime otomatis masuk invoice bulan berjalan", "", "H+1", "kpi:Recovery utilitas overtime +Rp 2.1 Jt")])
+
+uc("UC-12", "Kebocoran Air Malam Hari (Flow Anomali)",
+   "Flow meter PDAM 02:00 menunjukkan 9 m3/jam saat mall tutup (baseline 2)", "ENE", "TIC, BMS, CCTV",
+   "SOP-BMS-02", "P2", "ENM, CCO, MEP, QRT",
+   "Sumber kebocoran ditemukan sebelum mall buka",
+   dict(title="Flow Air Malam Abnormal 9 m3/jam", priority="P2", category="Fasilitas MEP, AC & Plumbing",
+        zone="LG", location="Riser Pipa LG Timur", source="Smart Flow Meter FM-PDAM-01", sop="SOP-BMS-02", cam="CAM-17",
+        tenant="", team="MEP Siaga Malam"),
+   [("ENE", "ENE", "EVT-ENERGY-ANOMALY", "ENM", "Anomali flow malam 4.5x baseline", "", "T+0", ""),
+    ("ENE", "TIC", "EVT-ENERGY-ANOMALY", "CCO", "Tiket P2 investigasi", "ticket", "T+2", "ticket"),
+    ("TIC", "BMS", "EVT-TICKET-STATUS", "MEP", "Sensor akustik pipa melokalisasi riser LG Timur", "", "T+10", "status:DISPATCHED"),
+    ("TIC", "CCTV", "EVT-CAM-VERIFY", "QRT", "Patroli malam & CAM-17 konfirmasi rembesan di shaft", "", "T+15", "cam:CAM-17"),
+    ("BMS", "TIC", "EVT-TICKET-STATUS", "MEP", "Valve segmen ditutup; perbaikan fitting", "", "T+45", "status:RESOLVED")])
+
+uc("UC-13", "Kerumunan Event Atrium Melebihi Kapasitas",
+   "Kerapatan Atrium Utama 92% saat meet & greet artis", "CCTV", "TIC, BMS, O360, PARK",
+   "SOP-VIS-01, SOP-COM-04", "P2", "CCO, CSEC, QRT, BMSO, MKT, PKR",
+   "Kepadatan < 70% <= 20 menit, 0 insiden desak-desakan",
+   dict(title="Kepadatan Atrium Utama 92% (Event Meet & Greet)", priority="P2", category="Keamanan, Parkir & Crowd",
+        zone="GF", location="GF Main Atrium", source="AI Crowd Density CAM-01", sop="SOP-VIS-01", cam="CAM-01",
+        tenant="", team="Regu Alpha + Bravo"),
+   [("CCTV", "CCTV", "EVT-CAM-AI", "CCO", "Kerapatan 92%, laju +142 orang/menit", "", "T+0", "cam:CAM-01"),
+    ("CCTV", "TIC", "EVT-TICKET-CREATED", "CCO", "Tiket P2 crowd control", "ticket", "T+1", "ticket"),
+    ("TIC", "CCTV", "EVT-TICKET-STATUS", "CSEC", "Regu Alpha & Bravo buka jalur alternatif, antrean berlapis", "", "T+3", "status:DISPATCHED"),
+    ("CCTV", "BMS", "EVT-BMS-ALARM", "BMSO", "CO2 atrium 980 ppm -> AHU-ATR suplai udara +25%", "", "T+5", "device:AHU-ATR:BOOST"),
+    ("TIC", "PARK", "EVT-PARK-QUEUE", "PKR", "Antisipasi lonjakan keluar: buka gate tambahan", "", "T+10", "device:GATE-G2:OPEN"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CSEC", "Kepadatan 65%; event lanjut aman", "", "T+18", "status:RESOLVED"),
+    ("CCTV", "O360", "EVT-KPI-UPDATE", "MKT", "Data puncak footfall & dwell time event untuk ROI", "", "H+1", "kpi:Footfall event +38% vs hari biasa")])
+
+uc("UC-14", "Predictive Maintenance Eskalator Sebelum Akhir Pekan",
+   "Tren getaran E-07 naik ke 2.6 mm/s (batas 2.8) hari Kamis", "BMS", "TIC, ANL",
+   "SOP-BMS-06", "P3", "BMSO, CENG, MEP",
+   "Perbaikan terencana malam Jumat, 0 downtime tak terencana akhir pekan",
+   dict(title="PM Eskalator E-07 Getaran Naik 2.6 mm/s", priority="P3", category="Fasilitas MEP, AC & Plumbing",
+        zone="1F", location="1F East E-07", source="Vibration IoT ESC-E07", sop="SOP-BMS-06", cam="",
+        tenant="", team="MEP Bravo"),
+   [("BMS", "BMS", "EVT-BMS-ALARM", "BMSO", "Model prediktif: probabilitas fault 7 hari 68%", "", "T+0", "device:ESC-E07:WARN"),
+    ("BMS", "TIC", "EVT-TICKET-CREATED", "CENG", "Work order PM malam Jumat 23:00", "ticket", "T+30", "ticket"),
+    ("TIC", "BMS", "EVT-TICKET-STATUS", "MEP", "Ganti bearing & pelumasan step chain", "", "H+1", "status:DISPATCHED"),
+    ("BMS", "ANL", "EVT-KPI-UPDATE", "CENG", "Getaran 0.9 mm/s; MTBF diperbarui", "", "H+3", "device:ESC-E07:RUNNING"),
+    ("TIC", "ANL", "EVT-KPI-UPDATE", "CENG", "Downtime tak terencana bulan ini tetap 0.5 jam", "", "H+3", "status:RESOLVED")])
+
+uc("UC-15", "Anak Hilang (Code Adam)",
+   "Orang tua melapor ke Info Desk GF: anak 6 tahun baju merah", "TIC", "CCTV, PARK, TEN",
+   "SOP-SEC-09", "P1", "CS, CCO, CSEC, QRT, PKR, TRO",
+   "Anak ditemukan <= 15 menit",
+   dict(title="Code Adam - Anak 6 Th Baju Merah", priority="P1", category="Keamanan, Parkir & Crowd",
+        zone="2F", location="2F Kids Zone (lokasi terakhir)", source="Info Desk GF", sop="SOP-SEC-09", cam="CAM-33",
+        tenant="", team="Seluruh Regu"),
+   [("TIC", "TIC", "EVT-TICKET-CREATED", "CS", "Data & foto anak diinput; Code Adam aktif", "ticket", "T+0", "ticket"),
+    ("TIC", "PARK", "EVT-TICKET-STATUS", "PKR", "Semua pintu & gate parkir awasi anak keluar", "", "T+1", "status:DISPATCHED"),
+    ("TIC", "CCTV", "EVT-CAM-AI", "CCO", "AI attribute search 'baju merah, anak' -> CAM-33 2F 4 menit lalu", "", "T+3", "cam:CAM-33"),
+    ("TIC", "TEN", "EVT-TENANT-BROADCAST", "TRO", "Info ke tenant 2F (Kids & Toys) ciri anak", "", "T+4", "tenant:CODE ADAM: anak laki-laki 6 th, baju merah, terakhir di 2F Kids Zone. Hubungi Command Center bila melihat."),
+    ("CCTV", "TIC", "EVT-TICKET-STATUS", "QRT", "Anak ditemukan di toko mainan 2F; diserahkan dengan verifikasi", "", "T+9", "status:RESOLVED")])
+
+uc("UC-16", "Laporan BOD Bulanan Terintegrasi",
+   "Akhir bulan / permintaan Direksi", "ANL", "O360, TIC, BMS, ENE, TEN, CCTV, PARK",
+   "SOP-FIN-04, SOP-FIN-03", "-", "FIN, GM, BOD",
+   "Paket laporan BOD terbit <= H+5",
+   dict(title="Generate Laporan BOD Bulanan", priority="P4", category="Tenant Fit-Out & Kasir IT",
+        zone="ALL", location="Command Center", source="Generator Laporan", sop="SOP-FIN-04", cam="",
+        tenant="", team="Finance & GM Office"),
+   [("TIC", "ANL", "EVT-KPI-UPDATE", "FIN", "Tarik KPI tiket: total, breach, MTTR, eskalasi", "", "H+1", "ticket"),
+    ("ENE", "ANL", "EVT-KPI-UPDATE", "ENM", "Tarik IKE, biaya energi, penghematan, ESG", "", "H+1", ""),
+    ("O360", "ANL", "EVT-KPI-UPDATE", "FIN", "Tarik okupansi, OCR, AR aging, NOI", "", "H+1", "status:DISPATCHED"),
+    ("ANL", "ANL", "EVT-KPI-UPDATE", "GM", "Review & komentar GM; rekomendasi AI ditambahkan", "", "H+3", ""),
+    ("ANL", "O360", "EVT-KPI-UPDATE", "BOD", "Laporan disetujui; target & capex diperbarui", "", "H+5", "status:RESOLVED")])
+
+
+uc("UC-17", "Hari-H Acara Atrium: Indikasi Tiket Palsu & Lonjakan Check-in",
+   ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Main Atrium", "EVT", "TIC, CCTV, PARK, ANL",
+   "SOP-EVT-03, SOP-EVT-01", "P2", "GTE, EO, CCO, QRT, CSEC, PKR",
+   "Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali",
+   dict(title="Indikasi tiket palsu/calo di Gate A Main Atrium", priority="P2", category="Keamanan, Parkir & Crowd",
+        zone="GF", location="Gate A (Lobby Utama) - Main Atrium", source="Event Check-in (DB-EVT)", sop="SOP-EVT-03", cam="CAM-01",
+        tenant="", team="Regu Bravo"),
+   [("EVT", "EVT", "EVT-EVENT-CHECKIN", "GTE", "Gate A: 3 QR TIDAK VALID (tanda tangan tidak cocok) & 1 SUDAH DIGUNAKAN dalam 8 menit", "gate=A, invalid=3, used=1", "T+0", ""),
+    ("EVT", "TIC", "EVT-TICKET-CREATED", "CCO", "Petugas gate/pengelola melapor ke Command Center; operator CC membuat tiket insiden P2 indikasi tiket palsu/calo dari Event 360 → Gate & Keamanan", "ticket", "T+2", "ticket"),
+    ("TIC", "CCTV", "EVT-CAM-VERIFY", "QRT", "CAM-01 diarahkan ke Gate A; pelaku penjual QR hasil tangkapan layar teridentifikasi", "", "T+5", "cam:CAM-01"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "QRT", "Regu Bravo tiba di Gate A, pelaku diamankan ke pos keamanan", "", "T+7", "status:DISPATCHED"),
+    ("EVT", "PARK", "EVT-PARK-QUEUE", "PKR", "Antrean gate acara > 15 menit: buka gate parkir tambahan & arahkan drop-off", "", "T+10", "device:GATE-G2:OPEN"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "CSEC", "Gate B dibuka sebagai gate tambahan; antrean normal, bukti disimpan", "", "T+25", "status:RESOLVED"),
+    ("EVT", "ANL", "EVT-KPI-UPDATE", "EO", "Kehadiran, waktu check-in & insiden gate masuk laporan pasca-acara", "", "H+1", "kpi:Check-in konser: 1 insiden calo tertangani <= 25 menit")])
+
+uc("UC-18", "Rebutan Kursi & Pembayaran Gagal saat Penjualan Dibuka",
+   "Penjualan konser dibuka: dua pembeli memilih kursi VIP yang sama pada detik yang sama; gateway sandbox menolak sebagian pembayaran", "EVT", "TIC, O360, ANL",
+   "SOP-EVT-02, SOP-EVT-04", "P3", "EO, IT, CCO, FIN, CS",
+   "0 kursi terjual ganda; pembeli gagal bayar mendapat kursi kembali atau dikabari via daftar tunggu",
+   dict(title="Lonjakan transaksi & gagal bayar penjualan konser", priority="P3", category="Tenant Fit-Out & Kasir IT",
+        zone="ALL", location="Portal tiket online", source="Event Ticketing Engine", sop="SOP-EVT-02", cam="",
+        tenant="", team="IT/OT On-Call"),
+   [("EVT", "EVT", "EVT-EVENT-SALE", "EO", "Pembeli A & B menekan kursi A5 bersamaan; commit A diterima, commit B ditolak (versi berubah) & B diminta memilih kursi lain", "seat=A5, version=v+1", "T+0", ""),
+    ("EVT", "TIC", "EVT-TICKET-CREATED", "CCO", "Tingkat gagal bayar 18% dalam 10 menit -> tiket P3 ke IT", "ticket", "T+10", "ticket"),
+    ("TIC", "TIC", "EVT-TICKET-STATUS", "IT", "IT cek log callback sandbox; callback idempoten, tidak ada tiket terbit ganda", "", "T+20", "status:DISPATCHED"),
+    ("EVT", "EVT", "EVT-EVENT-SALE", "EO", "Hold pesanan gagal bayar kedaluwarsa, kursi kembali tersedia; daftar tunggu dikabari", "", "T+25", ""),
+    ("EVT", "O360", "EVT-KPI-UPDATE", "FIN", "Rekonsiliasi pendapatan tiket vs pesanan lunas", "", "H+1", "status:RESOLVED")])

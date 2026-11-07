@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a122a" />
+  <meta name="robots" content="noindex" />
+  <title>Masuk dengan PIN · Summarecon Mall Bandung</title>
+  <!-- Halaman PIN untuk path 2 (pengelola) & 3 (Command Center). Verifikasi PIN dilakukan server.py. -->
+  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=3" />
+  <link rel="stylesheet" href="vendor/tailwind.css?v=7" />
+  <link rel="stylesheet" href="css/app.css?v=7" />
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex items-center justify-center px-4 py-10">
+  <main class="w-full max-w-sm">
+    <a href="../index.html" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface mb-4"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Pilih path</a>
+    <section class="card p-6 flex flex-col gap-5">
+      <div class="flex items-center gap-3">
+        <span id="role-icon" class="w-11 h-11 rounded-xl bg-surface-container-high text-primary flex items-center justify-center"><span class="material-symbols-outlined">lock</span></span>
+        <div class="flex flex-col leading-tight"><span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Masuk dengan PIN</span><h1 id="role-label" class="font-headline-sm text-headline-sm">Summarecon Mall</h1></div>
+      </div>
+      <form id="f" class="flex flex-col gap-4" autocomplete="off">
+        <label class="f">PIN peran
+          <input class="inp text-center tracking-[0.6em] text-[22px] font-bold" id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" required autofocus aria-describedby="msg">
+        </label>
+        <div id="msg" role="alert" class="font-body-sm text-body-sm min-h-[20px]"></div>
+        <button class="btn justify-center" id="go"><span class="material-symbols-outlined text-[18px]">login</span>Masuk</button>
+      </form>
+      <p id="hint" class="font-label-sm text-label-sm text-on-surface-variant">PIN diberikan oleh admin. Sesi berlaku 12 jam di perangkat ini. Salah 5 kali → dikunci 60 detik.</p>
+    </section>
+  </main>
+  <script>
+    (function () {
+      const ROLES = {
+        pengelola: { label: 'Konsol Pengelola Acara', icon: 'admin_panel_settings', home: '/app/pengelola.html', who: 'Panitia / EO & petugas gate' },
+        'command-center': { label: 'Command Center · Mall 360', icon: 'hub', home: '/app/index.html', who: 'Manajemen mall & operator Command Center' },
+      };
+      const q = new URLSearchParams(location.search);
+      const role = ROLES[q.get('role')] ? q.get('role') : 'pengelola';
+      const R = ROLES[role];
+      // hanya path lokal; server memvalidasi ulang tujuan sesuai peran
+      let next = q.get('next') || R.home;
+      if (!next.startsWith('/') || next.startsWith('//')) next = R.home;
+      document.getElementById('role-label').textContent = R.label;
+      document.querySelector('#role-icon span').textContent = R.icon;
+      document.getElementById('hint').insertAdjacentText('afterbegin', 'Untuk ' + R.who + '. ');
+      document.title = 'Masuk · ' + R.label;
+      const f = document.getElementById('f'), pin = document.getElementById('pin'), msg = document.getElementById('msg'), go = document.getElementById('go');
+      const say = (t, cls) => { msg.className = 'font-body-sm text-body-sm min-h-[20px] ' + (cls || 'text-rose-300'); msg.textContent = t; };
+      let timer = null;
+      function lock(sec) {
+        go.disabled = true; pin.disabled = true; clearInterval(timer);
+        const end = Date.now() + sec * 1000;
+        timer = setInterval(() => { const left = Math.ceil((end - Date.now()) / 1000); if (left <= 0) { clearInterval(timer); go.disabled = false; pin.disabled = false; pin.focus(); say('Silakan coba lagi.', 'text-on-surface-variant'); } else say('Terlalu banyak percobaan. Coba lagi dalam ' + left + ' detik.'); }, 250);
+      }
+      pin.addEventListener('input', () => { pin.value = pin.value.replace(/\D/g, '').slice(0, 8); });
+      f.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        if (!/^\d{4,8}$/.test(pin.value)) return say('PIN berupa 4–8 angka.');
+        go.disabled = true;
+        try {
+          const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role, pin: pin.value, next }) });
+          if (r.status === 404 || r.status === 501) throw new Error('no-server');
+          const j = await r.json().catch(() => ({}));
+          if (r.ok && j.ok) { say('Berhasil. Membuka ' + R.label + '…', 'text-emerald-300'); location.replace(j.next + location.hash); return; }
+          pin.value = '';
+          if (r.status === 429) return lock(j.retry || 60);
+          say(j.error || 'PIN tidak dapat diverifikasi.');
+        } catch (e) {
+          say('Server PIN tidak tersedia. Jalankan python3 server.py untuk memakai akses PIN.');
+        }
+        go.disabled = false; pin.focus();
+      });
+    })();
+  </script>
+</body>
+</html>

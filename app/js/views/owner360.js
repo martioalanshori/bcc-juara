@@ -1,0 +1,67 @@
+/* DB-O360 Owner 360 · Commercial, Visitor & Finance (Blueprint sheet 1 & 3 + pilar 1,2,6 mindmap) */
+(function () {
+  window.Views = window.Views || {};
+  const { esc, icon, num } = UI;
+  const fmt = (v, t) => (t === 'pct' ? (v * 100).toFixed(1) + '%' : t === 'int' ? num(v) : num(v, v % 1 ? 2 : 0));
+
+  window.Views.owner360 = {
+    title: 'Owner 360', live: true,
+    render() {
+      const K = window.SEED.KPIS, TR = window.SEED.TREND, Z = window.SEED.ZONES.filter((z) => z.nla), AR = window.SEED.AR;
+      const esc0 = Store.s.events.filter((e) => e.code === 'EVT-ESCALATION').slice(0, 5);
+      const nla = Z.reduce((a, z) => a + z.nla, 0), leased = Z.reduce((a, z) => a + z.leased, 0);
+      const rent = Z.reduce((a, z) => a + (z.leased * z.rate) / 1e6, 0), sales = Z.reduce((a, z) => a + z.sales, 0);
+      const arTot = AR.reduce((a, x) => a + x.v, 0);
+      const heat = [['LG', [62, 78, 55, 40, 71]], ['GF', [88, 95, 91, 76, 84]], ['1F', [70, 66, 81, 58, 63]], ['2F', [44, 38, 61, 29, 52]], ['3F', [80, 92, 74, 69, 87]], ['ROOF', [35, 22, 48, 30, 41]]];
+      return `
+      <section class="card p-4 mb-5 flex flex-wrap items-center gap-3">
+        <div><span class="chip-btn on">OWNER'S 360° VIEW</span><h2 class="font-headline-lg text-headline-lg mt-1">Summarecon Mall Integrated Command Center — Executive Dashboard</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Perspektif pemilik mall: operasional, komersial & finansial (sumber: Blueprint sheet 1, 2, 3)</p></div>
+        <div class="ml-auto flex gap-2">${UI.dbLink('ANL', '', 'Laporan BOD')}${UI.dbLink('TEN', '', 'Tenant Support')}</div>
+      </section>
+      ${esc0.length ? `<section class="card p-4 mb-5 crit-left"><div class="flex items-center gap-2 mb-2">${icon('notifications_active', 'text-rose-300')}<span class="font-headline-sm text-headline-sm">Eskalasi ke Owner (EVT-ESCALATION)</span></div>${esc0.map((e) => `<a href="#/ticketing?id=${e.ticketId}" class="rel-row mb-1">${UI.prio(e.sev)}<span class="font-label-md text-label-md text-outline">${UI.time(e.ts)}</span><span class="font-body-sm text-body-sm">${esc(e.detail)}</span></a>`).join('')}</section>` : ''}
+      <div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
+        ${UI.kpi({ label: 'Okupansi NLA', icon: 'apartment', value: ((leased / nla) * 100).toFixed(1) + '%', bar: (leased / nla) * 100, foot: num(leased) + ' / ' + num(nla) + ' m² · target ≥ 95%' })}
+        ${UI.kpi({ label: 'Pendapatan Sewa Bulanan', icon: 'payments', value: 'Rp ' + num(rent / 1000, 1), unit: 'Miliar', foot: 'Omzet tenant Rp ' + num(sales / 1000, 1) + ' M · OCR ' + ((rent / sales) * 100).toFixed(1) + '%' })}
+        ${UI.kpi({ label: 'Collection Ratio', icon: 'account_balance_wallet', value: '91.5%', vcls: 'text-amber-300', delta: 'Perlu Perhatian', dcls: 'bg-amber-500/15 text-amber-300', foot: 'Target 98% · AR > 60 hari Rp ' + num(AR[2].v + AR[3].v, 1) + ' M' })}
+        ${UI.kpi({ label: 'Footfall Harian', icon: 'groups', value: '68.400', delta: '105% target', foot: 'Dwell time 165 menit · CSAT 4.72/5' })}
+        ${UI.kpi({ label: 'NOI YTD', icon: 'trending_up', value: 'Rp ' + num(TR.reduce((a, r) => a + r[2] - r[3], 0), 1), unit: 'Miliar', vcls: 'text-secondary', foot: 'Revenue Rp ' + num(TR.reduce((a, r) => a + r[2], 0), 1) + ' M − Opex Rp ' + num(TR.reduce((a, r) => a + r[3], 0), 1) + ' M' })}
+      </div>
+      <section class="card p-5 mb-5">${UI.h('Executive KPI Scorecard', 'Blueprint 1_Executive_Command_KPI · capaian dihitung otomatis (arah KPI: naik = lebih baik / turun = lebih baik)', '', 'scoreboard')}
+        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Domain Pilar</th><th>Indikator Utama (KPI)</th><th>Target</th><th>Realisasi</th><th>Capaian</th><th>Status</th><th>Sumber Sensor / Sistem</th><th>Update</th></tr></thead><tbody>
+        ${K.map((k) => { const ach = k[5] === 'up' ? k[3] / k[2] : k[2] / k[3]; const st = ach >= 1 ? 'Optimal' : ach >= 0.95 ? 'Perlu Perhatian' : 'Warning'; return `<tr><td class="font-label-md text-on-surface-variant">${k[0]}</td><td class="font-body-sm">${k[1]}</td><td class="font-label-md">${fmt(k[2], k[4])}</td><td class="font-label-lg">${fmt(k[3], k[4])}</td><td class="w-36"><div class="font-label-md ${ach >= 1 ? 'text-secondary' : ach >= 0.95 ? 'text-amber-300' : 'text-tertiary'}">${(ach * 100).toFixed(1)}%</div>${UI.bar(Math.min(100, ach * 100), ach >= 1 ? 'bg-secondary' : ach >= 0.95 ? 'bg-amber-400' : 'bg-rose-400')}</td><td>${UI.chip(st, ach >= 1 ? 'bg-secondary/15 text-secondary' : ach >= 0.95 ? 'bg-amber-500/15 text-amber-300' : 'bg-rose-500/15 text-rose-300')}</td><td class="font-body-sm text-on-surface-variant">${k[6]}</td><td class="font-label-sm text-outline">${k[7]}</td></tr>`; }).join('')}</tbody></table></div></section>
+      <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5 mb-5">
+        <section class="card p-5 2xl:col-span-7">${UI.h('Tren Kinerja Bulanan (Tahun Berjalan)', 'Pendapatan, biaya energi & ops, NOI (IDR Miliar) · total pengunjung (ribu)', '', 'show_chart')}
+          <div class="flex gap-4 font-label-sm text-label-sm mb-1"><span><span class="text-sky-300">●</span> Pendapatan</span><span><span class="text-secondary">●</span> NOI</span><span><span class="text-rose-300">●</span> Biaya Energi & Ops</span></div>
+          ${UI.line([{ data: TR.map((r) => r[2]), color: '#38bdf8' }, { data: TR.map((r) => r[2] - r[3]), color: '#4edea3' }, { data: TR.map((r) => r[3]), color: '#fb7185' }], { labels: TR.map((r) => r[0]), min: 0, max: 56, h: 220 })}
+          <div class="grid grid-cols-5 lg:grid-cols-10 gap-1 mt-2">${TR.map((r) => `<div class="inner p-1.5 text-center"><div class="lbl">${r[0]}</div><div class="font-label-md text-label-md">${num(r[1])}k</div></div>`).join('')}</div></section>
+        <section class="card p-5 2xl:col-span-5">${UI.h('Billing & AR Aging', 'SOP-FIN-01 / SOP-FIN-02 · IDR Miliar', '', 'request_quote')}
+          <div class="flex items-center gap-5">${UI.donut(AR.map((a, i) => ({ v: a.v, color: ['#4edea3', '#38bdf8', '#f59e0b', '#f43f5e'][i] })), { size: 150, center: num(arTot, 1), sub: 'TOTAL AR (M)' })}
+            <div class="flex-1 flex flex-col gap-2">${AR.map((a, i) => `<div class="flex items-center gap-2 font-label-md text-label-md"><span class="w-2.5 h-2.5 rounded-full" style="background:${['#4edea3', '#38bdf8', '#f59e0b', '#f43f5e'][i]}"></span><span class="flex-1">${a.b}</span><span>Rp ${num(a.v, 1)} M</span></div>`).join('')}</div></div>
+          <div class="lbl mt-4 mb-2">Tenant menunggak (tindak lanjut otomatis)</div>
+          ${window.SEED.TENANTS.filter((t) => t.ar).map((t) => `<div class="inner p-3 mb-2 flex items-center gap-3 ${/6\d|9\d/.test(t.pay) ? 'crit-left' : 'warn-left'}"><div class="flex-1"><div class="font-body-md text-body-md">${esc(t.name)} (${t.id})</div><div class="font-label-sm text-label-sm text-outline">${esc(t.pay)} · Rp ${t.ar} Jt</div></div><button class="btn-ghost !py-1" data-sp="${t.id}">${icon('mail', 'text-[14px]')} Kirim SP</button></div>`).join('')}</section>
+      </div>
+      <section class="card p-5 mb-5">${UI.h('Analisis Zonasi Lantai, Okupansi & Produktivitas Tenant', 'Blueprint 3_Tenant_Zoning_Perf · optimasi tenant mix & tarif sewa', '', 'stacked_bar_chart')}
+        <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Lantai / Zona</th><th>Tenant Mix</th><th>NLA (m²)</th><th>Okupansi</th><th>Traffic / Bulan</th><th>Tarif (IDR/m²)</th><th>Sewa (Jt)</th><th>Omzet (Jt)</th><th>OCR</th><th>Rekomendasi Strategis Owner</th></tr></thead><tbody>
+        ${Z.map((z) => { const occ = z.leased / z.nla, r = (z.leased * z.rate) / 1e6, ocr = r / z.sales; return `<tr><td class="font-label-lg">${z.name}</td><td class="font-body-sm text-on-surface-variant">${esc(z.mix)}</td><td class="font-label-md">${num(z.nla)}</td><td class="w-28"><div class="font-label-md ${occ >= 0.95 ? 'text-secondary' : 'text-amber-300'}">${(occ * 100).toFixed(1)}%</div>${UI.bar(occ * 100, occ >= 0.95 ? 'bg-secondary' : 'bg-amber-400')}</td><td class="font-label-md">${num(z.traffic)}</td><td class="font-label-md">${num(z.rate)}</td><td class="font-label-md">${num(r, 0)}</td><td class="font-label-md">${num(z.sales)}</td><td class="font-label-md ${ocr > 0.12 ? 'text-amber-300' : 'text-secondary'}">${(ocr * 100).toFixed(1)}%</td><td class="font-body-sm">${esc(z.rec)}</td></tr>`; }).join('')}
+        <tr><td class="font-headline-sm">TOTAL</td><td class="font-body-sm text-on-surface-variant">Seluruh zona (6 lantai)</td><td class="font-label-md">${num(nla)}</td><td class="font-label-md">${((leased / nla) * 100).toFixed(1)}%</td><td class="font-label-md">${num(Z.reduce((a, z) => a + z.traffic, 0))}</td><td class="font-label-md">${num(Z.reduce((a, z) => a + z.rate, 0) / Z.length)}</td><td class="font-label-md">${num(rent)}</td><td class="font-label-md">${num(sales)}</td><td class="font-label-md">${((rent / sales) * 100).toFixed(1)}%</td><td class="font-body-sm">Target okupansi konsolidasi ≥ 95%</td></tr></tbody></table></div></section>
+      <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5 mb-5">
+        <section class="card p-5 2xl:col-span-7">${UI.h('Heatmap Footfall & Deteksi Dead-Zone', '3D people counter & Wi-Fi probe · indeks traffic relatif per sektor (SOP-VIS-02)', '', 'grid_on')}
+          <div class="grid grid-cols-6 gap-1.5"><div></div>${['Barat', 'Atrium Barat', 'Center Court', 'Atrium Timur', 'Timur'].map((h) => `<div class="lbl text-center">${h}</div>`).join('')}
+          ${heat.map(([f, v]) => `<div class="lbl self-center">${f}</div>${v.map((x) => `<div class="rounded-md h-11 flex items-center justify-center font-label-md text-label-md ${x < 40 ? 'ring-1 ring-rose-400/70' : ''}" style="background:rgba(56,189,248,${(x / 100) * 0.85 + 0.05})" title="Indeks ${x}">${x}${x < 40 ? ' ⚠' : ''}</div>`).join('')}`).join('')}</div>
+          <div class="font-label-sm text-label-sm text-on-surface-variant mt-3">⚠ Dead-zone (indeks &lt; 40): 2F Atrium Barat & Atrium Timur, Rooftop Atrium Barat → rekomendasi aktivasi event / pop-up (SOP-VIS-02).</div></section>
+        <section class="card p-5 2xl:col-span-5">${UI.h('Kontrak Jatuh Tempo & Pipeline Leasing', 'Trigger tim Leasing 6 bulan sebelum habis (SOP-COM-01)', '', 'event_upcoming')}
+          ${window.SEED.CONTRACTS.map((c) => `<div class="inner p-3 mb-2 flex items-center gap-3 ${c.m <= 3 ? 'crit-left' : c.m <= 6 ? 'warn-left' : ''}"><div class="w-12 text-center"><div class="font-headline-md text-headline-md ${c.m <= 3 ? 'text-tertiary' : c.m <= 6 ? 'text-amber-300' : ''}">${c.m}</div><div class="lbl">bulan</div></div><div class="flex-1"><div class="font-body-md text-body-md">${esc(c.t)}</div><div class="font-label-sm text-label-sm text-outline">${esc(c.act)}</div></div></div>`).join('')}
+          <div class="grid grid-cols-3 gap-2 mt-3">${[['Leased', '93.7%'], ['Fit-out', '2.1%'], ['Vacant', '4.2%']].map((r) => `<div class="inner p-2 text-center"><div class="lbl">${r[0]}</div><div class="font-headline-sm text-headline-sm">${r[1]}</div></div>`).join('')}</div></section>
+      </div>
+      ${UI.relasi('O360')}`;
+    },
+    mount(root) {
+      root.querySelectorAll('[data-sp]').forEach((b) => b.addEventListener('click', () => {
+        const t = window.SEED.TENANTS.find((x) => x.id === b.dataset.sp);
+        Store.addEvent({ from: 'O360', to: 'TEN', code: 'EVT-AR-OVERDUE', title: 'Surat peringatan ' + t.name, detail: t.pay + ' · Rp ' + t.ar + ' Jt', sev: 'P3' });
+        Store.chat({ from: 'Finance AR → ' + t.name, ch: 'Tenant App', bot: true, tenant: t.id, text: 'Surat Peringatan: tagihan unit ' + t.id + ' (' + t.pay + ', Rp ' + t.ar + ' Jt). Mohon segera melakukan pelunasan.' });
+        UI.toast('SP terkirim ke ' + t.name, 'P3', 'EVT-AR-OVERDUE → Tenant Support (SOP-FIN-02)');
+      }));
+    },
+  };
+})();

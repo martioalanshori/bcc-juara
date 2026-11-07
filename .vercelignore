@@ -1,0 +1,9 @@
+data/
+__pycache__/
+tools/
+*.zip
+*.xlsx
+*.drawio
+~$*
+.claude/
+.env.local
