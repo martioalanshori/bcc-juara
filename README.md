@@ -62,7 +62,7 @@ Reset data: tombol **Reset demo** di sidebar Command Center (tiket insiden) dan 
   ```
   Setelah semua PIN diganti, `data/PIN_AWAL.txt` terhapus otomatis. Restart server agar sesi lama berakhir.
 - Jangan membagikan folder `data/` (berisi hash PIN dan data event).
-- Batasan prototype: PIN mengunci **halaman**. API state event tetap bersama (dibutuhkan pengunjung untuk membeli), jadi perangkat yang paham API masih bisa mengirim perubahan. Produksi perlu API per aksi dengan otorisasi per peran di server. Tanpa `server.py` (mode lokal satu perangkat) PIN tidak berlaku.
+- PIN mengunci halaman, dan server memeriksa setiap perubahan data menurut peran: tanpa login hanya perubahan pembeli yang diterima (hold, pesanan, bayar, daftar tunggu); refund, check-in, ubah acara dan reset butuh PIN pengelola. Batasan prototype: aturan bisnis dan kunci tanda tangan QR masih di browser. Produksi perlu API per aksi dengan otorisasi per peran dan tanda tangan QR di server. Tanpa `server.py` (mode lokal satu perangkat) PIN tidak berlaku.
 
 ## Memperbarui aset lokal (opsional, perlu internet sekali)
 Bila menambah kelas Tailwind baru di `index.html`, `app/*.html` atau `app/js`:

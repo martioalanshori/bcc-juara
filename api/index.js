@@ -11,6 +11,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { guard } = require('./_guard.js');
 
 const ROLES = {
   pengelola: { label: 'Konsol Pengelola Acara', home: '/app/pengelola.html', pages: ['pengelola.html', 'checkin.html'], env: 'PIN_PENGELOLA' },
@@ -93,6 +94,13 @@ module.exports = async (req, res) => {
 
     if (p === '/api/evt/state') {
       if (typeof body.base !== 'number') return json(res, 400, { ok: false, error: 'base tidak valid' });
+      // Baca versi + state sekaligus (MGET atomik). Base basi -> 409 seperti biasa; selain itu periksa peran,
+      // lalu CAS memastikan tidak ada penulisan lain di antara pemeriksaan dan penyimpanan.
+      const [v0, s0] = await redis(['MGET', 'evt:v', 'evt:s']);
+      const cur = s0 ? JSON.parse(s0) : null;
+      if (+(v0 || 0) !== body.base) return json(res, 409, { ok: false, version: +(v0 || 0), state: cur, now: now() });
+      const err = guard(cur, body.state == null ? null : body.state, Object.keys(ROLES).filter((r) => hasRole(req, r)));
+      if (err) return json(res, 403, { ok: false, error: err });
       const r = await cas(String(body.base), body.state == null ? '' : JSON.stringify(body.state));
       if (r[0] === 1) return json(res, 200, { ok: true, version: r[1], now: now() });
       return json(res, 409, { ok: false, version: r[1], state: r[2] ? JSON.parse(r[2]) : null, now: now() });

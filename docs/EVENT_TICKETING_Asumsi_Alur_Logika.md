@@ -130,5 +130,10 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 ## 7. Batasan prototype
 - Tidak terhubung ke payment gateway, sistem internal Summarecon, CRM, POS, atau layanan pesan sungguhan.
 - Kamera live hanya di HTTPS/localhost. Di HTTP LAN gunakan *Foto QR*.
-- PIN per peran mengunci halaman, bukan API state bersama (dipakai pengunjung untuk membeli). Produksi perlu akun per orang, API per aksi, dan otorisasi per peran di server (EO hanya acaranya sendiri, Command Center hanya baca).
+- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server.py` dan `api/_guard.js`, kasus uji bersama `tools/tests/guard_cases.json`, penolakan 403):
+  - Tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan yang masih menunggu bayar, daftar tunggu, outbox.
+  - Command Center: seperti tanpa login, ditambah laporan gate (klaim dan tautan tiket insiden).
+  - Pengelola: semua, termasuk ubah acara dan kontrak venue, refund, check-in (halaman Check-in), batal acara, reset.
+  - Yang tidak boleh tanpa login: mengubah acara, e-ticket yang sudah terbit, pindaian, pesanan non-PENDING, kursi terjual, dan reset.
+- Batasan yang tersisa (prototipe): aturan bisnis tetap dijalankan di browser; server hanya menolak perubahan di luar peran. Kunci tanda tangan QR ada di `engine.js`, jadi orang yang membaca kode bisa membuat QR yang lolos verifikasi; pembayaran sandbox juga bisa ditandai lunas dari browser. Produksi perlu akun per orang, API per aksi, tanda tangan QR (HMAC) dan konfirmasi pembayaran dari gateway di server, serta otorisasi per acara (EO hanya acaranya sendiri).
 - Kunci tanda tangan QR ada di sisi klien demi kesederhanaan prototype. Pada produksi, tanda tangan & validasi dilakukan di server.

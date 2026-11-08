@@ -97,7 +97,13 @@ open each Excel file in Excel and save it once so the formulas recalculate.
   `data/access.json`. Sessions are HttpOnly cookies valid for 12 hours, and 5 wrong PINs lock
   the role for 60 s.
 - `POST /api/evt/reset` requires the `pengelola` session.
-- Known prototype limitation: the event state API itself is not role-authorized.
+- `POST /api/evt/state` checks the change against the caller's role before saving: `guard()` in
+  `server.py` and `api/_guard.js` (Vercel), both tested against the same cases in
+  `tools/tests/guard_cases.json`; keep the two in step. Without a session only buyer changes pass
+  (holds, new orders, pay/cancel/expire PENDING orders, waitlist); `command-center` may also change
+  gate reports; `pengelola` may change anything. Rejections are 403 and `tx()` surfaces them without
+  retrying. The rules themselves still run in the browser, and the QR signing key is client-side.
+- Python tests: `python -m unittest discover -s tools/tests -p "test_*.py"`.
 
 `data/` holds runtime secrets and state (`access.json`, `event_state.json`, `PIN_AWAL.txt`).
 Don't commit or share it.

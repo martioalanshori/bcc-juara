@@ -142,6 +142,59 @@ def persist():
     os.replace(tmp, DATA)
 
 
+# Pemeriksaan tulis state (padanan api/_guard.js; kasus uji bersama tools/tests/guard_cases.json).
+# Aturan bisnis dijalankan engine di browser; server memastikan perubahan yang butuh peran datang dari
+# sesi peran itu. Mengembalikan None bila boleh, atau pesan penolakan.
+OPEN_ORDER = ("PENDING", "PAID", "CANCELLED", "EXPIRED")
+
+
+def _d(x):
+    return x if isinstance(x, dict) else {}
+
+
+def guard(old, new, roles):
+    roles = roles or []
+    if "pengelola" in roles:
+        return None
+    if new is None:
+        return "Reset data hanya untuk pengelola."
+    if old is None:
+        return None if new.get("v") == 1 else "State awal tidak valid."
+    if old.get("events") != new.get("events") or old.get("order") != new.get("order"):
+        return "Perubahan data acara hanya untuk pengelola."
+    if old.get("scans") != new.get("scans"):
+        return "Check-in hanya dari halaman Check-in (login pengelola)."
+    if "command-center" not in roles and old.get("reports") != new.get("reports"):
+        return "Laporan gate hanya dari Command Center atau petugas gate."
+    ot, nt = _d(old.get("tickets")), _d(new.get("tickets"))
+    for k, a in ot.items():
+        if a != nt.get(k):
+            return "Perubahan e-ticket hanya untuk pengelola."
+    for k, b in nt.items():
+        if k not in ot and (b.get("status") != "ACTIVE" or b.get("checkedInAt")):
+            return "E-ticket baru harus aktif dan belum check-in."
+    oo, no = _d(old.get("orders")), _d(new.get("orders"))
+    for k, a in oo.items():
+        b = no.get(k)
+        if not b:
+            return "Pesanan tidak boleh dihapus."
+        if (a != b) if a.get("status") != "PENDING" else (b.get("status") not in OPEN_ORDER):
+            return "Refund dan perubahan pesanan lunas hanya untuk pengelola."
+    for k, b in no.items():
+        if k not in oo and b.get("status") not in ("PENDING", "PAID"):
+            return "Pesanan baru harus menunggu pembayaran atau lunas."
+    os_, ns = _d(old.get("seats")), _d(new.get("seats"))
+    for ev in set(os_) | set(ns):
+        a, b = _d(os_.get(ev)), _d(ns.get(ev))
+        for sid in set(a) | set(b):
+            x, y = a.get(sid), b.get(sid)
+            if x and x.get("st") == "SOLD" and x != y:
+                return "Kursi terjual hanya bisa dilepas pengelola (refund)."
+            if y and y.get("st") == "SOLD" and x != y and _d(no.get(y.get("order"))).get("status") != "PAID":
+                return "Kursi hanya terjual lewat pesanan yang lunas."
+    return None
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=ROOT, **kw)
@@ -240,6 +293,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if body.get("base") != DB["version"]:
                     return self._json(409, {"ok": False, "version": DB["version"], "state": DB["state"],
                                             "now": int(time.time() * 1000)})
+                err = guard(DB["state"], body.get("state"), [r for r in ROLES if self.has_role(r)])
+                if err:
+                    return self._json(403, {"ok": False, "error": err})
                 DB["version"] += 1
                 DB["state"] = body.get("state")
                 persist()

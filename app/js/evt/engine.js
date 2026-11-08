@@ -320,7 +320,7 @@
   };
   const server = {
     async get(known) { const r = await fetch(API + (known != null ? '?v=' + known : ''), { cache: 'no-store' }); return r.json(); },
-    async commit(base, st) { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base, state: st }) }); const j = await r.json(); return Object.assign({ ok: r.ok }, j); },
+    async commit(base, st) { const r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ base, state: st }) }); const j = await r.json().catch(() => ({})); return Object.assign({ ok: r.ok, status: r.status }, j); },
     async reset() { const r = await fetch('/api/evt/reset', { method: 'POST', body: '{}' }); const j = await r.json().catch(() => ({})); if (!r.ok || j.ok === false) throw new Error(j.error || 'Reset ditolak server (' + r.status + ')'); return j; },
   };
   const backend = () => (mode === 'server' ? server : local);
@@ -339,6 +339,7 @@
       if (res === NOOP) return null; // tidak ada perubahan: jangan commit (mencegah versi naik tanpa guna)
       const r = await backend().commit(base, d);
       if (r.ok) { version = r.version; state = d; if (r.now) offset = r.now - Date.now(); emit(); return res; }
+      if (r.status === 403 || r.status === 401) fail(r.error || 'Perubahan ini butuh login peran yang sesuai.'); // ditolak server: jangan diulang
       // kalah balapan: ambil state terbaru, jalankan ulang aturan di atasnya
       adopt(r); if (opts && opts.onConflict) opts.onConflict(i + 1);
     }
