@@ -216,7 +216,7 @@
   function finance(evId) {
     const e = ev(evId), t = now();
     const orders = Object.values(state.orders).filter((o) => o.ev === evId && (o.status === 'PAID' || o.status === 'REFUNDED'));
-    const totals = { orders: orders.length, gross: 0, refunded: 0, net: 0, fee: 0 };
+    const totals = { orders: orders.length, gross: 0, refunded: 0, net: 0, fee: 0, ticket: 0 }; // ticket = subtotal lunas (tanpa biaya layanan)
     const byM = {}, byT = {}, mismatches = [];
     orders.forEach((o) => {
       const m = byM[o.method || '-'] = byM[o.method || '-'] || { method: o.method || '-', orders: 0, gross: 0, refunded: 0, net: 0 };
@@ -227,7 +227,7 @@
         if (tks.some((x) => !x || x.status !== 'VOID')) mismatches.push({ order: o.id, reason: 'Pesanan refund masih punya e-ticket aktif.' });
         return;
       }
-      totals.fee += o.fee || 0;
+      totals.fee += o.fee || 0; totals.ticket += o.sub || 0;
       // Harga per item saat beli (it.price). Pesanan lama tanpa it.price: subtotal dibagi sebanding harga jenis saat ini.
       const cur = o.items.reduce((a, it) => a + typeById(e, it.type).price, 0);
       o.items.forEach((it) => {
@@ -244,13 +244,13 @@
     const tks = Object.values(state.tickets).filter((x) => x.ev === evId && x.status === 'ACTIVE');
     const started = e.start <= t;
     const attendees = started ? tks.filter((x) => x.checkedInAt).length : tks.length;
-    const share = Math.round(totals.net * fin.revShare);
+    const share = Math.round(totals.ticket * fin.revShare); // bagi hasil dari pendapatan tiket; biaya layanan milik platform
     const benefit = fin.rent + share;
     const roi = { rent: fin.rent, revShare: fin.revShare, share, cost: fin.cost, benefit, roi: fin.cost > 0 ? (benefit - fin.cost) / fin.cost : null, attendees, basis: started ? 'check-in' : 'tiket terjual', spend: fin.spend, tenantSpend: attendees * fin.spend };
     return { totals, byMethod: Object.values(byM).sort((a, b) => b.net - a.net), byType: Object.values(byT).map((b) => Object.assign(b, { gross: Math.round(b.gross) })), mismatches, roi };
   }
   // Anomali gate (SOP-EVT-03): >= 3 pindaian gagal/duplikat per gate dalam `mins` menit terakhir
-  const ANOM_MIN = 3, CLAIM_MS = 60000;
+  const ANOM_MIN = 3, CLAIM_MS = 60000, REPORT_MS = 30 * 60000;
   function anomaliesIn(d, evId, mins, t) {
     const from = t - (mins || 10) * 60000, by = {};
     d.scans.filter((s) => s.ev === evId && s.ts > from && s.result !== 'VALID' && !s.test).forEach((s) => { by[s.gate] = (by[s.gate] || 0) + 1; });
@@ -282,7 +282,7 @@
   }
   // Kursi/kuota pesanan o kembali tersedia: kabari antrean jenis yang sama (FIFO) sebanyak tiket yang dilepas
   function wakeWaitlist(d, o, reason, t) {
-    const e = d.events[o.ev]; if (!e || e.status === 'CANCELLED') return 0;
+    const e = d.events[o.ev]; if (!e || e.status !== 'PUBLISHED' || t > e.saleEnd) return 0; // penjualan tutup/batal: kursi tak bisa dibeli, jangan kabari
     const freed = {}; o.items.forEach((it) => (freed[it.type] = (freed[it.type] || 0) + 1));
     let n = 0;
     Object.entries(freed).forEach(([type, qty]) => {
@@ -586,7 +586,8 @@
       return tx((d, t) => {
         const a = anomaliesIn(d, evId, 10, t).find((x) => x.gate === gate);
         if (!a) return NOOP;
-        const r = d.reports.find((x) => x.ev === evId && x.gate === gate && x.ts > t - 10 * 60000);
+        // gate dianggap sudah ditangani selama ada laporannya dalam 30 menit terakhir (anomali panjang = 1 insiden)
+        const r = d.reports.find((x) => x.ev === evId && x.gate === gate && x.ts > t - REPORT_MS);
         if (r) { if (!claimable(r, t)) return NOOP; r.claimedBy = by; r.claimedAt = t; return r.id; }
         const id = 'GR-' + rand(4);
         d.reports.unshift({ id, ts: t, ev: evId, gate, text: 'Otomatis: ' + a.n + ' pindaian gagal/duplikat dalam 10 menit di ' + gate + '.', auto: true, claimedBy: by, claimedAt: t, ticketId: null });

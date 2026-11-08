@@ -201,7 +201,7 @@
           ${f.byType.map((b) => `<tr><td><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background:${Evt.typeById(e, b.type).color}"></span>${esc(b.name)}</td><td class="font-label-md text-label-md">${b.qty}</td><td class="font-label-md text-label-md whitespace-nowrap">${money(b.gross)}</td></tr>`).join('') || '<tr><td colspan="3" class="text-on-surface-variant">Belum ada tiket terjual.</td></tr>'}</tbody></table></section></div>
       <div class="2xl:col-span-5 flex flex-col gap-5">
         <section class="card p-5">${UI.h('ROI acara untuk mall', 'Manfaat = sewa venue + bagi hasil tiket. ROI = (manfaat - biaya) / biaya', '', 'trending_up')}
-          <div class="font-body-sm text-body-sm">${row('Sewa venue', money(R.rent))}${row('Bagi hasil tiket (' + pct(R.revShare) + ' dari neto)', money(R.share))}${row('Total manfaat', money(R.benefit))}${row('Biaya operasional mall', money(R.cost))}${row('ROI', R.roi == null ? '-' : pct(R.roi), R.roi == null ? '' : R.roi >= 0 ? 'text-emerald-300' : 'text-rose-300')}</div>
+          <div class="font-body-sm text-body-sm">${row('Sewa venue', money(R.rent))}${row('Bagi hasil tiket (' + pct(R.revShare) + ' dari pendapatan tiket)', money(R.share))}${row('Total manfaat', money(R.benefit))}${row('Biaya operasional mall', money(R.cost))}${row('ROI', R.roi == null ? '-' : pct(R.roi), R.roi == null ? '' : R.roi >= 0 ? 'text-emerald-300' : 'text-rose-300')}</div>
           <div class="inner p-3 mt-4 font-body-sm text-body-sm">${icon('storefront', 'text-primary text-[16px] align-middle')} Estimasi belanja pengunjung di tenant: <b>${money(R.tenantSpend)}</b><div class="text-on-surface-variant">${num(R.attendees)} pengunjung (${R.basis}) × ${money(R.spend)}. Tidak dihitung dalam ROI.</div></div>
           <p class="font-label-sm text-label-sm text-on-surface-variant mt-3">Angka sewa, bagi hasil, biaya dan belanja adalah asumsi${isMgr() ? ', ubah di tab Kelola acara sesuai perjanjian dengan mall.' : ' dari pengelola acara (diisi di Konsol Pengelola).'}</p></section></div></div>`;
   }
@@ -272,6 +272,8 @@
     return { title: 'Indikasi tiket palsu/calo di ' + gate, desc: (text ? text + ' ' : '') + 'Acara ' + e.name + '. Pindaian QR gagal/duplikat berulang (lihat log check-in DB-EVT).', sop: 'SOP-EVT-03', priority: 'P2', category: 'Keamanan, Parkir & Crowd', zone: 'GF', location: gate + ' · ' + e.venue.split(',')[0], source: source || 'Check-in event (DB-EVT)', cam: 'CAM-01', team: 'Regu Bravo', fromDb: 'EVT' };
   }
   function incident(e, gate, report) {
+    // Command Center: buat lewat jembatan otomatis (klaim atomik), jadi tidak bisa balapan dengan pembuatan otomatis
+    if (window.CCBridge) { CCBridge.check(); return; }
     Shell.newTicket(incidentFields(e, gate, report && report.text));
     const t0 = Store.s.tickets.length;
     const watch = Store.subscribe(() => { if (Store.s.tickets.length > t0) { watch(); const tk = Store.s.tickets[0]; if (report) Evt.linkReport(report.id, tk.id); } });

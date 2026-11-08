@@ -155,7 +155,8 @@ test('ROI = (sewa + bagi hasil - biaya) / biaya, memakai default bila e.fin koso
   const { Evt } = await loadEvt();
   const f = Evt.finance('EVT-01');
   const D = Evt.FIN_DEFAULT;
-  assert.equal(f.roi.share, Math.round(f.totals.net * D.revShare));
+  const tiket = Object.values(Evt.s.orders).filter((o) => o.ev === 'EVT-01' && o.status === 'PAID').reduce((a, o) => a + o.sub, 0);
+  assert.equal(f.roi.share, Math.round(tiket * D.revShare)); // bagi hasil dari pendapatan tiket, tanpa biaya layanan
   assert.equal(f.roi.benefit, D.rent + f.roi.share);
   assert.equal(f.roi.roi, (f.roi.benefit - D.cost) / D.cost);
   assert.equal(Evt.finance('EVT-03').roi.rent, 20000000);
@@ -258,4 +259,29 @@ test('cc-bridge: penautan gagal tidak membuat tiket insiden kedua', async () => 
   await ctx.CCBridge.check(); await ctx.CCBridge.check();
   assert.equal(tickets.length, 1);
   assert.equal(Evt.s.reports.find((r) => r.auto).ticketId, 'TCK-1');
+});
+
+// ------------------------------------------------------------------ perbaikan catatan minor
+test('penjualan sudah ditutup: refund tidak mengabari daftar tunggu', async () => {
+  const { Evt, clock } = await loadEvt();
+  const o = paidWith(Evt, 'EVT-01', 'VIP');
+  await Evt.joinWaitlist('EVT-01', 'VIP', { name: 'Z', contact: 'z@example.com', qty: 1 });
+  await Evt.updateEvent('EVT-01', { saleEnd: clock.now - 1000 });
+  await Evt.refund(o.id, 'uji');
+  assert.equal(Evt.s.waitlist.find((w) => w.name === 'Z').notified, null);
+});
+
+test('anomali panjang (> 10 menit) di gate yang sama tidak membuat laporan kedua', async () => {
+  const { Evt, clock } = await loadEvt();
+  await fail3(Evt);
+  const id = await Evt.claimAnomaly('EVT-01', GB, 'CC-1');
+  await Evt.linkReport(id, 'TCK-1');
+  clock.now += 11 * 60000;
+  await fail3(Evt);
+  assert.equal(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'), null);
+  assert.equal(Evt.s.reports.filter((r) => r.auto).length, 1);
+  clock.now += 31 * 60000; // laporan lama lewat 30 menit: anomali baru = insiden baru
+  await fail3(Evt);
+  assert.ok(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'));
+  assert.equal(Evt.s.reports.filter((r) => r.auto).length, 2);
 });
