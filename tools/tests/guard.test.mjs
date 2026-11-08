@@ -14,7 +14,7 @@ for (const c of C.cases) {
   test('guard: ' + c.name, () => {
     const err = guard(build(c.old, c.oldNull), build(c.next, c.nextNull), c.roles);
     if (c.ok) assert.equal(err, null);
-    else assert.match(String(err), /\S/);
+    else assert.ok(typeof err === 'string' && err.length > 0, 'harus ditolak');
   });
 }
 

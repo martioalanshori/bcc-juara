@@ -1,51 +1,854 @@
 {
-  "_doc": "Kasus uji pemeriksaan tulis state Event Ticketing di server. Dipakai bersama oleh guard.test.mjs (api/_guard.js) dan test_guard.py (server.py). old/next = penimpaan level atas terhadap base; oldNull/nextNull = state kosong; ok = boleh disimpan.",
-  "base": {
-    "v": 1,
-    "events": { "E": { "id": "E", "status": "PUBLISHED", "fin": { "rent": 1 } } },
-    "order": ["E"],
-    "seats": { "E": { "A1": { "st": "SOLD", "order": "BK-1" } } },
-    "qholds": { "E": [] },
-    "orders": {
-      "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] },
-      "BK-2": { "id": "BK-2", "ev": "E", "status": "PENDING", "tickets": [], "log": [] }
-    },
-    "tickets": { "T-1": { "id": "T-1", "order": "BK-1", "status": "ACTIVE", "checkedInAt": null, "gate": null } },
-    "scans": [],
-    "outbox": [],
-    "waitlist": [],
-    "reports": []
+ "_doc": "Kasus uji pemeriksaan tulis state Event Ticketing di server. Dipakai bersama oleh guard.test.mjs (api/_guard.js) dan test_guard.py (server.py). old/next = penimpaan level atas terhadap base; oldNull/nextNull = state kosong; ok = boleh disimpan.",
+ "base": {
+  "v": 1,
+  "events": {
+   "E": {
+    "id": "E",
+    "status": "PUBLISHED",
+    "fin": {
+     "rent": 1
+    }
+   }
   },
-  "cases": [
-    { "name": "pengelola boleh mengubah apa saja", "roles": ["pengelola"], "next": { "events": {} }, "ok": true },
-    { "name": "pengelola boleh reset (state kosong)", "roles": ["pengelola"], "nextNull": true, "ok": true },
-    { "name": "tanpa login: reset ditolak", "roles": [], "nextNull": true, "ok": false },
-    { "name": "tanpa login: seed awal saat state kosong boleh", "roles": [], "oldNull": true, "ok": true },
-    { "name": "tanpa login: state tanpa perubahan boleh", "roles": [], "ok": true },
-    { "name": "tanpa login: ubah acara ditolak", "roles": [], "next": { "events": { "E": { "id": "E", "status": "CANCELLED", "fin": { "rent": 1 } } } }, "ok": false },
-    { "name": "tanpa login: ubah urutan acara ditolak", "roles": [], "next": { "order": [] }, "ok": false },
-    { "name": "command center: ubah kontrak venue ditolak", "roles": ["command-center"], "next": { "events": { "E": { "id": "E", "status": "PUBLISHED", "fin": { "rent": 0 } } } }, "ok": false },
-    { "name": "tanpa login: hold kursi dan antrean boleh", "roles": [], "next": { "seats": { "E": { "A1": { "st": "SOLD", "order": "BK-1" }, "A2": { "st": "HELD", "cart": "C", "until": 9 } } }, "waitlist": [{ "id": "W-1" }], "outbox": [{ "to": "x" }] }, "ok": true },
-    { "name": "tanpa login: bayar pesanan PENDING (tiket baru, kursi SOLD milik pesanan PAID) boleh", "roles": [],
-      "next": {
-        "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "PAID", "tickets": ["T-2"], "log": [{ "text": "bayar" }] } },
-        "tickets": { "T-1": { "id": "T-1", "order": "BK-1", "status": "ACTIVE", "checkedInAt": null, "gate": null }, "T-2": { "id": "T-2", "order": "BK-2", "status": "ACTIVE", "checkedInAt": null, "gate": null } },
-        "seats": { "E": { "A1": { "st": "SOLD", "order": "BK-1" }, "B1": { "st": "SOLD", "order": "BK-2" } } }
-      }, "ok": true },
-    { "name": "tanpa login: pesanan PENDING kedaluwarsa/batal boleh", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "EXPIRED", "tickets": [], "log": [] } } }, "ok": true },
-    { "name": "tanpa login: pesanan baru PENDING boleh", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "PENDING", "tickets": [], "log": [] }, "BK-3": { "id": "BK-3", "ev": "E", "status": "PENDING", "tickets": [], "log": [] } } }, "ok": true },
-    { "name": "tanpa login: refund pesanan lunas ditolak", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "REFUNDED", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "PENDING", "tickets": [], "log": [] } } }, "ok": false },
-    { "name": "tanpa login: pesanan PENDING langsung REFUNDED ditolak", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "REFUNDED", "tickets": [], "log": [] } } }, "ok": false },
-    { "name": "tanpa login: hapus pesanan ditolak", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] } } }, "ok": false },
-    { "name": "tanpa login: pesanan baru langsung REFUNDED ditolak", "roles": [], "next": { "orders": { "BK-1": { "id": "BK-1", "ev": "E", "status": "PAID", "tickets": ["T-1"], "log": [] }, "BK-2": { "id": "BK-2", "ev": "E", "status": "PENDING", "tickets": [], "log": [] }, "BK-9": { "id": "BK-9", "ev": "E", "status": "REFUNDED", "tickets": [], "log": [] } } }, "ok": false },
-    { "name": "tanpa login: check-in tiket ditolak", "roles": [], "next": { "tickets": { "T-1": { "id": "T-1", "order": "BK-1", "status": "ACTIVE", "checkedInAt": 5, "gate": "G" } } }, "ok": false },
-    { "name": "tanpa login: VOID tiket ditolak", "roles": [], "next": { "tickets": { "T-1": { "id": "T-1", "order": "BK-1", "status": "VOID", "checkedInAt": null, "gate": null } } }, "ok": false },
-    { "name": "tanpa login: tiket baru sudah check-in ditolak", "roles": [], "next": { "tickets": { "T-1": { "id": "T-1", "order": "BK-1", "status": "ACTIVE", "checkedInAt": null, "gate": null }, "T-9": { "id": "T-9", "order": "BK-2", "status": "ACTIVE", "checkedInAt": 5, "gate": "G" } } }, "ok": false },
-    { "name": "tanpa login: tambah pindaian ditolak", "roles": [], "next": { "scans": [{ "ev": "E", "result": "INVALID" }] }, "ok": false },
-    { "name": "tanpa login: kursi SOLD tanpa pesanan lunas ditolak", "roles": [], "next": { "seats": { "E": { "A1": { "st": "SOLD", "order": "BK-1" }, "C1": { "st": "SOLD", "order": "BK-2" } } } }, "ok": false },
-    { "name": "tanpa login: kursi terjual dilepas ditolak", "roles": [], "next": { "seats": { "E": {} } }, "ok": false },
-    { "name": "tanpa login: laporan gate ditolak", "roles": [], "next": { "reports": [{ "id": "GR-1" }] }, "ok": false },
-    { "name": "command center: klaim dan tautkan laporan boleh", "roles": ["command-center"], "next": { "reports": [{ "id": "GR-1", "claimedBy": "CC-1", "ticketId": "TCK-1" }] }, "ok": true },
-    { "name": "command center: check-in tetap ditolak", "roles": ["command-center"], "next": { "scans": [{ "ev": "E" }] }, "ok": false }
-  ]
+  "order": [
+   "E"
+  ],
+  "seats": {
+   "E": {
+    "A1": {
+     "st": "SOLD",
+     "order": "BK-1"
+    },
+    "B1": {
+     "st": "HELD",
+     "cart": "C2",
+     "order": "BK-2",
+     "until": 9
+    }
+   }
+  },
+  "qholds": {
+   "E": []
+  },
+  "orders": {
+   "BK-1": {
+    "id": "BK-1",
+    "ev": "E",
+    "status": "PAID",
+    "tickets": [
+     "T-1"
+    ],
+    "log": [],
+    "items": [
+     {
+      "type": "V",
+      "seat": "A1"
+     }
+    ]
+   },
+   "BK-2": {
+    "id": "BK-2",
+    "ev": "E",
+    "status": "PENDING",
+    "tickets": [],
+    "log": [],
+    "items": [
+     {
+      "type": "V",
+      "seat": "B1"
+     }
+    ],
+    "until": 9
+   }
+  },
+  "tickets": {
+   "T-1": {
+    "id": "T-1",
+    "order": "BK-1",
+    "status": "ACTIVE",
+    "checkedInAt": null,
+    "gate": null
+   }
+  },
+  "scans": [],
+  "outbox": [],
+  "waitlist": [],
+  "reports": [],
+  "seededAt": 1
+ },
+ "cases": [
+  {
+   "name": "pengelola boleh mengubah apa saja",
+   "roles": [
+    "pengelola"
+   ],
+   "next": {
+    "events": {}
+   },
+   "ok": true
+  },
+  {
+   "name": "pengelola boleh reset (state kosong)",
+   "roles": [
+    "pengelola"
+   ],
+   "nextNull": true,
+   "ok": true
+  },
+  {
+   "name": "tanpa login: reset ditolak",
+   "roles": [],
+   "nextNull": true,
+   "ok": false
+  },
+  {
+   "name": "tanpa login: seed awal saat state kosong boleh",
+   "roles": [],
+   "oldNull": true,
+   "ok": true
+  },
+  {
+   "name": "tanpa login: state tanpa perubahan boleh",
+   "roles": [],
+   "ok": true
+  },
+  {
+   "name": "tanpa login: ubah acara ditolak",
+   "roles": [],
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "CANCELLED",
+      "fin": {
+       "rent": 1
+      }
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: ubah urutan acara ditolak",
+   "roles": [],
+   "next": {
+    "order": []
+   },
+   "ok": false
+  },
+  {
+   "name": "command center: ubah kontrak venue ditolak",
+   "roles": [
+    "command-center"
+   ],
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 0
+      }
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: hold kursi dan antrean boleh",
+   "roles": [],
+   "next": {
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "A2": {
+       "st": "HELD",
+       "cart": "C",
+       "until": 9
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      }
+     }
+    },
+    "waitlist": [
+     {
+      "id": "W-1"
+     }
+    ],
+    "outbox": [
+     {
+      "to": "x"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "tanpa login: bayar pesanan PENDING (tiket baru, kursi SOLD milik pesanan PAID) boleh",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-2"
+      ],
+      "log": [
+       {
+        "text": "bayar"
+       }
+      ],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     }
+    },
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     },
+     "T-2": {
+      "id": "T-2",
+      "order": "BK-2",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     }
+    },
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "B1": {
+       "st": "SOLD",
+       "order": "BK-2"
+      }
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "tanpa login: pesanan PENDING kedaluwarsa/batal boleh",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "EXPIRED",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "tanpa login: pesanan baru PENDING boleh",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     },
+     "BK-3": {
+      "id": "BK-3",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": [],
+      "until": 9
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "tanpa login: refund pesanan lunas ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "REFUNDED",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: pesanan PENDING langsung REFUNDED ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "REFUNDED",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: hapus pesanan ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: pesanan baru langsung REFUNDED ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     },
+     "BK-9": {
+      "id": "BK-9",
+      "ev": "E",
+      "status": "REFUNDED",
+      "tickets": [],
+      "log": [],
+      "items": []
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: check-in tiket ditolak",
+   "roles": [],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": 5,
+      "gate": "G"
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: VOID tiket ditolak",
+   "roles": [],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "VOID",
+      "checkedInAt": null,
+      "gate": null
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: tiket baru sudah check-in ditolak",
+   "roles": [],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     },
+     "T-9": {
+      "id": "T-9",
+      "order": "BK-2",
+      "status": "ACTIVE",
+      "checkedInAt": 5,
+      "gate": "G"
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: tambah pindaian ditolak",
+   "roles": [],
+   "next": {
+    "scans": [
+     {
+      "ev": "E",
+      "result": "INVALID"
+     }
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: kursi SOLD tanpa pesanan lunas ditolak",
+   "roles": [],
+   "next": {
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "C1": {
+       "st": "SOLD",
+       "order": "BK-2"
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      }
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: kursi terjual dilepas ditolak",
+   "roles": [],
+   "next": {
+    "seats": {
+     "E": {}
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: laporan gate ditolak",
+   "roles": [],
+   "next": {
+    "reports": [
+     {
+      "id": "GR-1"
+     }
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "command center: klaim dan tautkan laporan boleh",
+   "roles": [
+    "command-center"
+   ],
+   "next": {
+    "reports": [
+     {
+      "id": "GR-1",
+      "claimedBy": "CC-1",
+      "ticketId": "TCK-1"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "command center: check-in tetap ditolak",
+   "roles": [
+    "command-center"
+   ],
+   "next": {
+    "scans": [
+     {
+      "ev": "E"
+     }
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: ubah versi skema v ditolak (memicu seed ulang)",
+   "roles": [],
+   "next": {
+    "v": 2
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: ubah seededAt ditolak",
+   "roles": [
+    "command-center"
+   ],
+   "next": {
+    "seededAt": 2
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: kursi SOLD atas nama pesanan lunas lama ditolak",
+   "roles": [],
+   "next": {
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      },
+      "Z9": {
+       "st": "SOLD",
+       "order": "BK-1"
+      }
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: tiket baru untuk pesanan lunas lama ditolak",
+   "roles": [],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     },
+     "T-8": {
+      "id": "T-8",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: qholds rusak ditolak",
+   "roles": [],
+   "next": {
+    "qholds": {
+     "E": 5
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: outbox null ditolak",
+   "roles": [],
+   "next": {
+    "outbox": null
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: pesanan PENDING dengan items bukan array ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": 5,
+      "until": 9
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: hold kursi tanpa batas waktu ditolak",
+   "roles": [],
+   "next": {
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      },
+      "C1": {
+       "st": "HELD",
+       "cart": "X",
+       "until": 9000000000000000.0
+      }
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: tiket baru ber-id toString sudah check-in ditolak",
+   "roles": [],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     },
+     "toString": {
+      "id": "toString",
+      "order": "BK-2",
+      "status": "ACTIVE",
+      "checkedInAt": 5
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tanpa login: pesanan baru ber-id constructor REFUNDED ditolak",
+   "roles": [],
+   "next": {
+    "orders": {
+     "BK-1": {
+      "id": "BK-1",
+      "ev": "E",
+      "status": "PAID",
+      "tickets": [
+       "T-1"
+      ],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "A1"
+       }
+      ]
+     },
+     "BK-2": {
+      "id": "BK-2",
+      "ev": "E",
+      "status": "PENDING",
+      "tickets": [],
+      "log": [],
+      "items": [
+       {
+        "type": "V",
+        "seat": "B1"
+       }
+      ],
+      "until": 9
+     },
+     "constructor": {
+      "id": "constructor",
+      "ev": "E",
+      "status": "REFUNDED",
+      "items": [],
+      "tickets": [],
+      "log": []
+     }
+    }
+   },
+   "ok": false
+  }
+ ]
 }

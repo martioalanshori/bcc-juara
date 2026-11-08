@@ -99,7 +99,7 @@ module.exports = async (req, res) => {
       const [v0, s0] = await redis(['MGET', 'evt:v', 'evt:s']);
       const cur = s0 ? JSON.parse(s0) : null;
       if (+(v0 || 0) !== body.base) return json(res, 409, { ok: false, version: +(v0 || 0), state: cur, now: now() });
-      const err = guard(cur, body.state == null ? null : body.state, Object.keys(ROLES).filter((r) => hasRole(req, r)));
+      const err = guard(cur, body.state == null ? null : body.state, Object.keys(ROLES).filter((r) => hasRole(req, r)), now());
       if (err) return json(res, 403, { ok: false, error: err });
       const r = await cas(String(body.base), body.state == null ? '' : JSON.stringify(body.state));
       if (r[0] === 1) return json(res, 200, { ok: true, version: r[1], now: now() });

@@ -142,56 +142,121 @@ def persist():
     os.replace(tmp, DATA)
 
 
-# Pemeriksaan tulis state (padanan api/_guard.js; kasus uji bersama tools/tests/guard_cases.json).
-# Aturan bisnis dijalankan engine di browser; server memastikan perubahan yang butuh peran datang dari
-# sesi peran itu. Mengembalikan None bila boleh, atau pesan penolakan.
+# Pemeriksaan tulis state (padanan api/_guard.js; kasus uji bersama tools/tests/guard_cases.json, ubah
+# keduanya bersamaan). Aturan bisnis dijalankan engine di browser; server memastikan perubahan yang butuh
+# peran datang dari sesi peran itu dan bentuk data tidak dirusak. None = boleh, selain itu pesan penolakan.
 OPEN_ORDER = ("PENDING", "PAID", "CANCELLED", "EXPIRED")
+HOLD_MAX_MS = 60 * 60000
+ARRS = ("order", "scans", "outbox", "waitlist", "reports")
+OBJS = ("events", "seats", "qholds", "orders", "tickets")
+_MISSING = object()
+
+
+def _same(a, b):
+    """Kesetaraan ketat seperti same() di JS: bool bukan angka, tipe harus cocok."""
+    if isinstance(a, bool) or isinstance(b, bool):
+        return type(a) is type(b) and a == b
+    if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        return a == b
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, dict):
+        return a.keys() == b.keys() and all(_same(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return len(a) == len(b) and all(_same(x, y) for x, y in zip(a, b))
+    return a == b
+
+
+def _num(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool)
 
 
 def _d(x):
     return x if isinstance(x, dict) else {}
 
 
-def guard(old, new, roles):
+def guard(old, new, roles, now_ms=None):
     roles = roles or []
     if "pengelola" in roles:
         return None
     if new is None:
         return "Reset data hanya untuk pengelola."
+    if not isinstance(new, dict) or not _same(new.get("v", _MISSING), 1):
+        return "Format data tidak valid."
     if old is None:
-        return None if new.get("v") == 1 else "State awal tidak valid."
-    if old.get("events") != new.get("events") or old.get("order") != new.get("order"):
+        return None  # seed awal setelah reset
+    lim = (now_ms if now_ms is not None else time.time() * 1000) + HOLD_MAX_MS
+    ok_until = lambda u: _num(u) and u <= lim
+    if not _same(old.get("v", _MISSING), new.get("v", _MISSING)) or not _same(old.get("seededAt", _MISSING), new.get("seededAt", _MISSING)):
+        return "Versi data contoh hanya diubah pengelola (reset)."
+    if any(not isinstance(new.get(k), list) for k in ARRS) or any(not isinstance(new.get(k), dict) for k in OBJS):
+        return "Format data tidak valid."
+    if not _same(old.get("events"), new["events"]) or not _same(old.get("order"), new["order"]):
         return "Perubahan data acara hanya untuk pengelola."
-    if old.get("scans") != new.get("scans"):
+    if not _same(old.get("scans"), new["scans"]):
         return "Check-in hanya dari halaman Check-in (login pengelola)."
-    if "command-center" not in roles and old.get("reports") != new.get("reports"):
+    if "command-center" not in roles and not _same(old.get("reports"), new["reports"]):
         return "Laporan gate hanya dari Command Center atau petugas gate."
-    ot, nt = _d(old.get("tickets")), _d(new.get("tickets"))
-    for k, a in ot.items():
-        if a != nt.get(k):
-            return "Perubahan e-ticket hanya untuk pengelola."
-    for k, b in nt.items():
-        if k not in ot and (b.get("status") != "ACTIVE" or b.get("checkedInAt")):
-            return "E-ticket baru harus aktif dan belum check-in."
-    oo, no = _d(old.get("orders")), _d(new.get("orders"))
+    oo, no = _d(old.get("orders")), new["orders"]
+    ot, nt = _d(old.get("tickets")), new["tickets"]
+
+    def fresh(oid):  # pesanan yang lunas di penulisan ini (sebelumnya PENDING atau belum ada)
+        return isinstance(oid, str) and isinstance(no.get(oid), dict) and no[oid].get("status") == "PAID"             and (oid not in oo or _d(oo[oid]).get("status") == "PENDING")
+
     for k, a in oo.items():
         b = no.get(k)
-        if not b:
+        if not isinstance(b, dict):
             return "Pesanan tidak boleh dihapus."
-        if (a != b) if a.get("status") != "PENDING" else (b.get("status") not in OPEN_ORDER):
+        if (not _same(a, b)) if _d(a).get("status") != "PENDING" else (b.get("status") not in OPEN_ORDER):
             return "Refund dan perubahan pesanan lunas hanya untuk pengelola."
     for k, b in no.items():
+        if not isinstance(b, dict):
+            return "Format pesanan tidak valid."
+        if k in oo and _same(oo[k], b):
+            continue
         if k not in oo and b.get("status") not in ("PENDING", "PAID"):
             return "Pesanan baru harus menunggu pembayaran atau lunas."
-    os_, ns = _d(old.get("seats")), _d(new.get("seats"))
+        if not all(isinstance(b.get(f), list) for f in ("items", "tickets", "log")):
+            return "Format pesanan tidak valid."
+        if b.get("status") == "PENDING" and not ok_until(b.get("until")):
+            return "Batas waktu pembayaran tidak valid."
+    for k, a in ot.items():
+        if k not in nt or not _same(a, nt[k]):
+            return "Perubahan e-ticket hanya untuk pengelola."
+    for k, x in nt.items():
+        if k in ot:
+            continue
+        if not isinstance(x, dict) or x.get("status") != "ACTIVE" or x.get("checkedInAt"):
+            return "E-ticket baru harus aktif dan belum check-in."
+        if not fresh(x.get("order")) or k not in no[x["order"]]["tickets"]:
+            return "E-ticket hanya terbit untuk pesanan yang baru lunas."
+    os_, ns = _d(old.get("seats")), new["seats"]
     for ev in set(os_) | set(ns):
-        a, b = _d(os_.get(ev)), _d(ns.get(ev))
-        for sid in set(a) | set(b):
-            x, y = a.get(sid), b.get(sid)
-            if x and x.get("st") == "SOLD" and x != y:
+        a = _d(os_.get(ev))
+        if ev in ns and not isinstance(ns[ev], dict):
+            return "Format kursi tidak valid."
+        bb = _d(ns.get(ev))
+        for sid in set(a) | set(bb):
+            x, y = a.get(sid, _MISSING), bb.get(sid, _MISSING)
+            if x is not _MISSING and y is not _MISSING and _same(x, y):
+                continue
+            if isinstance(x, dict) and x.get("st") == "SOLD":
                 return "Kursi terjual hanya bisa dilepas pengelola (refund)."
-            if y and y.get("st") == "SOLD" and x != y and _d(no.get(y.get("order"))).get("status") != "PAID":
-                return "Kursi hanya terjual lewat pesanan yang lunas."
+            if y is _MISSING:
+                continue
+            if not isinstance(y, dict):
+                return "Format kursi tidak valid."
+            if y.get("st") == "SOLD":
+                if not fresh(y.get("order")) or not any(isinstance(it, dict) and it.get("seat") == sid for it in no[y["order"]]["items"]):
+                    return "Kursi hanya terjual lewat pesanan yang lunas."
+            elif y.get("st") == "HELD":
+                if not ok_until(y.get("until")):
+                    return "Batas waktu hold kursi tidak valid."
+            else:
+                return "Status kursi tidak valid."
+    for q in new["qholds"].values():
+        if not isinstance(q, list) or any(not isinstance(h, dict) or not ok_until(h.get("until")) for h in q):
+            return "Format hold kuota tidak valid."
     return None
 
 
@@ -290,10 +355,10 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(400, {"ok": False, "error": "JSON tidak valid"})
         if self.path == "/api/evt/state":
             with LOCK:
-                if body.get("base") != DB["version"]:
+                if type(body.get("base")) is not int or body.get("base") != DB["version"]:
                     return self._json(409, {"ok": False, "version": DB["version"], "state": DB["state"],
                                             "now": int(time.time() * 1000)})
-                err = guard(DB["state"], body.get("state"), [r for r in ROLES if self.has_role(r)])
+                err = guard(DB["state"], body.get("state"), [r for r in ROLES if self.has_role(r)], time.time() * 1000)
                 if err:
                     return self._json(403, {"ok": False, "error": err})
                 DB["version"] += 1

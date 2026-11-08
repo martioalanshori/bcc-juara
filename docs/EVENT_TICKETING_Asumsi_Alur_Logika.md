@@ -134,6 +134,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
   - Tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan yang masih menunggu bayar, daftar tunggu, outbox.
   - Command Center: seperti tanpa login, ditambah laporan gate (klaim dan tautan tiket insiden).
   - Pengelola: semua, termasuk ubah acara dan kontrak venue, refund, check-in (halaman Check-in), batal acara, reset.
-  - Yang tidak boleh tanpa login: mengubah acara, e-ticket yang sudah terbit, pindaian, pesanan non-PENDING, kursi terjual, dan reset.
+  - Yang tidak boleh tanpa login: mengubah acara, versi skema (`v`, `seededAt`, karena perubahan itu memicu seed ulang), e-ticket yang sudah terbit, pindaian, pesanan non-PENDING, kursi terjual, dan reset.
+  - Kursi SOLD dan e-ticket baru hanya diterima untuk pesanan yang lunas di penulisan itu (sebelumnya PENDING atau baru), dan kursinya harus ada di item pesanan. Hold kursi, hold kuota, dan batas bayar pesanan PENDING paling lama 60 menit ke depan. Bentuk data (array/objek di level atas, item/log/tiket pesanan) diperiksa supaya penulisan rusak tidak membuat semua halaman gagal.
 - Batasan yang tersisa (prototipe): aturan bisnis tetap dijalankan di browser; server hanya menolak perubahan di luar peran. Kunci tanda tangan QR ada di `engine.js`, jadi orang yang membaca kode bisa membuat QR yang lolos verifikasi; pembayaran sandbox juga bisa ditandai lunas dari browser. Produksi perlu akun per orang, API per aksi, tanda tangan QR (HMAC) dan konfirmasi pembayaran dari gateway di server, serta otorisasi per acara (EO hanya acaranya sendiri).
 - Kunci tanda tangan QR ada di sisi klien demi kesederhanaan prototype. Pada produksi, tanda tangan & validasi dilakukan di server.
