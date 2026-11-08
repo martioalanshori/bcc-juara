@@ -380,7 +380,8 @@
     const links = isMgr()
       ? `<a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a><a class="btn-ghost" href="checkin.html" target="_blank">${icon('qr_code_scanner', 'text-[16px]')} Check-in ponsel</a><button class="btn-ghost" id="evt-reset" title="Kembalikan data event ke kondisi awal">${icon('restart_alt', 'text-[16px]')} Reset</button>`
       : `<a class="btn-ghost" href="pengelola.html" target="_blank">${icon('admin_panel_settings', 'text-[16px]')} Konsol Pengelola</a><a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a>`;
-    let h = Evt.modeBanner() + `<section class="card pagebar">
+    const stale = isMgr() && Evt.demoStale() ? `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-stale-banner>${icon('history', 'text-amber-300 text-[20px]')}<span class="flex-1 min-w-[220px]"><b class="text-amber-300">Data contoh dibuat ${Evt.fmtDT(Evt.s.seededAt)}.</b> Jadwal acara contoh sudah lewat, jadi penjualan dan uji tekan bisa ditolak. Reset data sebelum demo.</span><button class="btn-ghost" data-stale-reset>${icon('restart_alt', 'text-[16px]')} Reset sekarang</button></div>` : '';
+    let h = Evt.modeBanner() + stale + `<section class="card pagebar">
       <div class="pagebar-info">
         ${Evt.mode === 'server' ? '<span class="stat live"><span class="dot"></span>Server LAN</span><span class="stat">Versi data <b>' + Evt.version + '</b></span>' : '<span class="stat live"><span class="dot warn"></span>Mode lokal (1 perangkat)</span>'}
         ${isMgr() ? UI.chip('Event Organizer, kendali penuh', 'bg-primary/15 text-primary') : UI.chip('Manajemen mal, read-only', 'bg-secondary/15 text-secondary')}
@@ -433,6 +434,7 @@
     el.querySelectorAll('[data-ev]').forEach((b) => b.addEventListener('click', () => { ui.ev = b.dataset.ev; ui.seatSel = null; ui.race = null; redraw(); }));
     el.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.stopCam(); ui.tab = b.dataset.tab; redraw(); }));
     el.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => { ui.ev = b.dataset.goto; ui.tab = 'ringkasan'; redraw(); }));
+    const sr = el.querySelector('[data-stale-reset]'); if (sr) sr.addEventListener('click', () => { const b = el.querySelector('#evt-reset'); if (b) b.click(); });
     const rs = el.querySelector('#evt-reset'); if (rs) rs.addEventListener('click', async () => { if (!confirm('Reset seluruh data Event Ticketing (semua perangkat di LAN) ke kondisi awal?')) return; try { await Evt.reset(); } catch (err) { return UI.toast(esc(err.message), 'P2'); } ui.seatSel = null; ui.race = null; redraw(); UI.toast('Data event direset', 'P4'); });
     bindRows(el); bindInc(el);
     // daftar acara (pengelola)

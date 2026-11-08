@@ -285,3 +285,11 @@ test('anomali panjang (> 10 menit) di gate yang sama tidak membuat laporan kedua
   assert.ok(await Evt.claimAnomaly('EVT-01', GB, 'CC-1'));
   assert.equal(Evt.s.reports.filter((r) => r.auto).length, 2);
 });
+
+// ------------------------------------------------------------------ mode demo: peringatan data contoh kedaluwarsa
+test('data contoh lebih dari 12 jam dianggap kedaluwarsa', async () => {
+  const { Evt, clock } = await loadEvt();
+  assert.equal(Evt.demoStale(), false);
+  clock.now += 13 * 3600000;
+  assert.equal(Evt.demoStale(), true);
+});

@@ -396,6 +396,9 @@
     return ready;
   }
   // Banner peringatan mode lokal (dipakai portal, konsol pengelola, check-in)
+  // Data contoh dibuat > 12 jam lalu: jadwal acara contoh (relatif terhadap waktu seed) sudah lewat, perlu Reset sebelum demo
+  const STALE_MS = 12 * 3600000;
+  const demoStale = () => !!(state && state.seededAt && now() - state.seededAt > STALE_MS);
   function modeBanner() {
     if (mode === 'server') return '';
     const file = location.protocol === 'file:';
@@ -748,7 +751,7 @@
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
