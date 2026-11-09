@@ -745,14 +745,27 @@
     }).join('');
     return `<div class="seatmap-wrap"><div class="seatmap"><div class="stage">${esc(e.layout.stage)}</div>${rows}</div></div>`;
   }
+  // CSV untuk Excel regional Indonesia: pemisah titik koma, BOM UTF-8, baris CRLF.
+  // Teks berawalan = + - @ tab CR diberi kutip tunggal agar tidak dijalankan sebagai rumus (CSV injection).
+  function csvText(rows) {
+    const cell = (v) => {
+      if (v == null) return '';
+      if (typeof v !== 'string') return String(v);
+      if (/^[=+\-@\t\r]/.test(v)) v = "'" + v;
+      return /[";,\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    return '﻿' + rows.map((r) => r.map(cell).join(';')).join('\r\n');
+  }
   function csv(name, rows) {
-    const s = rows.map((r) => r.map((v) => { v = v == null ? '' : String(v); return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(',')).join('\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + s], { type: 'text/csv;charset=utf-8' })); a.download = name; a.click();
+    const url = URL.createObjectURL(new Blob([csvText(rows)], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
