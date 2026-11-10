@@ -22,6 +22,10 @@ browser.
 
 Tampilan mobile-first untuk membeli tiket.
 
+- **Beranda (landing) responsif** ponsel sampai desktop: hero acara unggulan bergeser otomatis, info kunjungan hari ini,
+  acara terdekat, "Minggu ini di mal" (hari ini / akhir pekan / 7 hari), Laku keras, kategori, deretan per kategori,
+  area mal (Main Atrium, Summarecon Hall, Outdoor Plaza, Exhibition Hall, Kids Zone), promo tenant untuk pemegang
+  tiket, ajakan untuk penyelenggara, panduan pengunjung, dan footer. Foto masih foto demo (lihat `app/img/demo/CREDITS.md`).
 - **Daftar acara** di Summarecon Mall Bandung, lengkap dengan jadwal, venue dan status penjualan.
 - **Pilih kategori dulu, baru kursi**: halaman kategori (harga, sisa kuota, jumlah tiket festival),
   lalu denah khusus kategori itu (kursi kategori lain terkunci). Kursi yang dipilih langsung dikunci (ditahan)

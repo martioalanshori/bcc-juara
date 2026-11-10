@@ -6,35 +6,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#181b1f" />
   <title>Event & Tiket · Summarecon Mall Bandung</title>
-  <script src="/app/js/core/theme.js?v=26"></script>
-  <script src="/app/js/core/router.js?v=26"></script>
+  <script src="/app/js/core/theme.js?v=27"></script>
+  <script src="/app/js/core/router.js?v=27"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=26" />
-  <link rel="stylesheet" href="/app/css/app.css?v=26" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=27" />
+  <link rel="stylesheet" href="/app/css/app.css?v=27" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
+  <!-- Header: ponsel 2 baris (merek + alat, lalu kolom cari); desktop 1 baris dengan tautan. Lebar ikut .pv-wrap (beranda lebar). -->
   <header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-xl border-b border-white/5">
-    <div class="max-w-xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-      <a href="/pengunjung" class="flex items-center gap-2 min-w-0">
-        <span class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[18px]">local_activity</span></span>
+    <div class="pv-wrap pv-head">
+      <a href="/pengunjung" class="pv-brand flex items-center gap-2 min-w-0">
+        <span class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-[18px]">local_activity</span></span>
         <span class="flex flex-col leading-tight min-w-0"><span class="font-headline-sm text-headline-sm truncate">Summarecon Mall Bandung</span><span class="font-label-sm text-label-sm text-secondary">Event &amp; Tiket</span></span>
       </a>
-      <div class="flex items-center gap-2"><span id="mode" class="font-label-sm text-label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant whitespace-nowrap"></span><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
-    </div>
-    <div class="max-w-xl mx-auto px-4 pb-3">
-      <form class="pv-search" id="f-q" role="search">
+      <form class="pv-search pv-head-search" id="f-q" role="search">
         <div class="pv-search-field">
           <input id="q" type="search" placeholder="Cari acara, kategori, atau lokasi" autocomplete="off" aria-label="Cari acara, kategori, atau lokasi" enterkeyhint="search">
           <div class="pv-ph" id="q-ph" aria-hidden="true" hidden><span class="pv-ph-pre">Cari</span><span class="pv-ph-win" id="q-roll"></span></div>
         </div>
         <button type="submit" class="pv-search-btn" aria-label="Cari"><span class="material-symbols-outlined">search</span></button>
       </form>
+      <nav class="pv-head-links" aria-label="Menu pengunjung">
+        <a href="/pengunjung/tiket" data-nav="tiket"><span class="material-symbols-outlined text-[20px]">confirmation_number</span>Tiket saya</a>
+        <a href="/pengunjung/inbox" data-nav="inbox"><span class="material-symbols-outlined text-[20px]">mail</span>Kotak masuk</a>
+      </nav>
+      <div class="pv-head-tools flex items-center gap-2"><span id="mode" class="font-label-sm text-label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant whitespace-nowrap"></span><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
     </div>
   </header>
 
-  <main id="app" class="max-w-xl mx-auto px-4 pt-4 pb-40"></main>
+  <main id="app" class="pv-wrap px-4 pt-4 pb-40"></main>
 
-  <nav class="fixed bottom-0 inset-x-0 z-40 bg-surface-container-low/95 backdrop-blur-xl border-t border-white/5" style="padding-bottom: env(safe-area-inset-bottom)">
+  <nav class="pv-bnav fixed bottom-0 inset-x-0 z-40 bg-surface-container-low/95 backdrop-blur-xl border-t border-white/5" style="padding-bottom: env(safe-area-inset-bottom)">
     <div class="max-w-xl mx-auto grid grid-cols-3" id="bnav">
       <a href="/pengunjung" data-nav="home" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">event</span><span class="font-label-sm text-label-sm">Acara</span></a>
       <a href="/pengunjung/tiket" data-nav="tiket" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">confirmation_number</span><span class="font-label-sm text-label-sm">Tiket saya</span></a>
@@ -44,8 +47,8 @@
   <div id="modal-root"></div>
   <div id="toast-root" style="top: calc(var(--hdr, 56px) + 8px)" class="fixed inset-x-0 z-[90] flex flex-col gap-2 items-center px-4 pointer-events-none"></div>
 
-  <script src="/app/vendor/qrcode.js?v=26"></script>
-  <script src="/app/js/event/engine.js?v=26"></script>
-  <script src="/app/js/event/visitor.js?v=26"></script>
+  <script src="/app/vendor/qrcode.js?v=27"></script>
+  <script src="/app/js/event/engine.js?v=27"></script>
+  <script src="/app/js/event/visitor.js?v=27"></script>
 </body>
 </html>

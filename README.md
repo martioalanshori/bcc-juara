@@ -17,7 +17,7 @@
 ## Tiga path
 | Path | Halaman | Untuk | Isi |
 |---|---|---|---|
-| `/pengunjung` | `app/pages/pengunjung.html` | **1. Pengunjung** yang membeli tiket (mobile-first) | Acara → pilih kategori → pilih kursi (kategori bernomor kursi) → data peserta → bayar (sandbox) → e-ticket QR, Tiket Saya, Kotak Masuk, daftar tunggu |
+| `/pengunjung` | `app/pages/pengunjung.html` | **1. Pengunjung** yang membeli tiket (beranda responsif sampai desktop, langkah beli mobile-first) | Acara → pilih kategori → pilih kursi (kategori bernomor kursi) → data peserta → bayar (sandbox) → e-ticket QR, Tiket Saya, Kotak Masuk, daftar tunggu |
 | `/pengelola` | `app/pages/pengelola.html` | **2. Pengelola acara** (panitia/EO) | Daftar acara: **tambah, publikasikan, batalkan (refund otomatis), hapus**; Kelola acara (jadwal, venue, periode jual, jenis tiket, harga, kuota); Denah kursi (blokir, uji rebutan kursi); Peserta & transaksi (ubah data, refund, CSV); Check-in QR; Notifikasi & waitlist; lapor anomali ke Command Center |
 | `/command-center` | `app/pages/command-center.html` | **3. Manajemen mall 360** | 9 dashboard Command Center. Menu **Pemantauan Event** hanya baca: portofolio semua acara, dampak ke parkir/CCTV/BMS/tenant, Gate & Keamanan → tiket insiden SOP-EVT-03, transaksi |
 | `/checkin` | `app/pages/checkin.html` | Petugas gate (tim pengelola) | Pemindai QR di ponsel + tombol lapor ke Command Center |

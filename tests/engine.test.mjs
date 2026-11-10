@@ -310,3 +310,18 @@ test('denah terkunci kategori: kursi kategori lain disabled, kursi milik sendiri
   assert.ok(!/ disabled/.test(btn(mineB)), 'kursi kategori lain milik sendiri tetap bisa dilepas');
   assert.ok(!/ disabled/.test(Evt.seatMap('EVT-01', { only: a.id })), 'tanpa lock (konsol pengelola): hanya disorot, tidak dikunci');
 });
+
+test('data contoh: 12 acara di 5 area mal, foto demo ada di disk, beberapa hampir habis', async () => {
+  const { existsSync } = await import('node:fs');
+  const { Evt } = await loadEvt();
+  const evs = Evt.s.order.map(Evt.ev);
+  assert.equal(evs.length, 12);
+  assert.equal(new Set(evs.map((e) => e.venue.split(',')[0])).size, 5, 'tersebar di 5 area');
+  for (const e of evs) {
+    assert.ok(e.img, e.id + ' punya foto');
+    assert.ok(existsSync(new URL('..' + e.img, import.meta.url)), 'file foto ' + e.img + ' ada (ganti foto dengan nama yang sama)');
+  }
+  const hot = evs.filter((e) => { const s = Evt.stats(e.id); const t = e.types.filter((x) => x.onSale); const tot = t.reduce((a, x) => a + s.per[x.id].total, 0); return tot && t.reduce((a, x) => a + s.per[x.id].available, 0) / tot < 0.3; });
+  assert.ok(hot.length >= 2, 'beranda "Laku keras" terisi');
+  assert.ok(JSON.stringify(Evt.s).length < 350 * 1024, 'state contoh tetap kecil (kuota gratis)');
+});

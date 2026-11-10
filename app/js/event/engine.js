@@ -151,6 +151,7 @@
     ev2.layout.rows.filter((r) => r.t === 'UMM').forEach((row) => {
       for (let c = 1; c <= row.n; c += 2) if (R() < 0.42) mkOrder(ev2, [row.r + c, row.r + (c + 1)].filter((x, i) => c + i <= row.n).map((x) => ({ type: 'UMM', seat: x })), {});
     });
+    seedMore(s, t, mkOrder, R);
     // Notifikasi contoh
     Object.values(s.orders).filter((o) => o.status === 'PAID').slice(0, 4).forEach((o) => {
       s.outbox.push({ ts: o.paidAt, ch: 'Email', to: o.email, order: o.id, subject: 'E-ticket ' + s.events[o.ev].name, body: 'Pembayaran diterima. ' + o.tickets.length + ' e-ticket terlampir.' });
@@ -158,6 +159,75 @@
     });
     s.outbox.sort((a, b) => b.ts - a.ts);
     return s;
+  }
+
+  // Acara contoh tambahan untuk beranda portal (EVT-04..12): tersebar di area mal & kategori, jadwal relatif terhadap
+  // waktu seed (hari ini, akhir pekan, minggu ini) agar beranda selalu terisi. Foto demo di app/img/demo (lihat CREDITS.md).
+  const IMG = (f) => '/app/img/demo/' + f + '.jpg';
+  const AREA = {
+    atrium: 'Main Atrium, GF · Summarecon Mall Bandung',
+    hall: 'Summarecon Hall, Lt. 3 · Summarecon Mall Bandung',
+    plaza: 'Outdoor Plaza, GF · Summarecon Mall Bandung',
+    expo: 'Exhibition Hall, Lt. 1 · Summarecon Mall Bandung',
+    kids: 'Kids Zone, Lt. 2 · Summarecon Mall Bandung',
+  };
+  const GATES = { atrium: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'], hall: ['Gate Hall Lt. 3'], plaza: ['Gate Plaza Timur'], expo: ['Gate Exhibition Lt. 1'], kids: ['Gate Kids Zone'] };
+  function seedMore(s, t, mkOrder, R) {
+    const H = 3600000, D = 24 * H;
+    const day = (d, h, m) => { const x = new Date(t); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() + d); x.setHours(h, m || 0); return x.getTime(); };
+    const toSat = (6 - new Date(t).getDay() + 7) % 7 || 7; // Sabtu berikutnya (bukan hari ini)
+    const soon = (h) => Math.ceil((t + h * H) / H) * H;
+    const open = (o) => ({ id: o.id, name: o.name, tagline: o.tagline, cat: o.cat, start: o.start, doors: o.start - (o.doorsH || 1) * H, venue: AREA[o.area], img: IMG(o.img),
+      layout: o.layout || { stage: o.stage || 'AREA ACARA', rows: [] }, desc: o.desc, saleStart: t - 10 * D, saleEnd: o.start - H / 2, status: 'PUBLISHED',
+      holdMin: 8, maxPerOrder: o.max || 6, color: o.color, gates: GATES[o.area], blocked: [], types: o.types });
+    const fes = (id, name, price, quota, perks, color) => ({ id, name, price, color, seated: false, onSale: true, quota, perks });
+    const evs = [
+      open({ id: 'EVT-04', name: 'Bazar Kuliner Nusantara', tagline: '60+ tenant jajanan dari Sabang sampai Merauke', cat: 'Kuliner', area: 'plaza', img: 'ev-kuliner', color: '#f59e0b', start: soon(2), doorsH: 0.5,
+        desc: 'Bazar kuliner malam di Outdoor Plaza. Tiket masuk sudah termasuk satu minuman; Paket Kuliner berisi voucher jajan Rp50.000 yang berlaku di semua tenant bazar.',
+        types: [fes('MSK', 'Tiket Masuk', 25000, 200, 'Termasuk 1 minuman', '#f59e0b'), fes('PKT', 'Paket Kuliner', 60000, 40, 'Tiket masuk + voucher jajan Rp50.000', '#fb7185')] }),
+      open({ id: 'EVT-05', name: 'Pameran Kendaraan Listrik Bandung 2026', tagline: 'Mobil & motor listrik terbaru, test ride di area parkir', cat: 'Pameran', area: 'expo', img: 'ev-mobil-listrik', color: '#22c55e', start: day(toSat, 10),
+        desc: 'Pameran kendaraan listrik dengan 20 peserta pameran. Tiket Test Ride berlaku untuk satu sesi uji kendara 15 menit; bawa SIM yang masih berlaku.',
+        types: [fes('HRN', 'Tiket Harian', 35000, 300, 'Akses pameran sepanjang hari', '#22c55e'), fes('TRD', 'Test Ride + Tiket', 75000, 20, 'Satu sesi uji kendara 15 menit, wajib SIM', '#38bdf8')] }),
+      open({ id: 'EVT-06', name: 'Workshop Lukis Cat Air untuk Anak', tagline: 'Usia 5-12 tahun, semua alat disediakan', cat: 'Anak', area: 'kids', img: 'ev-lukis-anak', color: '#ec4899', start: day(toSat, 10), max: 3,
+        desc: 'Kelas melukis cat air 90 menit bersama ilustrator lokal. Kuas, cat, kertas, dan celemek disediakan; hasil karya dibawa pulang. Satu pendamping boleh menunggu di area Kids Zone.',
+        types: [fes('ANK', 'Peserta Anak', 120000, 16, 'Usia 5-12 tahun, termasuk alat lukis', '#ec4899')] }),
+      open({ id: 'EVT-07', name: 'Bandung Jazz Night', tagline: 'Malam jazz bersama kuartet & big band Bandung', cat: 'Konser', area: 'atrium', img: 'ev-jazz', color: '#6366f1', start: day(toSat + 1, 19, 30), doorsH: 1.5, layout: ATRIUM, max: 4,
+        desc: 'Konser jazz dua sesi di Main Atrium. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
+        types: [{ id: 'VIP', name: 'VIP', price: 550000, color: '#c084fc', seated: true, onSale: true, perks: 'Baris A-B, welcome drink' }, { id: 'GLD', name: 'Gold', price: 350000, color: '#facc15', seated: true, onSale: true, perks: 'Baris C-F' }, { id: 'SLV', name: 'Silver', price: 200000, color: '#2dd4bf', seated: true, onSale: true, perks: 'Baris G-L' }, fes('FES', 'Festival (Berdiri)', 120000, 200, 'Area berdiri belakang, tanpa nomor kursi', '#fb7185')] }),
+      open({ id: 'EVT-08', name: 'Zumba Party Sabtu Pagi', tagline: 'Olahraga bareng 60 menit, cocok untuk semua umur', cat: 'Olahraga', area: 'plaza', img: 'ev-zumba', color: '#14b8a6', start: day(toSat, 7),
+        desc: 'Zumba bersama instruktur bersertifikat di Outdoor Plaza. Tiket termasuk air mineral dan handuk kecil.',
+        types: [fes('PST', 'Peserta', 50000, 60, 'Termasuk air mineral & handuk', '#14b8a6')] }),
+      open({ id: 'EVT-09', name: 'Pameran Seni Rupa "Garis Kota"', tagline: '40 karya perupa muda Bandung', cat: 'Pameran', area: 'expo', img: 'ev-pameran-seni', color: '#a855f7', start: day(2, 10),
+        desc: 'Pameran lukisan, fotografi, dan instalasi tentang wajah kota Bandung. Tur Kurator berlangsung pukul 15:00 untuk kelompok kecil.',
+        types: [fes('MSK', 'Tiket Masuk', 20000, 150, 'Akses pameran', '#a855f7'), fes('TUR', 'Tur Kurator', 50000, 20, 'Tur 45 menit pukul 15:00', '#f472b6')] }),
+      open({ id: 'EVT-10', name: 'Turnamen Esports Antar-SMA Bandung', tagline: 'Final 8 tim, nonton langsung di layar besar', cat: 'Esports', area: 'hall', img: 'ev-esports', color: '#0ea5e9', start: day(5, 13), layout: HALL,
+        desc: 'Babak final turnamen esports pelajar se-Bandung. Kursi bernomor; Tribun Depan termasuk merchandise turnamen.',
+        types: [{ id: 'PRM', name: 'Tribun Depan', price: 75000, color: '#f472b6', seated: true, onSale: true, perks: 'Baris A-C, merchandise' }, { id: 'REG', name: 'Tribun', price: 35000, color: '#60a5fa', seated: true, onSale: true, perks: 'Baris D-H' }] }),
+      open({ id: 'EVT-11', name: 'Teater Boneka "Si Kancil"', tagline: 'Pertunjukan keluarga 60 menit', cat: 'Anak', area: 'hall', img: 'ev-teater-anak', color: '#f97316', start: day(toSat + 1, 10), layout: HALL, max: 5,
+        desc: 'Teater boneka dengan cerita rakyat Si Kancil untuk anak dan keluarga. Anak di bawah 2 tahun tidak perlu tiket bila dipangku.',
+        types: [{ id: 'PRM', name: 'Keluarga Depan', price: 120000, color: '#f472b6', seated: true, onSale: true, perks: 'Baris A-C' }, { id: 'REG', name: 'Reguler', price: 80000, color: '#60a5fa', seated: true, onSale: true, perks: 'Baris D-H' }] }),
+      open({ id: 'EVT-12', name: 'Festival Kopi Priangan', tagline: 'Kopi dari 30 roastery Jawa Barat', cat: 'Kuliner', area: 'plaza', img: 'ev-kopi', color: '#a16207', start: day(9, 10),
+        desc: 'Festival kopi dengan sesi cupping gratis tiap jam. Kelas Seduh Manual berlangsung 90 menit bersama barista juara regional.',
+        types: [fes('MSK', 'Tiket Masuk', 30000, 250, 'Termasuk 2 cupping', '#a16207'), fes('KLS', 'Kelas Seduh Manual', 150000, 25, 'Kelas 90 menit, alat disediakan', '#f59e0b')] }),
+    ];
+    evs.forEach((e) => { s.events[e.id] = e; s.order.push(e.id); s.seats[e.id] = {}; s.qholds[e.id] = []; });
+    Object.assign(s.events['EVT-01'], { img: IMG('ev-akustik') });
+    Object.assign(s.events['EVT-02'], { img: IMG('ev-demoday') });
+    Object.assign(s.events['EVT-03'], { img: IMG('ev-komedi') });
+    // Penjualan contoh: beberapa acara hampir habis (muncul di "Laku keras")
+    const sell = (ev, type, n) => { let left = n; while (left > 0) { const q = Math.min(left, 1 + Math.floor(R() * 3)); mkOrder(ev, Array.from({ length: q }, () => ({ type })), {}); left -= q; } };
+    const sellSeats = (ev, prob) => ev.layout.rows.forEach((row) => { let c = 1; while (c <= row.n) { const k = 1 + Math.floor(R() * 4); const seats = []; for (let j = 0; j < k && c <= row.n; j++, c++) seats.push(row.r + c); if (R() < prob[row.t]) mkOrder(ev, seats.map((x) => ({ type: row.t, seat: x })), {}); } });
+    const E = (id) => s.events[id];
+    // Jumlah dijaga kecil: setiap pesanan menambah ukuran state yang dikirim ke semua perangkat (kuota gratis Vercel/Upstash).
+    sell(E('EVT-04'), 'MSK', 40); sell(E('EVT-04'), 'PKT', 33);
+    sell(E('EVT-05'), 'HRN', 45); sell(E('EVT-05'), 'TRD', 13);
+    sell(E('EVT-06'), 'ANK', 14);
+    sellSeats(E('EVT-07'), { VIP: 0.35, GLD: 0.2, SLV: 0.1 });
+    sell(E('EVT-08'), 'PST', 49);
+    sell(E('EVT-09'), 'MSK', 18); sell(E('EVT-09'), 'TUR', 6);
+    sellSeats(E('EVT-10'), { PRM: 0.3, REG: 0.12 });
+    sellSeats(E('EVT-11'), { PRM: 0.9, REG: 0.75 });
+    sell(E('EVT-12'), 'MSK', 12); sell(E('EVT-12'), 'KLS', 4);
   }
 
   // ------------------------------------------------------------------ query helpers (read-only)

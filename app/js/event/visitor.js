@@ -44,7 +44,7 @@
   const avail = (e) => { const s = E.stats(e.id); const sale = e.types.filter((t) => t.onSale).map((t) => s.per[t.id]); const total = sale.reduce((a, p) => a + p.total - p.blocked, 0); const left = sale.reduce((a, p) => a + p.available, 0); return { left, total, pct: total ? (left / total) * 100 : 0 }; };
 
   // ---------------------------------------------------------------- komponen katalog
-  const ICON = { Konser: 'music_note', Teknologi: 'memory', Komedi: 'theater_comedy', Pameran: 'storefront', Olahraga: 'sports_soccer', Anak: 'child_care', Kuliner: 'restaurant' };
+  const ICON = { Konser: 'music_note', Teknologi: 'memory', Komedi: 'theater_comedy', Pameran: 'storefront', Olahraga: 'sports_soccer', Anak: 'child_care', Kuliner: 'restaurant', Esports: 'sports_esports' };
   const evIcon = (cat) => ICON[cat] || 'celebration';
   const shortVenue = (v) => String(v || '').split(' · ')[0];
   const priceFrom = (e) => { const p = e.types.filter((t) => t.onSale).map((t) => t.price); return p.length ? Math.min(...p) : null; };
@@ -57,7 +57,8 @@
     if (a.pct < 30) return ['Sisa ' + a.left + ' tiket', 'bg-amber-500/15 text-amber-300'];
     return ['Tersedia', 'bg-emerald-500/15 text-emerald-300'];
   }
-  const banner = (e, big) => `<div class="pv-banner ${big ? 'pv-banner-lg' : ''}" style="--c:${esc(e.color)}">${ic(evIcon(e.cat), 'pv-banner-ic')}
+  // Banner acara: foto bila ada (e.img), selain itu gradien warna acara + ikon kategori.
+  const banner = (e, big) => `<div class="pv-banner ${big ? 'pv-banner-lg' : ''} ${e.img ? 'has-img' : ''}" style="--c:${esc(e.color)}">${e.img ? `<img class="pv-banner-img" src="${esc(e.img)}" alt="" loading="lazy" decoding="async">` : ic(evIcon(e.cat), 'pv-banner-ic')}
     <div class="pv-banner-txt"><span class="pv-tag">${esc(e.cat)}</span>${big ? `<div><div class="pv-banner-title">${esc(e.name)}</div>${e.tagline ? `<div class="pv-banner-sub">${esc(e.tagline)}</div>` : ''}</div>` : ''}</div></div>`;
   const card = (e) => { const [l, c] = availChip(e); return `<a href="/pengunjung/e/${e.id}" class="pv-card">${banner(e)}<div class="p-3 flex flex-col gap-1 flex-1">
       <h3 class="font-label-lg text-label-lg pv-clamp2">${esc(e.name)}</h3>
@@ -77,26 +78,124 @@
 
   // ---------------------------------------------------------------- views
   const V = {};
+  // ---------------------------------------------------------------- beranda (landing)
+  // Urutan section: hero, info kunjungan, acara terdekat, minggu ini, laku keras, kategori, deretan per kategori,
+  // area mal, promo tenant, ajukan acara, panduan pengunjung, footer. Section tanpa data tidak ditampilkan.
+  const MALL = { hours: '10:00 - 22:00', address: 'Kawasan Summarecon Bandung, Gedebage, Kota Bandung' };
+  const AREAS = [
+    { key: 'Main Atrium', floor: 'GF', img: 'area-atrium', note: 'Panggung utama di bawah kubah' },
+    { key: 'Summarecon Hall', floor: 'Lt. 3', img: 'area-hall', note: 'Auditorium kursi bernomor' },
+    { key: 'Outdoor Plaza', floor: 'GF', img: 'area-plaza', note: 'Bazar, festival & olahraga' },
+    { key: 'Exhibition Hall', floor: 'Lt. 1', img: 'area-expo', note: 'Pameran & expo' },
+    { key: 'Kids Zone', floor: 'Lt. 2', img: 'area-kids', note: 'Kelas & acara anak' },
+  ];
+  // Contoh promo tenant untuk pemegang e-ticket (statis, ganti dengan data tenant sebenarnya).
+  const PROMOS = [
+    { img: 'promo-fnb', place: 'Food Court, Lt. 3', title: 'Diskon 15% makan malam', text: 'Tunjukkan e-ticket acara hari yang sama di kasir tenant food court yang ikut serta.' },
+    { img: 'promo-kopi', place: 'Kedai kopi, GF', title: 'Gratis upsize minuman', text: 'Berlaku 2 jam sebelum acara dimulai. Satu kali per e-ticket.' },
+    { img: 'promo-fashion', place: 'Area fashion, Lt. 1-2', title: 'Potongan Rp50.000', text: 'Minimal belanja Rp300.000 di tenant fashion yang ikut serta, sampai 7 hari setelah acara.' },
+    { img: 'promo-bioskop', place: 'Bioskop, Lt. 3', title: 'Beli 1 gratis 1 popcorn', text: 'Untuk pembelian tiket film di hari yang sama dengan acaramu.' },
+  ];
+  const GUIDE = [
+    { icon: 'local_parking', title: 'Parkir & akses', items: ['Parkir mobil di basement dan gedung parkir, motor di sisi timur.', 'Turun di lobi utama untuk ojek daring dan taksi.', 'Datang 30-60 menit lebih awal saat akhir pekan.'] },
+    { icon: 'qr_code_2', title: 'Masuk ke acara', items: ['Buka e-ticket di menu Tiket saya, tunjukkan QR ke petugas gate.', 'Satu QR berlaku untuk satu orang dan satu kali masuk.', 'Tangkapan layar QR tetap bisa dipindai.'] },
+    { icon: 'currency_exchange', title: 'Refund & pembatalan', items: ['Bila acara dibatalkan pengelola, dana kembali otomatis.', 'Pesanan yang belum dibayar batal sendiri setelah batas waktu.', 'Pertanyaan pesanan: siapkan kode booking BK-....'] },
+    { icon: 'accessible', title: 'Fasilitas', items: ['Kursi roda dapat dipinjam di Customer Service GF.', 'Musala, ruang laktasi, dan toilet ramah difabel di tiap lantai.', 'Area acara bebas rokok.'] },
+  ];
+  const img = (f) => '/app/img/demo/' + f + '.jpg';
+  const area = (e) => shortVenue(e.venue).split(',')[0];
+  const inArea = (e, key) => area(e) === key;
+  const dayStart = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const sec = (id, title, icon, body, more) => `<section class="pv-sec-home" id="sec-${id}"><div class="pv-sec-head"><h2 class="font-headline-sm text-headline-sm flex items-center gap-1.5">${icon ? ic(icon, 'text-[20px] text-primary') : ''}${title}</h2>${more || ''}</div>${body}</section>`;
+  let weekTab = 'today';
+  let areaF = null; // filter area mal di beranda
+  let heroIdx = 0;
+
+  function weekList(all) {
+    const t0 = dayStart(E.now()), D = 86400000;
+    const dow = new Date(E.now()).getDay(); const toSat = (6 - dow + 7) % 7;
+    const range = { today: [t0, t0 + D], weekend: dow === 0 ? [t0, t0 + D] : [t0 + toSat * D, t0 + (toSat + 2) * D], week: [t0, t0 + 7 * D] }[weekTab];
+    return all.filter((e) => e.start >= Math.max(range[0], E.now() - 3 * 3600000) && e.start < range[1]).sort((a, b) => a.start - b.start);
+  }
+  function homeSections(all) {
+    const open = all.filter((e) => E.saleState(e).open);
+    const upcoming = all.filter((e) => e.start > E.now() - 3 * 3600000).sort((a, b) => a.start - b.start);
+    const hero = (open.length ? open : all).slice().sort((a, b) => a.start - b.start).slice(0, 5);
+    const hot = open.filter((e) => { const a = avail(e); return a.left > 0 && a.pct < 30; }).sort((x, y) => avail(x).pct - avail(y).pct);
+    const today = all.filter((e) => dayStart(e.start) === dayStart(E.now()));
+    const cats = [...new Set(all.map((e) => e.cat))];
+    const byCat = cats.map((c) => [c, upcoming.filter((e) => e.cat === c)]).filter(([, l]) => l.length >= 2);
+    heroIdx = Math.min(heroIdx, Math.max(0, hero.length - 1));
+
+    const heroHtml = hero.length ? `<section class="pv-hero" aria-roledescription="carousel" aria-label="Acara unggulan">
+      <div class="pv-hero-track" data-rail="hero">${hero.map((e, i) => `<a href="/pengunjung/e/${e.id}" class="pv-hero-slide" aria-label="${esc(e.name)}" data-hero="${i}">${banner(e, true)}
+        <div class="pv-hero-cta"><span>${E.fmtShort(e.start)}, ${E.fmtTime(e.start)} WIB · ${esc(area(e))}</span><span class="btn !py-2">${ic('confirmation_number', 'text-[18px]')} Beli tiket</span></div></a>`).join('')}</div>
+      ${hero.length > 1 ? `<div class="pv-hero-dots" role="tablist">${hero.map((e, i) => `<button type="button" data-hero-dot="${i}" class="${i === heroIdx ? 'on' : ''}" aria-label="Slide ${i + 1}: ${esc(e.name)}"></button>`).join('')}</div>` : ''}</section>` : '';
+
+    const info = `<section class="pv-info">${[
+      ['schedule', 'Buka hari ini', MALL.hours],
+      ['local_activity', 'Acara hari ini', today.length ? today.length + ' acara' : 'Belum ada'],
+      ['door_front', 'Gate acara', 'Dibuka 30-60 menit sebelum mulai'],
+      ['local_parking', 'Parkir', 'Basement & gedung parkir'],
+    ].map(([i, k, v]) => `<div class="pv-info-item">${ic(i, 'text-primary text-[22px]')}<div><div class="font-label-sm text-label-sm text-on-surface-variant">${k}</div><div class="font-label-lg text-label-lg">${v}</div></div></div>`).join('')}</section>`;
+
+    const week = weekList(all);
+    const weekHtml = sec('week', 'Minggu ini di mal', 'event_upcoming', `<div class="pv-seg" role="tablist">${[['today', 'Hari ini'], ['weekend', 'Akhir pekan'], ['week', '7 hari ke depan']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${weekTab === k}" class="${weekTab === k ? 'on' : ''}" data-week="${k}">${l}</button>`).join('')}</div>
+      <div class="pv-list">${week.map((e) => { const d = new Date(e.start); return `<a href="/pengunjung/e/${e.id}" class="pv-list-row"><div class="pv-date"><b>${d.getDate()}</b><span>${d.toLocaleDateString('id-ID', { month: 'short' })}</span></div>
+        <div class="min-w-0 flex-1"><div class="font-label-lg text-label-lg truncate">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant truncate">${d.toLocaleDateString('id-ID', { weekday: 'long' })}, ${E.fmtTime(e.start)} WIB · ${esc(area(e))}</div></div>
+        <div class="text-right shrink-0"><div class="font-label-sm text-label-sm text-on-surface-variant">Mulai dari</div><div class="font-label-lg text-label-lg text-primary">${priceTxt(e)}</div></div></a>`; }).join('') || `<div class="inner p-4 font-body-sm text-body-sm text-on-surface-variant">Belum ada acara di rentang ini. Coba tab lain.</div>`}</div>`);
+
+    const catTiles = sec('cat', 'Jelajahi kategori', 'category', `<div class="pv-cats">${cats.map((c) => `<button type="button" class="pv-cat" data-cat="${esc(c)}">${ic(evIcon(c), 'text-[26px]')}<span>${esc(c)}</span><small>${all.filter((e) => e.cat === c).length} acara</small></button>`).join('')}</div>`);
+
+    const areas = AREAS.map((a) => ({ ...a, n: upcoming.filter((e) => inArea(e, a.key)).length })).filter((a) => a.n);
+    const areaHtml = areas.length ? sec('area', 'Jelajahi area mal', 'map', `<div class="pv-areas">${areas.map((a) => `<button type="button" class="pv-area" data-area="${esc(a.key)}"><img src="${img(a.img)}" alt="" loading="lazy"><span class="pv-area-txt"><b>${esc(a.key)}</b><small>${esc(a.floor)} · ${a.n} acara</small><small class="pv-area-note">${esc(a.note)}</small></span></button>`).join('')}</div>`) : '';
+
+    const promoHtml = sec('promo', 'Promo tenant untuk pemegang tiket', 'sell', `<p class="font-body-sm text-body-sm text-on-surface-variant -mt-1 mb-3">Contoh promo. Tunjukkan e-ticket di kasir tenant yang ikut serta.</p>
+      <div class="pv-row4">${PROMOS.map((p) => `<article class="pv-promo"><img src="${img(p.img)}" alt="" loading="lazy"><div class="p-3"><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(p.place)}</div><div class="font-label-lg text-label-lg mt-0.5">${esc(p.title)}</div><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${esc(p.text)}</p></div></article>`).join('')}</div>`);
+
+    const creator = `<section class="pv-creator"><div><div class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Untuk penyelenggara acara</div>
+      <h2 class="pv-creator-title">Gelar acaramu di Summarecon Mall Bandung</h2>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Lima area acara dari 50 sampai 400 pengunjung, penjualan tiket dengan kursi bernomor, check-in QR, dan laporan langsung ke tim mal.</p></div>
+      <div class="flex flex-wrap gap-2"><a class="btn" href="/pengelola">${ic('admin_panel_settings', 'text-[18px]')} Konsol pengelola</a><button type="button" class="btn-ghost" data-creator>${ic('call', 'text-[18px]')} Hubungi tim event</button></div></section>`;
+
+    const guide = sec('panduan', 'Panduan pengunjung', 'info', `<div class="pv-row4">${GUIDE.map((g) => `<details class="pv-guide"><summary>${ic(g.icon, 'text-primary text-[22px]')}<span class="flex-1">${esc(g.title)}</span>${ic('expand_more', 'pv-guide-chev')}</summary>
+      <ul>${g.items.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></details>`).join('')}</div>`);
+
+    return heroHtml + info
+      + sec('terdekat', 'Acara di Summarecon Mall', 'local_activity', `<div class="pv-grid">${upcoming.slice(0, 8).map(card).join('')}</div>`, upcoming.length > 8 ? `<button type="button" class="pv-more" data-cat="__all">Lihat semua ${ic('chevron_right', 'text-[18px]')}</button>` : '')
+      + weekHtml
+      + (hot.length ? sec('hot', 'Laku keras', 'local_fire_department', `<div class="pv-grid">${hot.slice(0, 4).map(card).join('')}</div>`) : '')
+      + catTiles
+      + byCat.map(([c, l]) => sec('k-' + c.toLowerCase(), esc(c) + ' di mal', evIcon(c), `<div class="pv-rail" data-rail="k-${esc(c)}">${l.map((e) => `<div class="pv-rail-item">${card(e)}</div>`).join('')}</div>`, `<button type="button" class="pv-more" data-cat="${esc(c)}">Lihat semua ${ic('chevron_right', 'text-[18px]')}</button>`)).join('')
+      + areaHtml + promoHtml + creator + guide + footer();
+  }
+
+  function footer() {
+    const col = (title, links) => `<div><div class="pv-foot-h">${title}</div>${links.map(([h, l]) => `<a href="${h}">${l}</a>`).join('')}</div>`;
+    return `<footer class="pv-foot"><div class="pv-foot-grid">
+      <div class="pv-foot-about"><div class="flex items-center gap-2 mb-2">${ic('local_activity', 'text-primary')}<b class="font-headline-sm text-headline-sm">Summarecon Mall Bandung</b></div>
+        <p>Tiket acara di Summarecon Mall Bandung: konser, pameran, kuliner, acara anak, dan lainnya.</p>
+        <p class="mt-2">${ic('location_on', 'text-[16px] align-middle')} ${esc(MALL.address)}<br>${ic('schedule', 'text-[16px] align-middle')} Buka setiap hari ${MALL.hours}</p></div>
+      ${col('Pengunjung', [['/pengunjung/tiket', 'Tiket saya'], ['/pengunjung/inbox', 'Kotak masuk'], ['#sec-panduan', 'Panduan pengunjung']])}
+      ${col('Penyelenggara', [['/pengelola', 'Konsol pengelola'], ['/checkin', 'Check-in gate']])}
+      ${col('Untuk staf', [['/command-center', 'Command Center'], ['/', 'Pilih peran']])}
+      <div><div class="pv-foot-h">Pembayaran (simulasi)</div><div class="flex flex-wrap gap-1.5">${['QRIS', 'Virtual account', 'E-wallet', 'Kartu kredit'].map((m) => `<span class="pv-pay">${m}</span>`).join('')}</div></div>
+    </div><div class="pv-foot-bot"><span>Prototipe Bandung Build Challenge 2026. Data contoh, pembayaran simulasi.</span><a href="/app/img/demo/CREDITS.md" target="_blank" rel="noopener">Kredit foto demo</a></div></footer>`;
+  }
+
   V.home = () => {
     const all = E.s.order.map(E.ev).filter((e) => e && e.status !== 'DRAFT');
     if (!all.length) return `<div class="card p-6 text-center font-body-sm text-body-sm text-on-surface-variant">Belum ada acara yang dipublikasikan.</div>`;
-    const cats = [...new Set(all.map((e) => e.cat))];
-    const chips = `<div class="pv-rail pv-chips mb-5" data-rail="cat"><button class="chip-btn ${!catF ? 'on' : ''}" data-cat="">Semua</button>${cats.map((c) => `<button class="chip-btn ${catF === c ? 'on' : ''}" data-cat="${esc(c)}">${ic(evIcon(c), 'text-[16px]')}${esc(c)}</button>`).join('')}</div>`;
     const q = query.trim().toLowerCase();
-    if (q || catF) {
-      const hit = all.filter((e) => (!catF || e.cat === catF) && (!q || [e.name, e.tagline, e.venue, e.cat].join(' ').toLowerCase().includes(q)));
-      return chips + `<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${hit.length} acara${q ? ` untuk "${esc(query.trim())}"` : ''}${catF ? ` di kategori ${esc(catF)}` : ''}</p>
+    if (q || catF || areaF) {
+      const cats = [...new Set(all.map((e) => e.cat))];
+      const chips = `<div class="pv-rail pv-chips mb-4" data-rail="cat"><button class="chip-btn ${!catF || catF === '__all' ? 'on' : ''}" data-cat="__all">Semua</button>${cats.map((c) => `<button class="chip-btn ${catF === c ? 'on' : ''}" data-cat="${esc(c)}">${ic(evIcon(c), 'text-[16px]')}${esc(c)}</button>`).join('')}</div>`;
+      const hit = all.filter((e) => (!catF || catF === '__all' || e.cat === catF) && (!areaF || inArea(e, areaF)) && (!q || [e.name, e.tagline, e.venue, e.cat].join(' ').toLowerCase().includes(q))).sort((a, b) => a.start - b.start);
+      return `<button type="button" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-primary mb-3" data-reset>${ic('arrow_back', 'text-[16px]')} Beranda</button>${chips}
+        <div class="flex flex-wrap items-center gap-2 mb-3"><p class="font-body-sm text-body-sm text-on-surface-variant">${hit.length} acara${q ? ` untuk "${esc(query.trim())}"` : ''}${catF && catF !== '__all' ? ` di kategori ${esc(catF)}` : ''}${areaF ? ` di ${esc(areaF)}` : ''}</p>${areaF ? `<button type="button" class="chip-btn on" data-area="">${esc(areaF)} ${ic('close', 'text-[14px]')}</button>` : ''}</div>
         <div class="pv-grid">${hit.map(card).join('') || `<div class="inner p-4 font-body-sm text-body-sm text-on-surface-variant">Tidak ada acara yang cocok. Coba kata lain atau pilih Semua.</div>`}</div>`;
     }
-    const open = all.filter((e) => E.saleState(e).open);
-    const hero = (open.length ? open : all).slice(0, 5);
-    const soon = all.filter((e) => e.start > E.now()).sort((x, y) => x.start - y.start);
-    const hot = open.filter((e) => { const a = avail(e); return a.left > 0 && a.pct < 30; }).sort((x, y) => avail(x).pct - avail(y).pct);
-    return `<div class="pv-rail mb-4" data-rail="hero">${hero.map((e) => `<a href="/pengunjung/e/${e.id}" class="pv-hero-item">${banner(e, true)}</a>`).join('')}</div>
-      ${chips}
-      ${rail('soon', 'Segera berlangsung', 'event_upcoming', soon)}
-      ${rail('hot', 'Hampir habis', 'local_fire_department', hot)}
-      <section class="mb-4"><h2 class="font-headline-sm text-headline-sm mb-2">Semua acara di Summarecon Mall Bandung</h2><div class="pv-grid">${all.map(card).join('')}</div></section>`;
+    return homeSections(all);
   };
 
   V.event = (id) => {
@@ -306,10 +405,32 @@
     if (p[0] === 'inbox') return { name: 'inbox', args: [] };
     return { name: 'home', args: [] };
   }
+  // Hero carousel: titik mengikuti posisi geser, klik titik melompat, geser otomatis tiap 6 dtk
+  // (berhenti saat disentuh/diarahkan kursor, tab tersembunyi, atau kurangi gerakan).
+  let heroHold = false;
+  function heroGo(i, smooth) {
+    const tr = app.querySelector('.pv-hero-track'); if (!tr) return;
+    const n = tr.children.length; heroIdx = ((i % n) + n) % n;
+    tr.scrollTo({ left: tr.children[heroIdx].offsetLeft - tr.firstElementChild.offsetLeft, behavior: smooth ? 'smooth' : 'auto' });
+    app.querySelectorAll('[data-hero-dot]').forEach((d) => d.classList.toggle('on', +d.dataset.heroDot === heroIdx));
+  }
+  function bindHero() {
+    const tr = app.querySelector('.pv-hero-track'); if (!tr) return;
+    let t = null;
+    tr.addEventListener('scroll', () => { clearTimeout(t); t = setTimeout(() => { const w = tr.children[0].offsetWidth || 1; const i = Math.round(tr.scrollLeft / w); if (i !== heroIdx) { heroIdx = i; app.querySelectorAll('[data-hero-dot]').forEach((d) => d.classList.toggle('on', +d.dataset.heroDot === i)); } }, 80); }, { passive: true });
+    const hero = tr.closest('.pv-hero');
+    ['pointerenter', 'focusin', 'touchstart'].forEach((ev) => hero.addEventListener(ev, () => (heroHold = true), { passive: true }));
+    ['pointerleave', 'focusout'].forEach((ev) => hero.addEventListener(ev, () => (heroHold = false)));
+    app.querySelectorAll('[data-hero-dot]').forEach((d) => d.addEventListener('click', () => heroGo(+d.dataset.heroDot, true)));
+  }
+  if (!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    setInterval(() => { if (cur.name === 'home' && !document.hidden && !heroHold && app.querySelector('.pv-hero-track')) heroGo(heroIdx + 1, true); }, 6000);
+  }
   function render(keepScroll) {
     const y = window.scrollY;
     const rails = {}; app.querySelectorAll('[data-rail]').forEach((r) => (rails[r.dataset.rail] = r.scrollLeft));
     app.innerHTML = E.modeBanner() + V[cur.name](...cur.args);
+    document.body.classList.toggle('pv-wide', cur.name === 'home'); // beranda selebar desktop, langkah beli tetap sempit
     bind();
     tick();
     const nav = { home: 'home', event: 'home', cats: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox' }[cur.name];
@@ -353,7 +474,16 @@
     const cc = app.querySelector('#cancel'); if (cc) cc.addEventListener('click', () => { if (confirm('Batalkan pesanan dan lepas kursi?')) act(() => E.cancel(id), 'Pesanan dibatalkan, kursi dilepas.'); });
     const rs = app.querySelector('#resend'); if (rs) rs.addEventListener('click', () => act(() => E.resend(id), 'E-ticket dikirim ulang ke email & WhatsApp (simulasi).'));
     const ics = app.querySelector('#ics'); if (ics) ics.addEventListener('click', () => downloadIcs(E.s.orders[id]));
-    app.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { catF = b.dataset.cat || null; render(true); }));
+    // Beranda: filter kategori/area membuka hasil; tombol Beranda mengosongkan semua filter.
+    const showResults = () => { render(); window.scrollTo(0, 0); };
+    app.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { catF = b.dataset.cat || null; showResults(); }));
+    app.querySelectorAll('[data-area]').forEach((b) => b.addEventListener('click', () => { areaF = b.dataset.area || null; showResults(); }));
+    app.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => { catF = null; areaF = null; query = ''; qIn.value = ''; roll.sync(); showResults(); }));
+    app.querySelectorAll('[data-week]').forEach((b) => b.addEventListener('click', () => { weekTab = b.dataset.week; render(true); }));
+    const cr = app.querySelector('[data-creator]');
+    if (cr) cr.addEventListener('click', () => modal('Hubungi tim event mal', `<p class="font-body-sm text-body-sm text-on-surface-variant">Contoh kontak untuk prototipe. Ganti dengan kontak tim event Summarecon Mall Bandung.</p>
+      <ul class="mt-3 flex flex-col gap-2 font-body-sm text-body-sm"><li>${ic('support_agent', 'text-primary text-[18px] align-middle')} Customer Service, GF dekat lobi utama</li><li>${ic('schedule', 'text-primary text-[18px] align-middle')} Setiap hari ${MALL.hours}</li><li>${ic('description', 'text-primary text-[18px] align-middle')} Siapkan: jenis acara, perkiraan pengunjung, tanggal, dan area yang diinginkan</li></ul>`));
+    bindHero();
     app.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
     const sh = app.querySelector('#share');
     if (sh) sh.addEventListener('click', async () => {
