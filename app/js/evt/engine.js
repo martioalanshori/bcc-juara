@@ -338,7 +338,7 @@
       const res = mut(d, t); // EvtError = aturan bisnis menolak; tidak ada commit
       if (res === NOOP) return null; // tidak ada perubahan: jangan commit (mencegah versi naik tanpa guna)
       const r = await backend().commit(base, d);
-      if (r.ok) { version = r.version; state = d; if (r.now) offset = r.now - Date.now(); emit(); return res; }
+      if (r.ok) { version = r.version; state = d; if (r.now) offset = r.now - Date.now(); pollFast(); emit(); return res; }
       if (r.status === 403 || r.status === 401) fail(r.error || 'Perubahan ini butuh login peran yang sesuai.'); // ditolak server: jangan diulang
       // kalah balapan: ambil state terbaru, jalankan ulang aturan di atasnya
       adopt(r); if (opts && opts.onConflict) opts.onConflict(i + 1);
@@ -362,21 +362,36 @@
       try {
         const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), ms);
         const r = await fetch('/api/health', { cache: 'no-store', signal: ctl.signal }); clearTimeout(to);
-        if (r.ok && (await r.json()).ok) return true;
+        if (r.ok) { const j = await r.json(); if (j.ok) { if (j.poll) poll = Object.assign({}, poll, j.poll); return true; } }
         if (r.status === 404 || r.status === 501) return false; // server statis biasa (bukan server.js)
       } catch (e) { /* timeout/jaringan: coba lagi */ }
     }
     return false;
   }
   let busy = false, serverHint = false;
+  // Jadwal tarik dari server, ditentukan server lewat /api/health {poll:{min,max,hidden}} (ms).
+  // LAN: tiap 1 detik, juga saat tab tersembunyi. Vercel: min saat ada perubahan, melambat x1,5 sampai max
+  // saat sepi, dan berhenti saat tab tersembunyi (hemat kuota gratis). Kebenaran tetap dijamin CAS, bukan polling.
+  let poll = { min: 1000, max: 1000, hidden: true }, delay = 0, nextAt = 0;
+  function pollFast() { delay = poll.min; nextAt = Date.now() + poll.min; }
   // Tarik perubahan dari perangkat/tab lain. Dipanggil berkala, saat tab kembali aktif, dan saat event storage.
+  // Mengembalikan true bila ada perubahan.
   async function pull() {
-    if (busy) return; busy = true;
+    if (busy) return false; busy = true;
     try {
-      if (mode === 'server') { if (adopt(await server.get(version))) { await ensureSeed(); emit(); } }
-      else if (local.ver() !== version || !state) { const j = local.read(); if (j.version !== version || !state) { adopt(j); await ensureSeed(); emit(); } }
+      if (mode === 'server') { if (adopt(await server.get(version))) { await ensureSeed(); emit(); return true; } }
+      else if (local.ver() !== version || !state) { const j = local.read(); if (j.version !== version || !state) { adopt(j); await ensureSeed(); emit(); return true; } }
     } catch (e) { /* jaringan putus sementara: coba lagi di putaran berikutnya */ } finally { busy = false; }
+    return false;
   }
+  async function pollTick() {
+    if (mode !== 'server') return pull();
+    if ((document.hidden && !poll.hidden) || Date.now() < nextAt || busy) return;
+    const changed = await pull();
+    delay = changed ? poll.min : Math.min(poll.max, Math.round((delay || poll.min) * 1.5));
+    nextAt = Date.now() + delay;
+  }
+  const pullNow = () => { pollFast(); pull(); };
   async function init() {
     if (ready) return ready;
     ready = (async () => {
@@ -384,14 +399,14 @@
       adopt(Object.assign({ state: null }, await backend().get()));
       await ensureSeed();
       if (mode === 'lokal' && !localStorage.getItem(LS_KEY + ':ver')) localStorage.setItem(LS_KEY + ':ver', String(version));
-      setInterval(pull, mode === 'server' ? 1000 : 700);
+      setInterval(pollTick, mode === 'server' ? 250 : 700);
       if (mode === 'lokal') {
         window.addEventListener('storage', (e) => { if (!e.key || e.key.startsWith(LS_KEY)) pull(); });
         // Halaman dibuka lewat http tetapi tanpa server.js: cek berkala apakah server.js sudah berjalan
         if (location.protocol.startsWith('http')) setInterval(async () => { if (!serverHint && (await probe(1, 2000))) { serverHint = true; emit(); } }, 10000);
       }
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
-      window.addEventListener('focus', pull);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) pullNow(); });
+      window.addEventListener('focus', pullNow);
       emit();
     })();
     return ready;

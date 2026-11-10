@@ -16,21 +16,27 @@ both on the LAN and on Vercel. Everything has to keep working
 ## Commands
 
 ```sh
-node server.js                        # 0.0.0.0:8765, shared state for all LAN devices
+npm start                             # = node server.js: 0.0.0.0:8765, shared state for all LAN devices
+npm run dev                           # 127.0.0.1:8765, restarts when server/ changes (node --watch)
 node server.js 8765 127.0.0.1         # local only (same as .claude/launch.json)
-node server.js --set-pin pengelola 123456            # change role PIN (also: command-center)
+npm run set-pin -- pengelola 123456   # change role PIN (also: command-center)
 python tools/build_docs.py            # validate SOP/use-case relations + regenerate outputs (needs openpyxl)
 npx tailwindcss@3 -c tools/tailwind/tailwind.config.js -i tools/tailwind/input.css -o app/vendor/tailwind.css --minify
 python tools/vendor_fonts.py          # re-download fonts (needs internet once)
 ```
 
-There is no linter or package manager. The Event Ticketing engine has dependency-free Node tests
-(Node 20+, no npm install), which load `app/js/evt/engine.js` unchanged in a `vm` sandbox in local
-mode (`tools/tests/harness.mjs`). `server.test.mjs` boots the real app on a random port (routes, PIN gate,
-legacy redirects, path traversal, CAS):
+There is no linter and no npm dependency. `package.json` only holds scripts (`npm run dev` = `node --watch`,
+`npm start`, `npm test`, `npm run set-pin -- <role> <PIN>`). **Never add dependencies, a `build`/`postinstall`
+script or `"type": "module"`**: LAN machines have no internet, Vercel would run the script on deploy, and
+`server/` uses `require()`. `tools/tests/deploy.test.mjs` enforces this (and the adaptive polling).
+
+The Event Ticketing engine has dependency-free Node tests (Node 20+, no npm install), which load
+`app/js/evt/engine.js` unchanged in a `vm` sandbox in local mode (`tools/tests/harness.mjs`).
+`server.test.mjs` boots the real app on a random port (routes, PIN gate, legacy redirects, path
+traversal, CAS):
 
 ```sh
-node --test "tools/tests/*.test.mjs"   # the glob is needed on Windows; a bare folder path fails
+npm test                               # = node --test "tools/tests/*.test.mjs" (glob needed on Windows)
 node --test tools/tests/engine.test.mjs                       # one file
 node --test --test-name-pattern="hold" "tools/tests/*.test.mjs"   # tests matching a name
 ```
@@ -48,7 +54,7 @@ UI changes still have to be checked by running `node server.js` and opening the 
 - `app/js/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Script and stylesheet tags carry a cache-buster (currently `?v=23`; `fonts.css` has its own,
+- Script and stylesheet tags carry a cache-buster (currently `?v=24`; `fonts.css` has its own,
   `?v=4`). Bump it on every page (`index.html` and `app/*.html`) when you change JS or CSS.
 
 ## Architecture
@@ -122,6 +128,10 @@ open each Excel file in Excel and save it once so the formulas recalculate.
   `POST /api/evt/reset` requires `pengelola`. The rules themselves still run in the browser, and the
   QR signing key is client-side.
 - `app/js/auth.js` calls `/api/auth/me` and `/api/auth/logout` to show the "Keluar" button.
+- `/api/health` also returns `poll {min, max, hidden}`, the engine's pull schedule (`pollTick` in
+  `engine.js`). LAN default: every 1 s, also in hidden tabs. Vercel (`api/index.js`): 2 s after a change,
+  backing off x1.5 to 15 s when idle, paused in hidden tabs, to stay inside the free Vercel Hobby and Upstash
+  quotas. Correctness never depends on polling speed (CAS does that), so tune these numbers freely.
 
 **Vercel.** Production (https://smiccts.vercel.app, auto-deployed on push to `main`) runs `api/index.js`,
 which wraps the same `server/app.js` with the Redis store and env PINs. `vercel.json` sends every

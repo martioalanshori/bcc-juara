@@ -1,0 +1,14 @@
+{
+  "name": "smicc-ts",
+  "private": true,
+  "description": "Summarecon Mall Command Center & Event Ticketing. Tanpa dependensi: harus jalan tanpa internet.",
+  "scripts": {
+    "dev": "node --watch server.js 8765 127.0.0.1",
+    "start": "node server.js",
+    "test": "node --test \"tools/tests/*.test.mjs\"",
+    "set-pin": "node server.js --set-pin"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

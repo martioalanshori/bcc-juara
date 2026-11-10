@@ -2,7 +2,8 @@
  * Dipakai server.js (LAN, `node server.js`) dan api/index.js (Vercel). Hanya penyimpanan yang berbeda.
  *
  * API:
- *   GET  /api/health               -> {ok, now}  (503 bila penyimpanan belum diatur -> browser pakai mode lokal)
+ *   GET  /api/health               -> {ok, now, poll}  (503 bila penyimpanan belum diatur -> browser pakai mode lokal)
+ *       poll {min, max, hidden} = jadwal tarik state untuk browser (ms), lihat engine.js pollTick.
  *   GET  /api/auth/me              -> {ok, server, roles, labels}
  *   GET  /api/evt/state[?v=N]      -> {version, now, state?}  (state hanya bila versi berubah)
  *   POST /api/evt/state  {base, state} -> 200 {ok, version} | 409 {ok:false, version, state} | 403 {ok:false, error}
@@ -25,8 +26,10 @@ const TYPES = {
 const MAX_BODY = 5 * 1024 * 1024;
 
 // opts: root (folder proyek), store (lihat store.js; null = belum diatur), auth (auth.js),
-//       secureCookie (true di HTTPS), clientIp(req) (alamat untuk kunci salah PIN).
-function createApp({ root, store, auth, secureCookie = false, clientIp = (req) => req.socket.remoteAddress || 'unknown' }) {
+//       secureCookie (true di HTTPS), clientIp(req) (alamat untuk kunci salah PIN),
+//       poll (jadwal tarik state di browser; default LAN = tiap 1 detik, juga saat tab tersembunyi).
+const LAN_POLL = { min: 1000, max: 1000, hidden: true };
+function createApp({ root, store, auth, secureCookie = false, clientIp = (req) => req.socket.remoteAddress || 'unknown', poll = LAN_POLL }) {
   const now = () => Date.now();
   const send = (res, code, headers, body) => { res.writeHead(code, headers); res.end(res.req.method === 'HEAD' ? undefined : body); };
   const json = (res, code, obj, extra) => send(res, code, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store', ...extra }, JSON.stringify(obj));
@@ -56,7 +59,7 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
   async function api(req, res, p, url) {
     const roles = auth.roles(req);
     if (req.method === 'GET' || req.method === 'HEAD') {
-      if (p === '/api/health') return json(res, store ? 200 : 503, { ok: !!store, now: now() });
+      if (p === '/api/health') return json(res, store ? 200 : 503, { ok: !!store, now: now(), poll });
       if (p === '/api/auth/me') return json(res, 200, { ok: true, server: true, roles, labels: Object.fromEntries(Object.entries(ROLES).map(([r, c]) => [r, c.label])) });
       if (p === '/api/evt/state') {
         if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });

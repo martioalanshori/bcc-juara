@@ -71,7 +71,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Transaksi**: lihat dan ekspor; refund dan perubahan data hanya oleh pengelola.
 
 ## 3c. Sinkronisasi antarperangkat
-- **Mode server** (`node server.js`): setiap halaman menarik perubahan tiap ~1 detik, serta saat tab kembali aktif atau mendapat fokus. Server dideteksi hingga 3 kali percobaan agar Wi-Fi lambat tidak membuat halaman jatuh ke mode lokal.
+- **Mode server** (`node server.js`): setiap halaman menarik perubahan tiap ~1 detik, serta saat tab kembali aktif atau mendapat fokus. Di Vercel jadwalnya hemat kuota: tiap 2 detik saat ramai, melambat sampai 15 detik saat sepi, berhenti saat tab tersembunyi (jadwal dikirim server lewat `/api/health`). Server dideteksi hingga 3 kali percobaan agar Wi-Fi lambat tidak membuat halaman jatuh ke mode lokal.
 - **Mode lokal** (file dibuka langsung atau server statis biasa):
   - data hanya di satu browser;
   - antar-tab tetap sinkron lewat event `storage` ditambah polling versi;

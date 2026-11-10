@@ -25,8 +25,13 @@ Semua halaman memakai URL bersih tanpa `#` (mis. `/pengunjung/e/EVT-01`, `/comma
 ## Menjalankan (tanpa internet, jaringan lokal)
 Semua aset lokal di `app/vendor/` (font, ikon, CSS Tailwind hasil build, library QR `qrcode.js` MIT & `jsQR.js` Apache-2.0).
 
+Butuh Node.js 20+ saja, **tanpa `npm install`** (proyek ini sengaja tanpa dependensi).
+
 ```bash
-node server.js
+npm start          # sama dengan: node server.js (bisa diakses perangkat lain di LAN)
+npm run dev        # hanya komputer ini, server restart otomatis saat file server/ berubah
+npm test           # semua tes
+npm run set-pin -- pengelola 123456
 ```
 Server berjalan di `0.0.0.0:8765` dan mencetak alamat LAN-nya, misalnya:
 - Pilih peran: `http://<IP>:8765/`
@@ -82,3 +87,13 @@ Produksi: https://smiccts.vercel.app, dideploy otomatis setiap push ke `main` (r
 `api/index.js` hanya pembungkus `server/app.js` yang sama dengan LAN; bedanya state event disimpan di Upstash Redis. `vercel.json` meneruskan semua path selain aset ke fungsi itu.
 Environment variable di Vercel: `PIN_PENGELOLA`, `PIN_COMMAND_CENTER`, `SESSION_SECRET`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
 Ganti PIN: ubah env di dashboard Vercel lalu Redeploy. Versi LAN (`node server.js`) tetap berjalan seperti biasa.
+
+### Tetap gratis (Vercel Hobby + Upstash Free)
+Kuota gratis: Vercel Hobby ±1 juta (sebagian sumber menyebut 100 ribu) function invocation per bulan, Upstash Free 500 ribu command per bulan. Tidak ada tagihan otomatis, tetapi bila kuota habis backend berhenti sampai bulan berikutnya. Karena itu di Vercel browser **menarik data lebih jarang** (diatur `poll` di `api/index.js`):
+- tiap 2 detik saat ada perubahan, melambat bertahap sampai 15 detik saat sepi;
+- berhenti saat tab tersembunyi, langsung menarik lagi saat tab dibuka atau mendapat fokus;
+- anti double-booking tetap dijamin CAS di server, bukan oleh kecepatan polling.
+
+Perkiraan: satu tab yang terus terlihat dan sepi ±5.800 request/hari. Untuk demo beberapa jam dengan beberapa perangkat jauh di bawah kuota. Jangan biarkan banyak tab Command Center terbuka 24 jam di Vercel; untuk pemakaian harian pakai versi LAN. Pantau di dashboard Vercel (Usage) dan Upstash.
+
+Aturan agar deploy tetap jalan (dijaga `tools/tests/deploy.test.mjs`): `package.json` tanpa dependensi, tanpa script `build`/`postinstall`, dan tanpa `"type": "module"`.

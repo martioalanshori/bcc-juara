@@ -20,4 +20,7 @@ module.exports = createApp({
   auth: createAuth({ dataDir: null }),
   secureCookie: true,
   clientIp: (req) => String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown',
+  // Hemat kuota gratis (invocation Vercel & command Upstash): tarik tiap 2 dtk saat ramai, melambat sampai
+  // 15 dtk saat sepi, berhenti saat tab tersembunyi. Satu tab terlihat terus-menerus <= ~5.800 request/hari.
+  poll: { min: 2000, max: 15000, hidden: false },
 });
