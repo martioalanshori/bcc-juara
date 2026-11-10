@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#181b1f" />
   <title>Event & Tiket · Summarecon Mall Bandung</title>
-  <script src="js/theme.js?v=21"></script>
+  <script src="js/theme.js?v=22"></script>
   <link rel="stylesheet" href="vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="vendor/tailwind.css?v=21" />
-  <link rel="stylesheet" href="css/app.css?v=21" />
+  <link rel="stylesheet" href="vendor/tailwind.css?v=22" />
+  <link rel="stylesheet" href="css/app.css?v=22" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-xl border-b border-white/5">
@@ -19,6 +19,9 @@
         <span class="flex flex-col leading-tight min-w-0"><span class="font-headline-sm text-headline-sm truncate">Summarecon Mall Bandung</span><span class="font-label-sm text-label-sm text-secondary">Event &amp; Tiket</span></span>
       </a>
       <div class="flex items-center gap-2"><span id="mode" class="font-label-sm text-label-sm px-2 py-1 rounded-md bg-surface-container-high text-on-surface-variant whitespace-nowrap"></span><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
+    </div>
+    <div class="max-w-xl mx-auto px-4 pb-3">
+      <label class="pv-search"><span class="material-symbols-outlined">search</span><input id="q" type="search" placeholder="Cari acara, kategori, atau lokasi" autocomplete="off" aria-label="Cari acara"></label>
     </div>
   </header>
 
@@ -32,10 +35,10 @@
     </div>
   </nav>
   <div id="modal-root"></div>
-  <div id="toast-root" class="fixed top-16 inset-x-0 z-[90] flex flex-col gap-2 items-center px-4 pointer-events-none"></div>
+  <div id="toast-root" style="top: calc(var(--hdr, 56px) + 8px)" class="fixed inset-x-0 z-[90] flex flex-col gap-2 items-center px-4 pointer-events-none"></div>
 
   <script src="vendor/qrcode.js"></script>
-  <script src="js/evt/engine.js?v=21"></script>
-  <script src="js/evt/visitor.js?v=21"></script>
+  <script src="js/evt/engine.js?v=22"></script>
+  <script src="js/evt/visitor.js?v=22"></script>
 </body>
 </html>

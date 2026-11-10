@@ -9,6 +9,8 @@
   let filter = null; // kategori yang disorot di denah
   let payMethod = 'QRIS';
   let busy = false;
+  let query = ''; // kata kunci pencarian di header
+  let catF = null; // filter kategori di beranda
 
   // ---------------------------------------------------------------- util UI
   function toast(text, kind) {
@@ -42,42 +44,97 @@
   };
   const avail = (e) => { const s = E.stats(e.id); const sale = e.types.filter((t) => t.onSale).map((t) => s.per[t.id]); const total = sale.reduce((a, p) => a + p.total - p.blocked, 0); const left = sale.reduce((a, p) => a + p.available, 0); return { left, total, pct: total ? (left / total) * 100 : 0 }; };
 
+  // ---------------------------------------------------------------- komponen katalog
+  const ICON = { Konser: 'music_note', Teknologi: 'memory', Komedi: 'theater_comedy', Pameran: 'storefront', Olahraga: 'sports_soccer', Anak: 'child_care', Kuliner: 'restaurant' };
+  const evIcon = (cat) => ICON[cat] || 'celebration';
+  const shortVenue = (v) => String(v || '').split(' · ')[0];
+  const priceFrom = (e) => { const p = e.types.filter((t) => t.onSale).map((t) => t.price); return p.length ? Math.min(...p) : null; };
+  const priceTxt = (e) => { const m = priceFrom(e); return m == null ? '-' : m === 0 ? 'Gratis' : rp(m); };
+  function availChip(e) {
+    const a = avail(e), sale = E.saleState(e);
+    if (!sale.open) return [sale.label, 'bg-slate-500/20 text-slate-300'];
+    if (a.left === 0) return ['Habis terjual', 'bg-rose-500/15 text-rose-300'];
+    if (a.pct < 30) return ['Sisa ' + a.left + ' tiket', 'bg-amber-500/15 text-amber-300'];
+    return ['Tersedia', 'bg-emerald-500/15 text-emerald-300'];
+  }
+  const banner = (e, big) => `<div class="pv-banner ${big ? 'pv-banner-lg' : ''}" style="--c:${esc(e.color)}">${ic(evIcon(e.cat), 'pv-banner-ic')}
+    <div class="pv-banner-txt"><span class="pv-tag">${esc(e.cat)}</span>${big ? `<div><div class="pv-banner-title">${esc(e.name)}</div>${e.tagline ? `<div class="pv-banner-sub">${esc(e.tagline)}</div>` : ''}</div>` : ''}</div></div>`;
+  const card = (e) => { const [l, c] = availChip(e); return `<a href="#/e/${e.id}" class="pv-card">${banner(e)}<div class="p-3 flex flex-col gap-1 flex-1">
+      <h3 class="font-label-lg text-label-lg pv-clamp2">${esc(e.name)}</h3>
+      <div class="font-label-sm text-label-sm text-on-surface-variant">${ic('calendar_month', 'text-[14px] align-middle')} ${E.fmtShort(e.start)}, ${E.fmtTime(e.start)} WIB</div>
+      <div class="font-label-sm text-label-sm text-on-surface-variant truncate">${ic('location_on', 'text-[14px] align-middle')} ${esc(shortVenue(e.venue))}</div>
+      <div class="pv-dash mt-auto pt-2 flex items-end justify-between gap-2"><div><div class="font-label-sm text-label-sm text-on-surface-variant">Mulai dari</div><div class="font-label-lg text-label-lg text-primary">${priceTxt(e)}</div></div><span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm text-right ${c}">${esc(l)}</span></div></div></a>`; };
+  const rail = (key, title, icon, list) => list.length ? `<section class="mb-6"><h2 class="font-headline-sm text-headline-sm mb-2 flex items-center gap-1.5">${icon ? ic(icon, 'text-[20px] text-primary') : ''}${title}</h2>
+      <div class="pv-rail" data-rail="${key}">${list.map((e) => `<div class="pv-rail-item">${card(e)}</div>`).join('')}</div></section>` : '';
+  const steps = (n) => { const L = ['Pilih tiket', 'Data pemesan', 'Pembayaran']; return `<div class="mb-4"><div class="font-label-md text-label-md"><span class="text-on-surface-variant">Langkah ${n} dari 3</span><span class="pv-sep text-on-surface-variant"></span><b>${L[n - 1]}</b></div><div class="pv-steps mt-2">${L.map((_, i) => `<span class="${i < n ? 'on' : ''}"></span>`).join('')}</div></div>`; };
+
   // ---------------------------------------------------------------- views
   const V = {};
   V.home = () => {
-    const evs = E.s.order.map(E.ev).filter((e) => e.status !== 'DRAFT');
-    return `<section class="mb-5"><h1 class="font-headline-lg text-headline-lg">Acara di Summarecon Mall Bandung</h1>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Pilih acara dan kursi di denah, bayar lewat simulasi sandbox, lalu terima e-ticket ber-QR.</p></section>
-      <div class="flex flex-col gap-4">${evs.map((e) => {
-        const a = avail(e); const sale = E.saleState(e); const min = Math.min(...e.types.filter((t) => t.onSale).map((t) => t.price));
-        const sold = sale.open && a.left === 0;
-        return `<a href="#/e/${e.id}" class="card p-0 overflow-hidden block hover:ring-1 hover:ring-primary-container/50">
-          <div class="h-24 relative" style="background:linear-gradient(120deg, ${e.color}55, rgb(var(--surface-container-low)) 70%)"><div class="absolute inset-0 p-4 flex flex-col justify-between"><span class="self-start px-2 py-0.5 rounded bg-black/50 font-label-sm text-label-sm">${esc(e.cat)}</span><span class="font-label-md text-label-md text-white/90">${ic('calendar_month', 'text-[14px] align-middle')} ${E.fmtDate(e.start)} · ${E.fmtTime(e.start)} WIB</span></div></div>
-          <div class="p-4"><h2 class="font-headline-sm text-headline-sm">${esc(e.name)}</h2><p class="font-body-sm text-body-sm text-on-surface-variant">${esc(e.tagline)}</p>
-            <p class="font-label-md text-label-md text-on-surface-variant mt-2">${ic('location_on', 'text-[14px] align-middle')} ${esc(e.venue)}</p>
-            <div class="flex items-center justify-between mt-3"><span class="font-label-lg text-label-lg text-primary">${min === 0 ? 'Gratis' : 'Mulai ' + rp(min)}</span>
-              <span class="font-label-sm text-label-sm px-2 py-1 rounded-md ${sold ? 'bg-rose-500/15 text-rose-300' : sale.open ? (a.pct < 15 ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300') : 'bg-slate-500/20 text-slate-300'}">${sold ? 'Habis terjual' : sale.open ? (a.pct < 15 ? 'Hampir habis, sisa ' : 'Tersedia ') + a.left + ' tiket' : esc(sale.label)}</span></div>
-            ${sale.open ? `<div class="mt-2">${bar(100 - a.pct, e.color)}</div>` : ''}</div></a>`;
-      }).join('') || `<div class="card p-6 text-center font-body-sm text-body-sm text-on-surface-variant">Belum ada acara yang dipublikasikan.</div>`}</div>`;
+    const all = E.s.order.map(E.ev).filter((e) => e && e.status !== 'DRAFT');
+    if (!all.length) return `<div class="card p-6 text-center font-body-sm text-body-sm text-on-surface-variant">Belum ada acara yang dipublikasikan.</div>`;
+    const cats = [...new Set(all.map((e) => e.cat))];
+    const chips = `<div class="pv-rail pv-chips mb-5" data-rail="cat"><button class="chip-btn ${!catF ? 'on' : ''}" data-cat="">Semua</button>${cats.map((c) => `<button class="chip-btn ${catF === c ? 'on' : ''}" data-cat="${esc(c)}">${ic(evIcon(c), 'text-[16px]')}${esc(c)}</button>`).join('')}</div>`;
+    const q = query.trim().toLowerCase();
+    if (q || catF) {
+      const hit = all.filter((e) => (!catF || e.cat === catF) && (!q || [e.name, e.tagline, e.venue, e.cat].join(' ').toLowerCase().includes(q)));
+      return chips + `<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${hit.length} acara${q ? ` untuk "${esc(query.trim())}"` : ''}${catF ? ` di kategori ${esc(catF)}` : ''}</p>
+        <div class="pv-grid">${hit.map(card).join('') || `<div class="inner p-4 font-body-sm text-body-sm text-on-surface-variant">Tidak ada acara yang cocok. Coba kata lain atau pilih Semua.</div>`}</div>`;
+    }
+    const open = all.filter((e) => E.saleState(e).open);
+    const hero = (open.length ? open : all).slice(0, 5);
+    const soon = all.filter((e) => e.start > E.now()).sort((x, y) => x.start - y.start);
+    const hot = open.filter((e) => { const a = avail(e); return a.left > 0 && a.pct < 30; }).sort((x, y) => avail(x).pct - avail(y).pct);
+    return `<div class="pv-rail mb-4" data-rail="hero">${hero.map((e) => `<a href="#/e/${e.id}" class="pv-hero-item">${banner(e, true)}</a>`).join('')}</div>
+      ${chips}
+      ${rail('soon', 'Segera berlangsung', 'event_upcoming', soon)}
+      ${rail('hot', 'Hampir habis', 'local_fire_department', hot)}
+      <section class="mb-4"><h2 class="font-headline-sm text-headline-sm mb-2">Semua acara di Summarecon Mall Bandung</h2><div class="pv-grid">${all.map(card).join('')}</div></section>`;
   };
-  const bar = (pct, col) => `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-full" style="width:${Math.max(2, Math.min(100, pct))}%;background:${col}"></div></div>`;
 
   V.event = (id) => {
     const e = E.ev(id); if (!e) return notFound();
     const s = E.stats(id); const sale = E.saleState(e);
+    const onSale = e.types.filter((t) => t.onSale);
+    const row = (icon, html) => `<div class="flex gap-2.5 items-start">${ic(icon, 'text-primary text-[20px]')}<span>${html}</span></div>`;
+    const tix = (t) => {
+      const p = s.per[t.id]; const sold = t.onSale && p.available === 0;
+      const st = !t.onSale ? ['Tidak dijual', 'text-on-surface-variant'] : sold ? ['Habis terjual', 'text-rose-300'] : p.available < 10 ? ['Sisa ' + p.available, 'text-amber-300'] : ['Tersedia', 'text-emerald-300'];
+      return `<div class="pv-tix" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div><span class="font-label-md text-label-md whitespace-nowrap ${st[1]}">${st[0]}</span></div>
+          <div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${esc(/kursi/i.test(t.perks || '') ? t.perks : [t.perks, t.seated ? 'Kursi bernomor' : 'Tanpa nomor kursi'].filter(Boolean).join('. '))}</div></div>
+        <div class="pv-dash mx-4"></div>
+        <div class="px-4 py-3 flex items-center justify-between gap-2"><span class="font-headline-sm text-headline-sm">${t.price ? rp(t.price) : 'Gratis'}</span><span class="font-label-sm text-label-sm text-on-surface-variant text-right">Penjualan berakhir<br>${E.fmtDT(e.saleEnd)} WIB</span></div></div>`;
+    };
+    const sk = [
+      'Satu e-ticket berlaku untuk satu orang dan satu kali masuk.',
+      `Maksimal ${e.maxPerOrder} tiket per pesanan.`,
+      `Kursi yang kamu pilih ditahan ${e.holdMin} menit. Setelah pesanan dibuat, pembayaran harus selesai dalam ${E.PAY_MIN} menit.`,
+      'Isi nama pemesan sesuai identitas. Petugas gate dapat mencocokkan nama pada e-ticket.',
+      `Tunjukkan QR e-ticket di gate. Gate dibuka pukul ${E.fmtTime(e.doors)} WIB.`,
+      'Bila acara dibatalkan pengelola, dana dikembalikan otomatis dan e-ticket tidak berlaku lagi.',
+      'Prototipe: pembayaran memakai simulasi sandbox, tidak ada uang yang ditarik.',
+    ];
     return `${back('#/', 'Semua acara')}
-      <section class="card p-5 mb-4"><span class="font-label-sm text-label-sm text-secondary">${esc(e.cat)}</span>
-        <h1 class="font-headline-md text-headline-md mt-1">${esc(e.name)}</h1><p class="font-body-sm text-body-sm text-on-surface-variant">${esc(e.tagline)}</p>
-        <div class="grid grid-cols-1 gap-2 mt-4 font-body-sm text-body-sm">
-          <div class="flex gap-2">${ic('calendar_month', 'text-primary text-[18px]')}<span>${E.fmtDate(e.start)}<br><span class="text-on-surface-variant">Mulai ${E.fmtTime(e.start)} WIB, gate dibuka ${E.fmtTime(e.doors)} WIB</span></span></div>
-          <div class="flex gap-2">${ic('location_on', 'text-primary text-[18px]')}<span>${esc(e.venue)}</span></div>
-          <div class="flex gap-2">${ic('schedule', 'text-primary text-[18px]')}<span>Periode penjualan ${E.fmtDT(e.saleStart)} sampai ${E.fmtDT(e.saleEnd)}</span></div>
-        </div>
-        <p class="font-body-sm text-body-sm text-on-surface-variant mt-3">${esc(e.desc)}</p></section>
-      <section class="card p-5 mb-4"><h2 class="font-headline-sm text-headline-sm mb-3">Kategori tiket</h2><div class="flex flex-col gap-2">
-        ${e.types.map((t) => { const p = s.per[t.id]; const sold = t.onSale && p.available === 0; return `<div class="inner p-3 flex items-center gap-3"><span class="w-3 h-10 rounded" style="background:${t.color}"></span><div class="flex-1 min-w-0"><div class="font-label-lg text-label-lg">${esc(t.name)} ${t.seated ? '' : '<span class="font-label-sm text-label-sm text-on-surface-variant">(tanpa nomor kursi)</span>'}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(t.perks || '')}</div></div><div class="text-right"><div class="font-label-lg text-label-lg">${rp(t.price)}</div><div class="font-label-sm text-label-sm ${!t.onSale ? 'text-on-surface-variant' : sold ? 'text-rose-300' : p.available < 10 ? 'text-amber-300' : 'text-emerald-300'}">${!t.onSale ? 'Tidak dijual' : sold ? 'Habis' : 'Sisa ' + p.available}</div></div></div>`; }).join('')}
-      </div></section>
-      ${sale.open ? `<a href="#/e/${id}/kursi" class="btn w-full justify-center !py-3">${ic('event_seat')} Pilih kategori & kursi</a>` : `<div class="inner p-4 text-center font-body-sm text-body-sm text-on-surface-variant">${ic('info', 'text-[18px] align-middle')} ${esc(sale.label)}</div>`}`;
+      <div class="pv-bleed mb-4">${banner(e)}</div>
+      <h1 class="font-headline-md text-headline-md">${esc(e.name)}</h1>
+      ${e.tagline ? `<p class="font-body-sm text-body-sm text-on-surface-variant">${esc(e.tagline)}</p>` : ''}
+      <div class="flex flex-col gap-2.5 mt-4 font-body-sm text-body-sm">
+        ${row('location_on', esc(e.venue))}
+        ${row('calendar_month', `${E.fmtDate(e.start)}<br><span class="text-on-surface-variant">Mulai ${E.fmtTime(e.start)} WIB, gate dibuka ${E.fmtTime(e.doors)} WIB</span>`)}
+        ${row('category', esc(e.cat))}
+      </div>
+      <button type="button" id="share" class="mt-3 inline-flex items-center gap-1.5 font-label-md text-label-md text-primary">${ic('share', 'text-[18px]')} Bagikan acara</button>
+      <div class="pv-dash mt-4 pt-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">${ic('storefront', 'text-[20px]')}</span><div><div class="font-label-sm text-label-sm text-on-surface-variant">Diselenggarakan oleh</div><div class="font-label-lg text-label-lg">${esc(e.org || 'Summarecon Mall Bandung')}</div></div></div>
+      <nav class="pv-tabs" aria-label="Bagian acara"><button type="button" data-jump="desk" class="on">Deskripsi</button><button type="button" data-jump="tiket">Tiket</button><button type="button" data-jump="sk">Syarat & ketentuan</button></nav>
+      <section id="sec-desk" class="pv-sec"><h2 class="font-headline-sm text-headline-sm mb-2">Deskripsi</h2><p class="font-body-md text-body-md text-on-surface-variant whitespace-pre-line">${esc(e.desc || 'Belum ada deskripsi.')}</p></section>
+      <section id="sec-tiket" class="pv-sec"><h2 class="font-headline-sm text-headline-sm">Tiket</h2>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${onSale.length} kategori tiket, harga mulai dari ${priceTxt(e)}</p>
+        <div class="flex flex-col gap-3">${e.types.map(tix).join('')}</div></section>
+      <section id="sec-sk" class="pv-sec"><h2 class="font-headline-sm text-headline-sm mb-2">Syarat & ketentuan</h2>
+        <ol class="list-decimal pl-5 flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">${sk.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></section>
+      <div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex items-center justify-between gap-3">
+        <div><div class="font-label-sm text-label-sm text-on-surface-variant">Harga mulai dari</div><div class="font-headline-sm text-headline-sm">${priceTxt(e)}</div></div>
+        ${sale.open ? `<a href="#/e/${id}/kursi" class="btn !px-6 !py-3">${ic('confirmation_number', 'text-[18px]')} Beli tiket</a>` : `<span class="font-label-md text-label-md text-on-surface-variant text-right">${ic('info', 'text-[16px] align-middle')} ${esc(sale.label)}</span>`}</div></div></div>`;
   };
 
   V.seats = (id) => {
@@ -89,7 +146,7 @@
     const seated = e.types.filter((t) => t.seated && t.onSale);
     const myQ = (tid) => h.items.filter((i) => i.type === tid && !i.seat).length;
     const sumByType = {}; h.items.forEach((i) => (sumByType[i.type] = (sumByType[i.type] || 0) + 1));
-    return `${back('#/e/' + id, esc(e.name))}
+    return `${back('#/e/' + id, esc(e.name))}${steps(1)}
       <h1 class="font-headline-md text-headline-md">Pilih kategori & kursi</h1>
       <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Ketuk kursi untuk memilih. Kursi langsung ditahan untukmu selama ${e.holdMin} menit. Maksimal ${e.maxPerOrder} tiket per pesanan.</p>
       ${!sale.open ? `<div class="inner p-3 mb-3 font-body-sm text-body-sm text-amber-300">${esc(sale.label)}. Denah hanya untuk dilihat.</div>` : ''}
@@ -122,7 +179,7 @@
     if (!h.items.length) return `${back('#/e/' + id + '/kursi', 'Kembali ke denah')}<div class="card p-6 text-center">${ic('timer_off', 'text-[40px] text-amber-300')}<h2 class="font-headline-sm text-headline-sm mt-2">Waktu penahanan kursi habis</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Kursi sudah dilepas dan kini bisa dipesan orang lain.</p><a href="#/e/${id}/kursi" class="btn mt-4">Pilih kursi lagi</a></div>`;
     const pr = E.price(e, h.items);
     const saved = JSON.parse(sessionStorage.getItem('smicc-evt-form') || '{}');
-    return `${back('#/e/' + id + '/kursi', 'Ubah kursi')}
+    return `${back('#/e/' + id + '/kursi', 'Ubah kursi')}${steps(2)}
       <h1 class="font-headline-md text-headline-md mb-3">Data peserta & ringkasan</h1>
       <form id="f-order" class="flex flex-col gap-4">
         <section class="card p-4 flex flex-col gap-3"><h2 class="font-headline-sm text-headline-sm">Data pemesan</h2>
@@ -150,7 +207,7 @@
       <div class="mt-2 flex flex-col divide-y divide-white/5">${o.items.map((it) => `<div class="flex justify-between py-1.5 font-body-sm text-body-sm"><span>${esc(E.typeById(e, it.type).name)}${it.seat ? ', kursi <b>' + it.seat + '</b>' : ''}</span><span>${rp(E.typeById(e, it.type).price)}</span></div>`).join('')}
       ${o.fee ? `<div class="flex justify-between py-1.5 font-body-sm text-body-sm text-on-surface-variant"><span>Biaya layanan</span><span>${rp(o.fee)}</span></div>` : ''}<div class="flex justify-between py-2 font-headline-sm text-headline-sm"><span>Total</span><span>${rp(o.total)}</span></div></div>
       <div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.name)} · ${esc(o.email)} · ${esc(o.phone)}</div></section>`;
-    if (o.status === 'PENDING' && o.until > E.now()) return head + payView(o) + summary;
+    if (o.status === 'PENDING' && o.until > E.now()) return head.replace('</a>', '</a>' + steps(3)) + payView(o) + summary;
     if (o.status === 'PAID') return head + ticketsView(o, e) + summary;
     const msg = { EXPIRED: ['timer_off', 'Batas waktu pembayaran habis', 'Kursi sudah dilepas. Pesan ulang bila kursi masih tersedia.'], CANCELLED: ['cancel', 'Pesanan dibatalkan', 'Kursi sudah dilepas.'], REFUNDED: ['currency_exchange', 'Pesanan di-refund', (o.refundReason ? o.refundReason.replace(/\.?\s*$/, '. ') : '') + 'E-ticket tidak berlaku lagi.'], PENDING: ['timer_off', 'Batas waktu pembayaran habis', 'Kursi dilepas.'] }[o.status];
     return head + `<div class="card p-6 text-center mb-4">${ic(msg[0], 'text-[40px] text-on-surface-variant')}<h2 class="font-headline-sm text-headline-sm mt-2">${msg[1]}</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${esc(msg[2])}</p><a href="#/e/${e.id}" class="btn mt-4">Lihat acara</a></div>` + summary;
@@ -211,12 +268,14 @@
   }
   function render(keepScroll) {
     const y = window.scrollY;
+    const rails = {}; app.querySelectorAll('[data-rail]').forEach((r) => (rails[r.dataset.rail] = r.scrollLeft));
     app.innerHTML = E.modeBanner() + V[cur.name](...cur.args);
     bind();
     tick();
     const nav = { home: 'home', event: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox' }[cur.name];
     document.querySelectorAll('[data-nav]').forEach((a) => { a.classList.toggle('text-primary', a.dataset.nav === nav); a.classList.toggle('text-on-surface-variant', a.dataset.nav !== nav); });
-    if (keepScroll) window.scrollTo(0, y);
+    if (keepScroll) { window.scrollTo(0, y); app.querySelectorAll('[data-rail]').forEach((r) => { if (rails[r.dataset.rail]) r.scrollLeft = rails[r.dataset.rail]; }); }
+    syncTabs();
     const sm = app.querySelector('.seatmap-wrap'); if (sm) sm.scrollLeft = keepScroll && render.sx != null ? render.sx : (sm.scrollWidth - sm.clientWidth) / 2;
   }
   function bind() {
@@ -255,6 +314,16 @@
     const cc = app.querySelector('#cancel'); if (cc) cc.addEventListener('click', () => { if (confirm('Batalkan pesanan dan lepas kursi?')) act(() => E.cancel(id), 'Pesanan dibatalkan, kursi dilepas.'); });
     const rs = app.querySelector('#resend'); if (rs) rs.addEventListener('click', () => act(() => E.resend(id), 'E-ticket dikirim ulang ke email & WhatsApp (simulasi).'));
     const ics = app.querySelector('#ics'); if (ics) ics.addEventListener('click', () => downloadIcs(E.s.orders[id]));
+    app.querySelectorAll('[data-cat]').forEach((b) => b.addEventListener('click', () => { catF = b.dataset.cat || null; render(true); }));
+    app.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+    const sh = app.querySelector('#share');
+    if (sh) sh.addEventListener('click', async () => {
+      const url = location.href;
+      try {
+        if (navigator.share) { await navigator.share({ title: E.ev(id).name, url }); return; }
+        await navigator.clipboard.writeText(url); toast('Tautan acara disalin.', 'ok');
+      } catch (err) { if (err && err.name !== 'AbortError') toast('Salin tautan ini: ' + esc(url), 'info'); }
+    });
     const ff = app.querySelector('#f-find');
     if (ff) ff.addEventListener('submit', (ev) => { ev.preventDefault(); const f = Object.fromEntries(new FormData(ff)); const o = E.s.orders[f.code.trim().toUpperCase()]; if (o && o.email.toLowerCase() === f.email.trim().toLowerCase()) { E.rememberOrder(o.id); location.hash = '#/o/' + o.id; } else toast('Kode booking atau email tidak cocok.', 'err'); });
   }
@@ -272,6 +341,20 @@
   let rt = null;
   const rerender = () => { clearTimeout(rt); rt = setTimeout(() => { if (cur.name === 'data') return; if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#modal-root')) return; render(true); }, 80); };
   window.addEventListener('hashchange', () => { cur = parse(); render(); window.scrollTo(0, 0); });
+  // Tab detail acara ikut aktif sesuai bagian yang sedang terlihat
+  function syncTabs() {
+    const tabs = app.querySelectorAll('[data-jump]'); if (!tabs.length) return;
+    const line = (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr'), 10) || 56) + 60;
+    let on = tabs[0].dataset.jump;
+    tabs.forEach((b) => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec && sec.getBoundingClientRect().top <= line) on = b.dataset.jump; });
+    tabs.forEach((b) => b.classList.toggle('on', b.dataset.jump === on));
+  }
+  window.addEventListener('scroll', syncTabs, { passive: true });
+  const setHdr = () => document.documentElement.style.setProperty('--hdr', document.querySelector('header').offsetHeight + 'px');
+  setHdr(); window.addEventListener('resize', setHdr);
+  const qIn = document.getElementById('q');
+  qIn.addEventListener('input', () => { query = qIn.value; if (cur.name !== 'home') location.hash = '#/'; else render(true); });
+
   E.init().then(() => {
     document.getElementById('mode').innerHTML = E.mode === 'server' ? '<span class="text-emerald-300">●</span> LAN' : '<span class="text-amber-300">●</span> Lokal';
     document.getElementById('mode').title = E.mode === 'server' ? 'Terhubung ke server.py. Kursi tersinkron ke semua perangkat di jaringan lokal.' : 'Tanpa server: data hanya di browser ini (sinkron antar-tab)';

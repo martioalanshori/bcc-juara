@@ -29,6 +29,9 @@ mode (`tools/tests/harness.mjs`):
 
 ```sh
 node --test "tools/tests/*.test.mjs"   # the glob is needed on Windows; a bare folder path fails
+node --test tools/tests/engine.test.mjs                       # one file
+node --test --test-name-pattern="hold" "tools/tests/*.test.mjs"   # tests matching a name
+python -m unittest discover -s tools/tests -p "test_*.py"     # Python guard tests
 ```
 
 UI changes still have to be checked by running `server.py` and opening the pages in a browser.
@@ -44,7 +47,8 @@ UI changes still have to be checked by running `server.py` and opening the pages
 - `app/js/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Script tags carry a cache-buster (`?v=10`). Bump it on every page when you change JS or CSS.
+- Script and stylesheet tags carry a cache-buster (currently `?v=22`; `fonts.css` has its own,
+  `?v=4`). Bump it on every page (`index.html` and `app/*.html`) when you change JS or CSS.
 
 ## Architecture
 
@@ -103,7 +107,17 @@ open each Excel file in Excel and save it once so the formulas recalculate.
   (holds, new orders, pay/cancel/expire PENDING orders, waitlist); `command-center` may also change
   gate reports; `pengelola` may change anything. Rejections are 403 and `tx()` surfaces them without
   retrying. The rules themselves still run in the browser, and the QR signing key is client-side.
-- Python tests: `python -m unittest discover -s tools/tests -p "test_*.py"`.
+- `app/js/auth.js` calls `/api/auth/me` and `/api/auth/logout` to show the "Keluar" button; it
+  hides the button in local mode.
+
+**Two backends, same API.** Production (https://smiccts.vercel.app, auto-deployed on push to
+`main`) does not run `server.py`. It runs `api/index.js`, a dependency-free Vercel function that
+serves the same `/api/*` endpoints and the PIN-gated pages (`vercel.json` routes them through
+`?__page=`). The differences: state lives in Upstash Redis with the version CAS done atomically
+in a Lua script, sessions are stateless HMAC-signed cookies, the lockout is per IP, and PINs come
+from env vars (`PIN_PENGELOLA`, `PIN_COMMAND_CENTER`, `SESSION_SECRET`, `KV_REST_API_URL`,
+`KV_REST_API_TOKEN`). Any API or auth change has to be made in both `server.py` and
+`api/index.js`. `.vercelignore` keeps `tools/`, `data/` and the xlsx/drawio files out of the deploy.
 
 `data/` holds runtime secrets and state (`access.json`, `event_state.json`, `PIN_AWAL.txt`).
 Don't commit or share it.
