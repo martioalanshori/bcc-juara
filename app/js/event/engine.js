@@ -74,7 +74,7 @@
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
-  const SAMPLE_VER = 2;
+  const SAMPLE_VER = 3;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
@@ -173,6 +173,7 @@
     expo: 'Exhibition Hall, Lt. 1 · Summarecon Mall Bandung',
     kids: 'Kids Zone, Lt. 2 · Summarecon Mall Bandung',
   };
+  const ORG_MALL = 'Tim Event Summarecon Mall Bandung';
   const GATES = { atrium: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'], hall: ['Gate Hall Lt. 3'], plaza: ['Gate Plaza Timur'], expo: ['Gate Exhibition Lt. 1'], kids: ['Gate Kids Zone'] };
   function seedMore(s, t, mkOrder, R) {
     const H = 3600000, D = 24 * H;
@@ -180,8 +181,9 @@
     const toSat = (6 - new Date(t).getDay() + 7) % 7 || 7; // Sabtu berikutnya (bukan hari ini)
     const soon = (h) => Math.ceil((t + h * H) / H) * H;
     const open = (o) => ({ id: o.id, name: o.name, tagline: o.tagline, cat: o.cat, start: o.start, doors: o.start - (o.doorsH || 1) * H, venue: AREA[o.area], img: IMG(o.img),
-      layout: o.layout || { stage: o.stage || 'AREA ACARA', rows: [] }, desc: o.desc, saleStart: t - 10 * D, saleEnd: o.start - H / 2, status: 'PUBLISHED',
-      holdMin: 8, maxPerOrder: o.max || 6, color: o.color, gates: GATES[o.area], blocked: [], types: o.types });
+      layout: o.layout || { stage: o.stage || 'AREA ACARA', rows: [] }, desc: o.desc, saleStart: o.saleStart || t - 10 * D, saleEnd: o.start - H / 2, status: 'PUBLISHED',
+      holdMin: 8, maxPerOrder: o.max || 6, color: o.color, gates: GATES[o.area], blocked: [], types: o.types, org: o.org || ORG_MALL });
+    const seatT = (id, name, price, color, perks) => ({ id, name, price, color, seated: true, onSale: true, perks });
     const fes = (id, name, price, quota, perks, color) => ({ id, name, price, color, seated: false, onSale: true, quota, perks });
     const evs = [
       open({ id: 'EVT-04', name: 'Bazar Kuliner Nusantara', tagline: '60+ tenant jajanan dari Sabang sampai Merauke', cat: 'Kuliner', area: 'plaza', img: 'ev-kuliner', color: '#f59e0b', start: soon(2), doorsH: 0.5,
@@ -211,11 +213,57 @@
       open({ id: 'EVT-12', name: 'Festival Kopi Priangan', tagline: 'Kopi dari 30 roastery Jawa Barat', cat: 'Kuliner', area: 'plaza', img: 'ev-kopi', color: '#a16207', start: day(9, 10),
         desc: 'Festival kopi dengan sesi cupping gratis tiap jam. Kelas Seduh Manual berlangsung 90 menit bersama barista juara regional.',
         types: [fes('MSK', 'Tiket Masuk', 30000, 250, 'Termasuk 2 cupping', '#a16207'), fes('KLS', 'Kelas Seduh Manual', 150000, 25, 'Kelas 90 menit, alat disediakan', '#f59e0b')] }),
+      // EVT-13..27: acara dari penyelenggara lain (komunitas & mitra fiktif) agar katalog beranda ramai.
+      open({ id: 'EVT-13', name: 'Indie Pop Showcase "Suara Gedebage"', tagline: 'Empat band indie Bandung dalam satu malam', cat: 'Konser', area: 'atrium', img: 'ev-indie', color: '#7c3aed', start: day(3, 19), doorsH: 1.5, layout: ATRIUM, max: 4, org: 'Gedebage Musik Kolektif',
+        desc: 'Showcase empat band indie pop dan shoegaze Bandung di bawah kubah Main Atrium. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
+        types: [seatT('VIP', 'VIP', 350000, '#c084fc', 'Baris A-B, poster bertanda tangan'), seatT('GLD', 'Gold', 220000, '#facc15', 'Baris C-F'), seatT('SLV', 'Silver', 150000, '#2dd4bf', 'Baris G-L'), fes('FES', 'Festival (Berdiri)', 95000, 200, 'Area berdiri belakang, tanpa nomor kursi', '#fb7185')] }),
+      open({ id: 'EVT-14', name: 'Little Runway: Fashion Show Anak', tagline: 'Peragaan busana anak usia 4-12 tahun', cat: 'Fashion', area: 'atrium', img: 'ev-fashion', color: '#db2777', start: day(toSat, 15), org: 'Little Runway Bandung',
+        desc: 'Peragaan busana anak bersama desainer lokal. Tiket Penonton untuk keluarga; Peserta Runway sudah termasuk gladi bersih dan sesi foto.',
+        types: [fes('PNT', 'Penonton', 40000, 80, 'Area duduk lesehan & berdiri', '#db2777'), fes('PSR', 'Peserta Runway', 250000, 10, 'Gladi bersih, rias, sesi foto', '#f59e0b')] }),
+      open({ id: 'EVT-15', name: 'Kelas Membatik dengan Canting', tagline: 'Belajar batik tulis dari perajin Priangan', cat: 'Workshop', area: 'expo', img: 'ev-batik', color: '#92400e', start: day(4, 13), max: 2, org: 'Rumah Batik Priangan',
+        desc: 'Kelas batik tulis 2 jam: mengenal motif Priangan, mencanting, dan mewarnai. Kain 50 x 50 cm, canting, dan malam disediakan; hasil karya dibawa pulang.',
+        types: [fes('KLS', 'Peserta Kelas', 175000, 12, 'Kain, canting & malam disediakan', '#92400e')] }),
+      open({ id: 'EVT-16', name: 'Dongeng & Baca Bersama', tagline: 'Pendongeng keliling untuk anak 3-8 tahun', cat: 'Anak', area: 'kids', img: 'ev-dongeng', color: '#16a34a', start: day(toSat + 1, 9, 30), max: 4, org: 'Komunitas Dongeng Gedebage',
+        desc: 'Sesi dongeng interaktif 45 menit dilanjutkan baca buku bersama. Gratis dengan registrasi agar jumlah anak di Kids Zone tetap nyaman.',
+        types: [fes('RGS', 'Registrasi Gratis', 0, 20, 'Satu tiket untuk satu anak, pendamping tanpa tiket', '#16a34a')] }),
+      open({ id: 'EVT-17', name: 'Summarecon Fun Run 5K', tagline: 'Lari pagi keliling kawasan Summarecon Bandung', cat: 'Olahraga', area: 'plaza', img: 'ev-funrun', color: '#0284c7', start: day(20, 6), saleStart: day(9, 10), max: 4, org: 'Lari Gedebage',
+        desc: 'Rute 5 km start dan finis di Outdoor Plaza. Paket lomba berisi kaus, nomor dada, dan medali finisher. Pengambilan paket H-1 di Customer Service GF.',
+        types: [fes('5K', 'Kategori 5K', 150000, 500, 'Kaus, nomor dada, medali', '#0284c7')] }),
+      open({ id: 'EVT-18', name: 'Malam Keroncong Priangan', tagline: 'Orkes keroncong dan tamu penyanyi lintas generasi', cat: 'Konser', area: 'hall', img: 'ev-keroncong', color: '#b45309', start: day(6, 19, 30), layout: HALL, max: 4, org: 'Sanggar Keroncong Priangan',
+        desc: 'Konser keroncong dua babak di Summarecon Hall. Kursi bernomor; Premium berada di tiga baris terdepan.',
+        types: [seatT('PRM', 'Premium', 200000, '#f472b6', 'Baris A-C'), seatT('REG', 'Reguler', 120000, '#60a5fa', 'Baris D-H')] }),
+      open({ id: 'EVT-19', name: 'Layar Tancap: Film Pendek Bandung', tagline: 'Pemutaran 6 film pendek sineas Bandung', cat: 'Film', area: 'plaza', img: 'ev-layar', color: '#1e40af', start: day(1, 19), max: 4, org: 'Kineklub Gedebage',
+        desc: 'Pemutaran film pendek di layar besar Outdoor Plaza, dilanjutkan diskusi bersama sutradara. Gratis dengan registrasi; kursi lipat tersedia sampai habis.',
+        types: [fes('RGS', 'Registrasi Gratis', 0, 120, 'Tanpa nomor kursi', '#1e40af')] }),
+      open({ id: 'EVT-20', name: 'Open Mic Komika Muda', tagline: '10 komika baru, 5 menit per orang', cat: 'Komedi', area: 'hall', img: 'ev-openmic', color: '#ea580c', start: day(4, 20), layout: { stage: 'PANGGUNG · SUMMARECON HALL (FORMAT STUDIO)', rows: rowsSpec([['A', 'PRM', 8], ['B', 'PRM', 8], ['C', 'REG', 8], ['D', 'REG', 8]]) }, max: 4, org: 'Panggung Komika Gedebage',
+        desc: 'Malam open mic untuk komika yang baru mulai, format studio 32 kursi. Kursi bernomor, penonton boleh memberi nilai lewat QR di kursi.',
+        types: [seatT('PRM', 'Depan', 75000, '#f472b6', 'Baris A-B'), seatT('REG', 'Reguler', 50000, '#60a5fa', 'Baris C-D')] }),
+      open({ id: 'EVT-21', name: 'Kompetisi Rakit Bata Keluarga', tagline: 'Satu tim = satu anak + satu orang tua', cat: 'Anak', area: 'kids', img: 'ev-lego', color: '#dc2626', start: day(toSat, 13), max: 2, org: 'Klub Rakit Bata Bandung',
+        desc: 'Lomba merakit kota impian dari bata mainan dalam 60 menit. Bata disediakan panitia; tiga tim terbaik mendapat hadiah dari tenant mainan.',
+        types: [fes('TIM', 'Tiket Tim (2 orang)', 85000, 16, 'Satu anak + satu pendamping', '#dc2626')] }),
+      open({ id: 'EVT-22', name: 'Bandung Startup Meetup: AI untuk UMKM', tagline: 'Diskusi & demo alat AI untuk usaha kecil', cat: 'Teknologi', area: 'expo', img: 'ev-startup', color: '#0f766e', start: day(3, 18, 30), max: 2, org: 'Ruang Rintis Bandung',
+        desc: 'Tiga sesi singkat dari pendiri startup lokal, dilanjutkan demo dan tanya jawab. Gratis dengan registrasi; tempat terbatas.',
+        types: [fes('RGS', 'Registrasi Gratis', 0, 30, 'Termasuk kopi & kudapan', '#0f766e')] }),
+      open({ id: 'EVT-23', name: 'Pameran Mainan & Figure Kolektor', tagline: 'Figure, diecast, dan mainan lawas dari 40 kolektor', cat: 'Pameran', area: 'expo', img: 'ev-figure', color: '#4f46e5', start: day(8, 10), org: 'Kolektor Mainan Priangan',
+        desc: 'Pameran dan bursa mainan koleksi. Tiket Kolektor termasuk akses jam pertama (10:00-11:00) sebelum pengunjung umum.',
+        types: [fes('MSK', 'Tiket Masuk', 25000, 300, 'Akses mulai 11:00', '#4f46e5'), fes('KOL', 'Tiket Kolektor', 75000, 40, 'Akses jam pertama + tote bag', '#f59e0b')] }),
+      open({ id: 'EVT-24', name: 'Kelas Masak Hidangan Sunda', tagline: 'Nasi liwet, pepes, dan sambal dadak', cat: 'Kuliner', area: 'expo', img: 'ev-masak', color: '#65a30d', start: day(5, 10), max: 2, org: 'Dapur Sunda Gedebage',
+        desc: 'Kelas masak 2,5 jam bersama juru masak rumah makan Sunda. Semua bahan dan celemek disediakan; hasil masakan disantap bersama.',
+        types: [fes('KLS', 'Peserta Kelas', 225000, 12, 'Bahan, celemek & resep', '#65a30d')] }),
+      open({ id: 'EVT-25', name: 'Orkestra Simfoni Remaja Bandung', tagline: 'Konser akhir tahun 60 musisi muda', cat: 'Konser', area: 'hall', img: 'ev-orkestra', color: '#9f1239', start: day(24, 19), saleStart: day(9, 10), layout: HALL, max: 4, org: 'Simfoni Remaja Gedebage',
+        desc: 'Konser orkestra akhir tahun: karya klasik dan aransemen lagu daerah Jawa Barat. Penjualan dibuka sembilan hari lagi.',
+        types: [seatT('PRM', 'Premium', 250000, '#f472b6', 'Baris A-C'), seatT('REG', 'Reguler', 150000, '#60a5fa', 'Baris D-H')] }),
+      open({ id: 'EVT-26', name: 'Yoga Pagi Akhir Pekan', tagline: 'Hatha yoga 75 menit untuk pemula', cat: 'Olahraga', area: 'plaza', img: 'ev-yoga', color: '#0d9488', start: day(toSat + 1, 7), max: 2, org: 'Studio Napas Yoga',
+        desc: 'Yoga pagi bersama instruktur bersertifikat di Outdoor Plaza. Matras bisa dipinjam di lokasi; datang 15 menit lebih awal.',
+        types: [fes('PST', 'Peserta', 60000, 50, 'Pinjam matras & air mineral', '#0d9488')] }),
+      open({ id: 'EVT-27', name: 'Kelas Fotografi Ponsel', tagline: 'Komposisi, cahaya, dan edit cepat di ponsel', cat: 'Workshop', area: 'expo', img: 'ev-foto', color: '#2563eb', start: day(2, 16), max: 2, org: 'Kelas Foto Gedebage',
+        desc: 'Kelas 2 jam: teori singkat lalu praktik memotret di sekitar mal. Bawa ponsel dengan baterai penuh.',
+        types: [fes('KLS', 'Peserta Kelas', 95000, 30, 'Materi & sertifikat digital', '#2563eb')] }),
     ];
     evs.forEach((e) => { s.events[e.id] = e; s.order.push(e.id); s.seats[e.id] = {}; s.qholds[e.id] = []; });
-    Object.assign(s.events['EVT-01'], { img: IMG('ev-akustik') });
-    Object.assign(s.events['EVT-02'], { img: IMG('ev-demoday') });
-    Object.assign(s.events['EVT-03'], { img: IMG('ev-komedi') });
+    Object.assign(s.events['EVT-01'], { img: IMG('ev-akustik'), org: ORG_MALL });
+    Object.assign(s.events['EVT-02'], { img: IMG('ev-demoday'), org: 'Panitia Bandung Build Challenge 2026' });
+    Object.assign(s.events['EVT-03'], { img: IMG('ev-komedi'), org: ORG_MALL });
     // Penjualan contoh: beberapa acara hampir habis (muncul di "Laku keras")
     const sell = (ev, type, n) => { let left = n; while (left > 0) { const q = Math.min(left, 1 + Math.floor(R() * 3)); mkOrder(ev, Array.from({ length: q }, () => ({ type })), {}); left -= q; } };
     const sellSeats = (ev, prob) => ev.layout.rows.forEach((row) => { let c = 1; while (c <= row.n) { const k = 1 + Math.floor(R() * 4); const seats = []; for (let j = 0; j < k && c <= row.n; j++, c++) seats.push(row.r + c); if (R() < prob[row.t]) mkOrder(ev, seats.map((x) => ({ type: row.t, seat: x })), {}); } });
@@ -230,6 +278,19 @@
     sellSeats(E('EVT-10'), { PRM: 0.3, REG: 0.12 });
     sellSeats(E('EVT-11'), { PRM: 0.9, REG: 0.75 });
     sell(E('EVT-12'), 'MSK', 12); sell(E('EVT-12'), 'KLS', 4);
+    sellSeats(E('EVT-13'), { VIP: 0.35, GLD: 0, SLV: 0 }); sell(E('EVT-13'), 'FES', 8);
+    sell(E('EVT-14'), 'PNT', 8); sell(E('EVT-14'), 'PSR', 8);
+    sell(E('EVT-15'), 'KLS', 10);
+    sell(E('EVT-16'), 'RGS', 8);
+    sellSeats(E('EVT-18'), { PRM: 0.25, REG: 0 });
+    sell(E('EVT-19'), 'RGS', 8);
+    sellSeats(E('EVT-20'), { PRM: 1, REG: 1 }); // habis terjual: tampil "Daftar tunggu"
+    sell(E('EVT-21'), 'TIM', 11);
+    sell(E('EVT-22'), 'RGS', 24);
+    sell(E('EVT-23'), 'KOL', 8);
+    sell(E('EVT-24'), 'KLS', 10);
+    sell(E('EVT-26'), 'PST', 6);
+    sell(E('EVT-27'), 'KLS', 8);
   }
 
   // ------------------------------------------------------------------ query helpers (read-only)

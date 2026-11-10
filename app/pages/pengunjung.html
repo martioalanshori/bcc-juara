@@ -6,45 +6,63 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <title>Event & Tiket · Summarecon Mall Bandung</title>
-  <script src="/app/js/core/theme.js?v=32"></script>
-  <script src="/app/js/core/router.js?v=32"></script>
+  <script src="/app/js/core/theme.js?v=37"></script>
+  <script src="/app/js/core/router.js?v=37"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=32" />
-  <link rel="stylesheet" href="/app/css/app.css?v=32" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=37" />
+  <link rel="stylesheet" href="/app/css/app.css?v=37" />
 </head>
 <body class="pv-page bg-surface font-body-md text-body-md text-on-surface antialiased">
-  <!-- Header: ponsel 2 baris (merek, lalu kolom cari); desktop 1 baris. Portal selalu mode terang berlatar putih. -->
+  <!-- Header: ponsel 2 baris (merek + bahasa/Jelajah/profil, lalu kolom cari); desktop 1 baris (merek, cari,
+       Kerjasama dengan kami, Masuk). Portal selalu mode terang berlatar putih. -->
   <header class="pv-header sticky top-0 z-40">
     <div class="pv-wrap pv-head">
-      <a href="/pengunjung" class="pv-brand flex items-center gap-2 min-w-0">
-        <span class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-[18px]">local_activity</span></span>
-        <span class="flex flex-col leading-tight min-w-0"><span class="font-headline-sm text-headline-sm truncate">Summarecon Mall Bandung</span><span class="font-label-sm text-label-sm text-secondary">Event &amp; Tiket</span></span>
-      </a>
+      <div class="pv-head-top">
+        <a href="/pengunjung" class="pv-brand flex items-center gap-2 min-w-0">
+          <span class="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0"><span class="material-symbols-outlined text-[18px]">local_activity</span></span>
+          <span class="flex flex-col leading-tight min-w-0"><span class="pv-brand-name font-headline-sm text-headline-sm truncate">Summarecon<span class="pv-desk-only"> Mall Bandung</span></span><span class="font-label-sm text-label-sm text-on-surface-variant truncate"><span class="pv-mob-only">Mall Bandung</span><span class="pv-desk-only" data-en="Events &amp; Tickets">Event &amp; Tiket</span></span></span>
+        </a>
+        <div class="pv-head-mob">
+          <button type="button" class="pv-hbtn" data-lang-btn aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="Bahasa: Indonesia. Ganti bahasa"><span class="pv-flag" aria-hidden="true"></span><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+          <a href="/pengunjung" class="pv-hbtn pv-explore" id="h-explore"><span class="material-symbols-outlined text-[18px]">explore</span><span data-en="Explore">Jelajah</span><span class="pv-new" data-en="New">Baru</span></a>
+          <a href="/masuk" class="pv-hbtn pv-hround" aria-label="Masuk" data-en-label="Log in"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings:'FILL' 1">person</span></a>
+        </div>
+      </div>
       <form class="pv-search pv-head-search" id="f-q" role="search">
         <div class="pv-search-field">
-          <input id="q" type="search" placeholder="Cari acara, kategori, atau lokasi" autocomplete="off" aria-label="Cari acara, kategori, atau lokasi" enterkeyhint="search">
-          <div class="pv-ph" id="q-ph" aria-hidden="true" hidden><span class="pv-ph-pre">Cari</span><span class="pv-ph-win" id="q-roll"></span></div>
+          <input id="q" type="search" placeholder="Cari acara, kategori, atau lokasi" data-en-ph="Search events, categories or places" autocomplete="off" aria-label="Cari acara, kategori, atau lokasi" data-en-label="Search events, categories or places" enterkeyhint="search">
+          <div class="pv-ph" id="q-ph" aria-hidden="true" hidden><span class="pv-ph-pre" data-en="Search">Cari</span><span class="pv-ph-win" id="q-roll"></span></div>
         </div>
-        <button type="submit" class="pv-search-btn" aria-label="Cari"><span class="material-symbols-outlined">search</span></button>
+        <button type="submit" class="pv-search-btn" aria-label="Cari" data-en-label="Search"><span class="material-symbols-outlined">search</span></button>
       </form>
+      <div class="pv-head-desk">
+        <button type="button" class="pv-hbtn" data-lang-btn aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="Bahasa: Indonesia. Ganti bahasa"><span class="pv-flag" aria-hidden="true"></span><span class="material-symbols-outlined text-[18px]">expand_more</span></button>
+        <button type="button" class="btn-ghost" id="h-mitra"><span class="material-symbols-outlined text-[18px]">handshake</span><span data-en="Partner with us">Kerjasama dengan kami</span></button>
+        <a href="/masuk" class="btn"><span class="material-symbols-outlined text-[18px]">login</span><span data-en="Log in">Masuk</span></a>
+      </div>
     </div>
   </header>
+  <!-- Menu bahasa: satu untuk kedua tombol (ponsel & desktop), diposisikan di bawah tombol yang diklik. -->
+  <div id="lang-menu" class="pv-lang-menu" role="menu" aria-label="Bahasa / Language" hidden>
+    <button type="button" role="menuitemradio" data-lang="id" aria-checked="true" tabindex="-1"><span class="pv-flag" data-flag="id" aria-hidden="true"></span><span class="flex-1">Bahasa Indonesia</span><span class="material-symbols-outlined pv-lang-check text-[18px]">check</span></button>
+    <button type="button" role="menuitemradio" data-lang="en" aria-checked="false" tabindex="-1"><span class="pv-flag" data-flag="en" aria-hidden="true"></span><span class="flex-1">English</span><span class="material-symbols-outlined pv-lang-check text-[18px]">check</span></button>
+  </div>
 
   <main id="app" class="pv-wrap px-4 pt-4 pb-40"></main>
 
   <nav class="pv-bnav fixed bottom-0 inset-x-0 z-40" style="padding-bottom: env(safe-area-inset-bottom)">
     <div class="max-w-xl mx-auto grid grid-cols-3" id="bnav">
-      <a href="/pengunjung" data-nav="home" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">event</span><span class="font-label-sm text-label-sm">Acara</span></a>
-      <a href="/pengunjung/tiket" data-nav="tiket" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">confirmation_number</span><span class="font-label-sm text-label-sm">Tiket saya</span></a>
-      <a href="/pengunjung/inbox" data-nav="inbox" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">mail</span><span class="font-label-sm text-label-sm">Kotak masuk</span></a>
+      <a href="/pengunjung" data-nav="home" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">event</span><span class="font-label-sm text-label-sm" data-en="Events">Acara</span></a>
+      <a href="/pengunjung/tiket" data-nav="tiket" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">confirmation_number</span><span class="font-label-sm text-label-sm" data-en="My tickets">Tiket saya</span></a>
+      <a href="/pengunjung/inbox" data-nav="inbox" class="flex flex-col items-center gap-0.5 py-2 text-on-surface-variant"><span class="material-symbols-outlined">mail</span><span class="font-label-sm text-label-sm" data-en="Inbox">Kotak masuk</span></a>
     </div>
   </nav>
   <div id="modal-root"></div>
   <div id="toast-root" style="top: calc(var(--hdr, 56px) + 8px)" class="fixed inset-x-0 z-[90] flex flex-col gap-2 items-center px-4 pointer-events-none"></div>
 
-  <script src="/app/vendor/qrcode.js?v=32"></script>
-  <script src="/app/js/event/engine.js?v=32"></script>
-  <script src="/app/js/event/tenants.js?v=32"></script>
-  <script src="/app/js/event/visitor.js?v=32"></script>
+  <script src="/app/vendor/qrcode.js?v=37"></script>
+  <script src="/app/js/event/engine.js?v=37"></script>
+  <script src="/app/js/event/tenants.js?v=37"></script>
+  <script src="/app/js/event/visitor.js?v=37"></script>
 </body>
 </html>

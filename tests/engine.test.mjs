@@ -311,11 +311,11 @@ test('denah terkunci kategori: kursi kategori lain disabled, kursi milik sendiri
   assert.ok(!/ disabled/.test(Evt.seatMap('EVT-01', { only: a.id })), 'tanpa lock (konsol pengelola): hanya disorot, tidak dikunci');
 });
 
-test('data contoh: 12 acara di 5 area mal, foto demo ada di disk, beberapa hampir habis', async () => {
+test('data contoh: 27 acara di 5 area mal, foto demo ada di disk, beberapa hampir habis', async () => {
   const { existsSync } = await import('node:fs');
   const { Evt } = await loadEvt();
   const evs = Evt.s.order.map(Evt.ev);
-  assert.equal(evs.length, 12);
+  assert.equal(evs.length, 27);
   assert.equal(new Set(evs.map((e) => e.venue.split(',')[0])).size, 5, 'tersebar di 5 area');
   for (const e of evs) {
     assert.ok(e.img, e.id + ' punya foto');

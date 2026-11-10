@@ -87,10 +87,12 @@ Logika CAS, hold kursi, dan validasi QR tidak diubah.
 /pengelola#/e/EVT-01/keuangan             └ Keuangan & ROI
 ```
 
-Perubahan dari tab sekarang:
+Navigasi utama berupa sidebar kiri (rincian di bawah), bukan baris tab. Perubahan dari susunan
+sekarang:
 
 | Sekarang | Baru | Alasan |
 |---|---|---|
+| Baris 8 tab + chip pemilih acara | Sidebar: Semua acara, pemilih acara, menu per acara | Konteks acara selalu terlihat, menu tidak berdesakan |
 | Daftar acara (tab) | Halaman tingkat 1 | Bukan bagian dari satu acara |
 | Ringkasan | Ringkasan | Ditambah blok "Perlu tindakan" |
 | Kelola acara + Denah kursi | Pengaturan (6 sub-bagian) | Semua yang mengubah konfigurasi di satu tempat |
@@ -99,29 +101,98 @@ Perubahan dari tab sekarang:
 | Notifikasi & daftar tunggu | Komunikasi | Nama lebih pendek, isi sama |
 | Uji rebutan, uji tekan, uji 2 gate, Reset | Panel "Alat demo" | Dipisah, bisa disembunyikan |
 
+### Sidebar
+
+Baris tab diganti sidebar kiri, memakai pola yang sudah ada di Command Center
+(`<aside id="sidebar">` di `app/index.html`, kelas `.nav-item`, `.nav-item.active`, dan badge
+`.cnt` di `app/css/app.css`). Dengan begitu kedua konsol terasa satu sistem, dan CSS-nya cukup
+dipakai ulang tanpa gaya baru.
+
+Isi sidebar dari atas ke bawah:
+
+```
+┌──────────────────────────────┐
+│ [▣] Konsol Pengelola         │  identitas + tombol ciutkan («)
+│                              │
+│ ▤ Semua acara            4   │  tingkat 1 (jumlah acara)
+│ ＋ Acara baru                │
+│ ──────────────────────────── │
+│ ┌──────────────────────────┐ │
+│ │● Festival Musik Atrium ▾ │ │  pemilih acara (dropdown + cari),
+│ │  21 Nov · Dijual         │ │  status & tanggal selalu terlihat
+│ └──────────────────────────┘ │
+│ ◔ Ringkasan              3   │  badge = jumlah "Perlu tindakan"
+│ ⚙ Pengaturan             2   │  badge = cek kesiapan yang belum lolos (draft)
+│   · Info acara               │  sub-menu terbuka saat Pengaturan aktif
+│   · Jadwal & penjualan       │
+│   · Tiket & harga            │
+│   · Denah kursi              │
+│   · Gate                     │
+│   · Kontrak venue            │
+│ 👥 Peserta & transaksi    4   │  badge = pesanan menunggu bayar
+│ ▣ Check-in & gate        2   │  badge merah = anomali/laporan terbuka
+│ ✉ Komunikasi             5   │  badge = daftar tunggu belum dikabari
+│ ₨ Keuangan & ROI         1   │  badge merah = selisih rekonsiliasi
+│ ──────────────────────────── │
+│ ↗ Portal pengunjung          │  tautan luar (tab baru)
+│ ▢ Pemindai ponsel            │
+│ ⚗ Alat demo              ▸   │  lipat; berisi uji rebutan, uji tekan,
+│                              │  uji 2 gate, reset data
+│ ● Server LAN                 │  status koneksi, kecil di bawah
+└──────────────────────────────┘
+```
+
+Aturan:
+
+- Bagian acara (pemilih + menu per acara) hanya tampil bila ada acara. Di halaman Semua acara,
+  menu per acara tetap terlihat untuk acara terakhir yang dibuka, supaya kembali ke sana satu klik.
+- Badge hanya muncul bila angkanya > 0. Merah (`.cnt` bawaan) untuk masalah, abu-abu untuk
+  hitungan biasa (kelas baru `.cnt.muted`).
+- Menu memakai `<a href="#/e/EVT-01/peserta">`, bukan tombol, sehingga bisa dibuka di tab baru dan
+  ikut router.
+- Info teknis (Server LAN, versi data) pindah ke baris status kecil di kaki sidebar, keluar dari
+  area kerja.
+- Ciutkan: lebar 272 px ↔ 64 px (hanya ikon, label muncul sebagai tooltip). Pilihan disimpan di
+  `localStorage['smicc-pengelola-nav']` (dibungkus try/catch). Default terbuka di ≥ 1280 px,
+  ciut di 1024 sampai 1279 px.
+- Di bawah 1024 px sidebar menjadi drawer: tombol menu di header membukanya, latar `.scrim`,
+  tertutup saat memilih menu, Esc, atau klik latar. Fokus pindah ke menu pertama saat terbuka dan
+  kembali ke tombol menu saat tertutup.
+- Di bawah 768 px ditambah bar bawah menempel berisi 4 menu tersering (Ringkasan, Peserta,
+  Check-in, Lainnya → membuka drawer) dan tombol aksi utama acara.
+- Aksesibilitas: `<nav aria-label="Navigasi konsol">`, item aktif memakai `aria-current="page"`,
+  sub-menu Pengaturan memakai `aria-expanded`.
+- Mode `mall` (Command Center) tidak memakai sidebar ini, karena Command Center sudah punya
+  sidebar sendiri. Di sana `event.js` tetap memakai baris tab seperti sekarang.
+
 ### Wireframe ruang kerja acara (desktop)
 
 ```
-┌ header halaman (logo, Pilih peran, tema, Keluar) ──────────────────────────────────┐
-│ ← Semua acara                                                                      │
-│ Festival Musik Atrium            [Dipublikasikan] [Penjualan dibuka]               │
-│ Sab, 21 Nov 2026 · 19.00 WIB · Main Atrium GF        [Lihat di portal] [Tutup penjualan ▾]│
-│ Ringkasan | Pengaturan | Peserta & transaksi | Check-in & gate | Komunikasi | Keuangan │
-├────────────────────────────────────────────────────────────────────────────────────┤
-│ Perlu tindakan (3)                                                                 │
-│  ! 2 anomali di Gate A               [Laporkan ke CC]                              │
-│  ! 4 pesanan menunggu bayar, 1 habis dalam 3 menit   [Lihat]                       │
-│  ! Selisih rekonsiliasi 1 pesanan    [Periksa]                                     │
-├──────────────┬──────────────┬──────────────┬──────────────┐                        │
-│ Terjual 61%  │ Pendapatan   │ Kehadiran    │ Sedang dipesan│  (4 KPI, bukan 6)      │
-└──────────────┴──────────────┴──────────────┴──────────────┘                        │
-│ Ketersediaan per kategori (tabel)          │ Denah mini (hanya pantau)             │
-│ Penjualan 14 hari | Arus check-in          │ Transaksi terbaru                     │
-└────────────────────────────────────────────────────────────────────────────────────┘
+┌ header: logo · Pilih peran · tema · Keluar ─────────────────────────────────────────────┐
+├─────────────────┬───────────────────────────────────────────────────────────────────────┤
+│ SIDEBAR         │ Festival Musik Atrium           [Dipublikasikan] [Penjualan dibuka]   │
+│ (lihat atas)    │ Sab, 21 Nov 2026 · 19.00 WIB · Main Atrium GF                         │
+│                 │                       [Lihat di portal] [Tutup penjualan ▾]           │
+│ ▤ Semua acara   ├───────────────────────────────────────────────────────────────────────┤
+│ ＋ Acara baru   │ Perlu tindakan (3)                                                    │
+│ ─────────────   │  ! 2 anomali di Gate A                         [Laporkan ke CC]       │
+│ ● Festival… ▾   │  ! 4 pesanan menunggu bayar, 1 habis 3 menit   [Lihat]                │
+│ ◔ Ringkasan  3  │  ! Selisih rekonsiliasi 1 pesanan              [Periksa]              │
+│ ⚙ Pengaturan    ├──────────────┬──────────────┬──────────────┬──────────────┐          │
+│ 👥 Peserta    4  │ Terjual 61%  │ Pendapatan   │ Kehadiran    │ Sedang dipesan│ 4 KPI    │
+│ ▣ Check-in   2  ├──────────────┴──────────────┴──────────────┴──────────────┘          │
+│ ✉ Komunikasi    │ Ketersediaan per kategori         │ Denah mini (hanya pantau)         │
+│ ₨ Keuangan   1  │ Penjualan 14 hari | Arus check-in │ Transaksi terbaru                 │
+│ ─────────────   │                                                                       │
+│ ⚗ Alat demo  ▸  │                                                                       │
+│ ● Server LAN    │                                                                       │
+└─────────────────┴───────────────────────────────────────────────────────────────────────┘
 ```
 
-Di bawah 768 px: tab menjadi baris yang bisa digeser horizontal, tombol aksi utama pindah ke
-bar bawah yang menempel, KPI 2 kolom.
+Header acara (nama, status, aksi utama) menempel di atas area kerja saat di-scroll.
+
+Di bawah 1024 px: sidebar menjadi drawer, area kerja penuh. Di bawah 768 px: bar bawah menempel
+(Ringkasan, Peserta, Check-in, Lainnya, aksi utama), KPI 2 kolom.
 
 ### Wireframe daftar acara
 
@@ -188,7 +259,7 @@ DRAFT ──Publikasikan (cek kesiapan)──▶ PUBLISHED ──Tutup penjualan
   aktif hanya bila ada perubahan. Tiket & harga menyimpan semua kategori sekaligus.
 - Validasi di field (pesan merah di bawah input) sebelum submit, memakai aturan yang sama dengan
   daftar periksa kesiapan.
-- Pindah tab, pindah acara, atau menutup halaman dengan perubahan belum disimpan memunculkan
+- Pindah menu, pindah acara, atau menutup halaman dengan perubahan belum disimpan memunculkan
   dialog "Buang perubahan?" (`beforeunload` untuk tutup halaman).
 - Bila data acara diubah perangkat lain saat form terbuka, tampil strip "Data acara ini diubah di
   perangkat lain. [Muat ulang]", bukan diam-diam dilewati seperti sekarang.
@@ -219,12 +290,12 @@ Butuh fungsi engine baru `Evt.setBlocked(evId, seats[], blocked)` (satu `tx`).
 
 ### F. Hari H: check-in dan gate
 
-- Tab Check-in & gate menampilkan, berurutan: anomali dan laporan (paling atas, merah bila ada),
+- Halaman Check-in & gate menampilkan, berurutan: anomali dan laporan (paling atas, merah bila ada),
   kehadiran per gate, log pindaian.
 - Pemindai di konsol tetap ada tetapi dilipat; tautan "Buka pemindai di ponsel" menampilkan QR
   menuju `/checkin` agar petugas gate tinggal memindai.
 - Saat `sekarang` berada di antara `doors - 2 jam` dan `start + 6 jam`, ruang kerja otomatis
-  membuka tab ini dan header memberi label "Hari H".
+  membuka halaman ini dan header memberi label "Hari H".
 
 ### G. Aksi berisiko
 
@@ -243,6 +314,7 @@ mengembalikan Promise, menggantikan semua `prompt()`/`confirm()`:
 
 | Mekanisme | Rancangan | File |
 |---|---|---|
+| Sidebar | Fungsi `sidebar()` di `event.js` (hanya peran pengelola) dirender ke `<aside>` baru di `pengelola.html`; isi `<main>` bergeser `lg:pl-72` (atau `lg:pl-16` saat ciut). Badge dari `attention(e)` dan `readiness(e)`. Region sidebar ikut render parsial supaya badge segar tanpa menggambar ulang area kerja. Drawer ponsel memakai `.scrim` dan penanganan Esc yang sudah ada. Kelas `.nav-item` dipakai ulang; tambah `.nav-item .cnt.muted` dan gaya sub-menu di `app.css`. | `pengelola.html`, `views/event.js`, `css/app.css` |
 | Router | Hash router kecil di `event.js` khusus peran pengelola: parse `#/acara`, `#/e/:id/:tab/:sub?`, `?o=`. `hashchange` memicu `draw`. Mode `mall` (Command Center) tetap memakai `EvtAdmin.open(params)` dari router Shell. | `views/event.js` |
 | Status acara | `Evt.setStatus(evId, next)` dengan tabel transisi; `Evt.readiness(e)` mengembalikan daftar cek. `updateEvent` tidak lagi menerima `status`. | `evt/engine.js` |
 | Validasi | Fungsi `validateEvent(patch)` di engine dipakai form (inline) dan `updateEvent` (lempar error bila dilanggar). | `evt/engine.js`, `views/event.js` |
@@ -253,7 +325,7 @@ mengembalikan Promise, menggantikan semua `prompt()`/`confirm()`:
 | Konfirmasi | `UI.confirm()` dan `UI.toast(msg, lvl, { action: { label, fn } })` untuk Urungkan. | `ui.js` |
 | Alat demo | Panel lipat "Alat demo" di footer ruang kerja, tampil bila `localStorage['smicc-demo-tools'] = '1'` (toggle di menu header). Default tampil selama masa prototype. | `views/event.js`, `pengelola.html` |
 | Warna | Ganti hex di `event.js` dengan variabel status (`rgb(var(--slate-500))` dst.) dan warna kategori acara tetap dari data. Gradien header diganti strip warna kategori 4 px. | `views/event.js`, `css/app.css` |
-| Perlu tindakan | Fungsi `attention(e)` mengumpulkan anomali gate, laporan belum ditangani, pesanan PENDING yang akan habis, selisih rekonsiliasi, kesiapan draft. Dipakai di Ringkasan dan badge angka di tab terkait. | `views/event.js` |
+| Perlu tindakan | Fungsi `attention(e)` mengumpulkan anomali gate, laporan belum ditangani, pesanan PENDING yang akan habis, selisih rekonsiliasi, kesiapan draft. Dipakai di Ringkasan dan badge angka di sidebar. | `views/event.js` |
 
 Dampak ke server guard: semua aksi baru dijalankan oleh peran `pengelola`, yang boleh mengubah
 apa saja, jadi `server.py` dan `api/_guard.js` tidak perlu diubah. Tetap jalankan tes guard untuk
@@ -269,26 +341,26 @@ bila ada kelas baru.
 
 | Tahap | Isi | Perkiraan |
 |---|---|---|
-| 0. Baseline | Screenshot semua tab pengelola dan `#/event` di 1440 px dan 390 px, mode gelap dan terang. Catat alur saat ini sebagai pembanding. | 0,5 hari |
+| 0. Baseline | Screenshot semua tab pengelola saat ini dan `#/event` di 1440 px dan 390 px, mode gelap dan terang. Catat alur saat ini sebagai pembanding. | 0,5 hari |
 | 1. Engine | `setStatus`, `readiness`, `validateEvent`, `setBlocked` + tes di `tools/tests/engine.test.mjs`. Perbarui `docs/EVENT_TICKETING_Asumsi_Alur_Logika.md`. | 1 hari |
 | 2. Komponen UI | `UI.confirm`, toast dengan aksi, pesan error field, panel samping. | 0,5 hari |
-| 3. Router dan kerangka | Hash router, daftar acara sebagai halaman, header ruang kerja dengan aksi utama per status, tab baru, render per region. | 1,5 hari |
+| 3. Router, sidebar, dan kerangka | Hash router, sidebar (pemilih acara, menu per acara, badge, ciutkan, drawer ponsel, bar bawah), daftar acara sebagai halaman, header acara menempel dengan aksi utama per status, render per region. | 2 hari |
 | 4. Buat dan publikasi | Wizard 4 langkah, daftar periksa kesiapan, kartu "Langkah berikutnya" di daftar acara. | 1 hari |
 | 5. Pengaturan | Pecah form Kelola ke 6 sub-bagian, satu tombol simpan, validasi inline, penjaga form kotor, strip data basi. Denah dengan pilih banyak dan Urungkan. | 1,5 hari |
-| 6. Ringkasan dan check-in | Blok "Perlu tindakan", 4 KPI, denah mini, urutan baru tab Check-in & gate, mode Hari H. | 1 hari |
+| 6. Ringkasan dan check-in | Blok "Perlu tindakan", 4 KPI, denah mini, urutan baru halaman Check-in & gate, mode Hari H. | 1 hari |
 | 7. Peserta dan komunikasi | Chip berjumlah, pagination, panel transaksi bertaut URL, dialog refund, konfirmasi pengingat. | 1 hari |
 | 8. Aksi berisiko dan demo | Ganti semua `prompt`/`confirm`, pindahkan alat demo ke panel lipat. | 0,5 hari |
-| 9. Rapi dan aksesibilitas | Hapus hex, layout 390 px tanpa scroll horizontal, navigasi panah di tab, fokus baris tabel, target sentuh 44 px di ponsel, pass teks sesuai panduan. | 1 hari |
+| 9. Rapi dan aksesibilitas | Hapus hex, layout 390 px tanpa scroll horizontal, navigasi keyboard di sidebar, fokus baris tabel, target sentuh 44 px di ponsel, pass teks sesuai panduan. | 1 hari |
 | 10. Verifikasi | Lihat bagian 7. | 0,5 hari |
 
-Total sekitar 10 hari kerja untuk satu orang.
+Total sekitar 10,5 hari kerja untuk satu orang.
 
 ## 7. Verifikasi
 
 - `node --test "tools/tests/*.test.mjs"` dan `python -m unittest discover -s tools/tests -p "test_*.py"`
   lolos, termasuk tes baru untuk transisi status, kesiapan, dan blokir massal.
 - Uji manual di mode `server` dan `lokal`:
-  1. Buat acara lewat wizard, simpan draft, refresh halaman (tetap di acara dan tab yang sama).
+  1. Buat acara lewat wizard, simpan draft, refresh halaman (tetap di acara dan menu yang sama).
   2. Coba publikasikan dengan periode jual salah (ditolak, cek kesiapan menunjuk field).
   3. Publikasikan, beli tiket di `/pengunjung`, lihat ringkasan dan denah berubah tanpa kehilangan
      scroll.
@@ -299,8 +371,11 @@ Total sekitar 10 hari kerja untuk satu orang.
   7. Refund, batalkan acara, hapus acara lewat dialog baru.
   8. Check-in di `/checkin`, anomali muncul di "Perlu tindakan", laporkan ke CC, tiket insiden
      terbuat di Command Center.
-  9. Tombol Back browser berpindah antar tab dan acara.
-- `#/event` di Command Center: tidak ada tombol ubah, wizard, atau alat demo.
+  9. Tombol Back browser berpindah antar menu dan acara.
+  10. Sidebar: ganti acara lewat pemilih, badge berubah saat ada pesanan atau anomali baru,
+      ciutkan lalu refresh (tetap ciut), drawer di 900 px bisa dibuka dan ditutup dengan
+      keyboard dan Esc, bar bawah tampil di 390 px.
+- `#/event` di Command Center: tidak ada tombol ubah, wizard, alat demo, atau sidebar kedua.
 - 390 px dan 1440 px, mode gelap dan terang, konsol browser bersih.
 - `grep -n "#[0-9a-fA-F]\{6\}" app/js/views/event.js` kosong (kecuali warna yang berasal dari data).
 
