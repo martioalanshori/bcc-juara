@@ -73,6 +73,8 @@
   const METHODS = ['QRIS', 'VA BCA', 'VA Mandiri', 'GoPay', 'OVO', 'DANA', 'Kartu Kredit'];
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
+  // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
+  const SAMPLE_VER = 2;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
@@ -95,7 +97,7 @@
         { id: 'PRM', name: 'Premium', price: 300000, color: '#f472b6', seated: true, onSale: true, perks: 'Baris A-C' },
         { id: 'REG', name: 'Reguler', price: 175000, color: '#60a5fa', seated: true, onSale: true, perks: 'Baris D-H' },
       ] };
-    const s = { v: 1, events: { 'EVT-01': ev1, 'EVT-02': ev2, 'EVT-03': ev3 }, order: ['EVT-01', 'EVT-02', 'EVT-03'], seats: { 'EVT-01': {}, 'EVT-02': {}, 'EVT-03': {} }, qholds: { 'EVT-01': [], 'EVT-02': [], 'EVT-03': [] }, orders: {}, tickets: {}, scans: [], outbox: [], waitlist: [], reports: [], seededAt: t };
+    const s = { v: 1, events: { 'EVT-01': ev1, 'EVT-02': ev2, 'EVT-03': ev3 }, order: ['EVT-01', 'EVT-02', 'EVT-03'], seats: { 'EVT-01': {}, 'EVT-02': {}, 'EVT-03': {} }, qholds: { 'EVT-01': [], 'EVT-02': [], 'EVT-03': [] }, orders: {}, tickets: {}, scans: [], outbox: [], waitlist: [], reports: [], seededAt: t, sample: SAMPLE_VER };
     const R = prng(20261115);
     let ni = 0;
     const person = () => { const n = NAMES[ni++ % NAMES.length]; const u = n.toLowerCase().replace(/[^a-z]+/g, '.') + (ni > NAMES.length ? Math.ceil(ni / NAMES.length) : ''); return { name: n, email: u + '@example.com', phone: '0812-0000-' + String(1000 + ni).slice(-4) }; };
@@ -492,7 +494,8 @@
   // Banner peringatan mode lokal (dipakai portal, konsol pengelola, check-in)
   // Data contoh dibuat > 12 jam lalu: jadwal acara contoh (relatif terhadap waktu seed) sudah lewat, perlu Reset sebelum demo
   const STALE_MS = 12 * 3600000;
-  const demoStale = () => !!(state && state.seededAt && now() - state.seededAt > STALE_MS);
+  const demoOld = () => !!(state && state.seededAt && state.sample !== SAMPLE_VER);
+  const demoStale = () => !!(state && state.seededAt && (now() - state.seededAt > STALE_MS || demoOld()));
   function modeBanner() {
     if (mode === 'server' && fails >= OFFLINE_AFTER) return `<div class="card p-3 mb-4 border border-rose-500/30 bg-rose-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-mode-banner role="status">
       <span class="material-symbols-outlined text-rose-300 text-[20px]">cloud_off</span>
@@ -865,7 +868,7 @@
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });

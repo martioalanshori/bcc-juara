@@ -181,6 +181,9 @@ details > summary::-webkit-details-marker { display: none; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   /* Ticker insiden tetap berjalan dari kanan ke kiri; berhenti saat disorot. */
   .ticker-move { animation-duration: 38s !important; animation-iteration-count: infinite !important; }
+  /* Sama seperti ticker: logo tenant tetap berjalan (berhenti saat disorot, ada tombol Jeda). Kata kunci cari hanya memudar. */
+  .pv-marquee-track { animation-duration: var(--dur, 40s) !important; animation-iteration-count: infinite !important; }
+  .pv-ph-win > span { transition-property: opacity !important; transition-duration: .4s !important; }
 }
 
 /* atribut hidden harus menang atas utilitas display (.flex dll.) */
@@ -206,7 +209,7 @@ details > summary::-webkit-details-marker { display: none; }
 .pv-search-btn .material-symbols-outlined { font-size: 22px; }
 .pv-search-btn:hover { color: rgb(var(--primary)); }
 .pv-search:focus-within .pv-search-btn { background: rgb(var(--primary)); color: rgb(var(--on-primary)); }
-@media (prefers-reduced-motion: reduce) { .pv-ph-win > span, .pv-ph, .pv-search, .pv-search-btn { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .pv-ph, .pv-search, .pv-search-btn { transition: none; } .pv-ph-win > span { transition: opacity .4s ease; } }
 /* Alur beli: kategori yang sudah berisi tiket disorot; kursi kategori lain (denah terkunci) tidak bisa diketuk */
 .pv-tix-on { border-color: rgb(var(--primary) / .6); }
 .seat:disabled { cursor: not-allowed; }
@@ -335,6 +338,15 @@ body.pv-wide .pv-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1
 .pv-foot a { display: block; padding: 3px 0; } .pv-foot a:hover { color: rgb(var(--primary)); }
 .pv-pay { padding: 3px 8px; border-radius: 6px; border: 1px solid rgb(var(--outline-variant)); font-size: 12px; }
 .pv-foot-bot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 24px; padding-top: 16px; border-top: 1px solid rgb(var(--outline-variant) / .6); font-size: 12px; }
+/* Logo tenant berjalan (marquee): track berisi daftar dua kali, digeser -50% lalu mengulang tanpa jeda */
+.pv-marquee { position: relative; overflow: hidden; padding: 4px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.pv-marquee-track { display: flex; width: max-content; animation: pv-marquee var(--dur, 40s) linear infinite; }
+.pv-marquee:hover .pv-marquee-track, .pv-marquee:focus-within .pv-marquee-track, .pv-marquee.paused .pv-marquee-track { animation-play-state: paused; }
+@keyframes pv-marquee { to { transform: translateX(-50%); } }
+.pv-logo { flex: 0 0 auto; margin-right: 12px; width: 148px; height: 72px; display: flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1px solid rgb(var(--outline-variant) / .7); }
+.pv-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.pv-logo span { font-weight: 700; font-size: 14px; color: #1f2937; text-align: center; line-height: 1.15; }
+@media (min-width: 900px) { .pv-logo { width: 168px; height: 84px; } }
 @media (prefers-reduced-motion: reduce) { .pv-cat, .pv-area img, .pv-hero-dots button { transition: none; } }
 
 .pv-bleed { margin-left: -16px; margin-right: -16px; }

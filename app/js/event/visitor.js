@@ -150,6 +150,13 @@
     const areas = AREAS.map((a) => ({ ...a, n: upcoming.filter((e) => inArea(e, a.key)).length })).filter((a) => a.n);
     const areaHtml = areas.length ? sec('area', 'Jelajahi area mal', 'map', `<div class="pv-areas">${areas.map((a) => `<button type="button" class="pv-area" data-area="${esc(a.key)}"><img src="${img(a.img)}" alt="" loading="lazy"><span class="pv-area-txt"><b>${esc(a.key)}</b><small>${esc(a.floor)} · ${a.n} acara</small><small class="pv-area-note">${esc(a.note)}</small></span></button>`).join('')}</div>`) : '';
 
+    // Logo tenant berjalan kanan -> kiri (daftar digandakan agar loop mulus). Berhenti saat diarahkan/disentuh, ada tombol Jeda
+    // (WCAG 2.2.2). Seperti ticker Command Center, tetap berjalan walau sistem meminta kurangi gerakan.
+    const T = (window.SMB_TENANTS || []).filter((x) => x && x.name);
+    const logo = (x, hidden) => `<li class="pv-logo" ${hidden ? 'aria-hidden="true"' : ''} title="${esc(x.name)}${x.cat ? ' · ' + esc(x.cat) : ''}">${x.logo ? `<img src="${esc(x.logo)}" alt="${hidden ? '' : esc(x.name)}" loading="lazy" decoding="async">` : `<span>${esc(x.name)}</span>`}</li>`;
+    const marquee = T.length ? sec('tenant', 'Tenant di Summarecon Mall Bandung', 'storefront', `<div class="pv-marquee" style="--dur:${Math.max(30, T.length * 2.6)}s">
+        <ul class="pv-marquee-track" aria-label="Daftar tenant">${T.map((x) => logo(x)).join('')}${T.map((x) => logo(x, true)).join('')}</ul></div>`,
+      `<button type="button" class="pv-more" data-marquee aria-pressed="false">${ic('pause', 'text-[18px]')} Jeda</button>`) : '';
     const promoHtml = sec('promo', 'Promo tenant untuk pemegang tiket', 'sell', `<p class="font-body-sm text-body-sm text-on-surface-variant -mt-1 mb-3">Contoh promo. Tunjukkan e-ticket di kasir tenant yang ikut serta.</p>
       <div class="pv-row4">${PROMOS.map((p) => `<article class="pv-promo"><img src="${img(p.img)}" alt="" loading="lazy"><div class="p-3"><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(p.place)}</div><div class="font-label-lg text-label-lg mt-0.5">${esc(p.title)}</div><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${esc(p.text)}</p></div></article>`).join('')}</div>`);
 
@@ -167,7 +174,7 @@
       + (hot.length ? sec('hot', 'Laku keras', 'local_fire_department', `<div class="pv-grid">${hot.slice(0, 4).map(card).join('')}</div>`) : '')
       + catTiles
       + byCat.map(([c, l]) => sec('k-' + c.toLowerCase(), esc(c) + ' di mal', evIcon(c), `<div class="pv-rail" data-rail="k-${esc(c)}">${l.map((e) => `<div class="pv-rail-item">${card(e)}</div>`).join('')}</div>`, `<button type="button" class="pv-more" data-cat="${esc(c)}">Lihat semua ${ic('chevron_right', 'text-[18px]')}</button>`)).join('')
-      + areaHtml + promoHtml + creator + guide + footer();
+      + areaHtml + marquee + promoHtml + creator + guide + footer();
   }
 
   function footer() {
@@ -484,6 +491,11 @@
     if (cr) cr.addEventListener('click', () => modal('Hubungi tim event mal', `<p class="font-body-sm text-body-sm text-on-surface-variant">Contoh kontak untuk prototipe. Ganti dengan kontak tim event Summarecon Mall Bandung.</p>
       <ul class="mt-3 flex flex-col gap-2 font-body-sm text-body-sm"><li>${ic('support_agent', 'text-primary text-[18px] align-middle')} Customer Service, GF dekat lobi utama</li><li>${ic('schedule', 'text-primary text-[18px] align-middle')} Setiap hari ${MALL.hours}</li><li>${ic('description', 'text-primary text-[18px] align-middle')} Siapkan: jenis acara, perkiraan pengunjung, tanggal, dan area yang diinginkan</li></ul>`));
     bindHero();
+    const mq = app.querySelector('[data-marquee]');
+    if (mq) mq.addEventListener('click', () => {
+      const box = app.querySelector('.pv-marquee'); const paused = box.classList.toggle('paused');
+      mq.setAttribute('aria-pressed', String(paused)); mq.innerHTML = ic(paused ? 'play_arrow' : 'pause', 'text-[18px]') + (paused ? ' Putar' : ' Jeda');
+    });
     app.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
     const sh = app.querySelector('#share');
     if (sh) sh.addEventListener('click', async () => {
@@ -523,12 +535,13 @@
   setHdr(); window.addEventListener('resize', setHdr);
   // Placeholder kolom cari yang bergulir: "Cari" + kata kunci (nama acara yang sedang dijual) yang naik sambil memudar.
   // Kata kunci aktif di posisi 0, berikutnya menunggu di bawah (100%), yang baru lewat keluar ke atas (-100%).
-  // Disembunyikan saat kolom berisi teks; diam (kata pertama saja) bila pengguna memilih kurangi gerakan.
+  // Disembunyikan saat kolom berisi teks. Bila pengguna memilih kurangi gerakan (mis. Windows: Animation effects mati),
+  // kata kunci tetap berganti tetapi hanya memudar di tempat, tanpa gerakan naik.
   function rollSearch(input, ph, win) {
     const STEP_MS = 2200, native = input.placeholder;
     const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     let words = [], i = 0, timer = null;
-    const pos = (k) => { const n = words.length, d = (k - i + n) % n; return d === 0 ? [0, 1] : d === n - 1 ? [-100, 0] : [100, 0]; };
+    const pos = (k) => { const n = words.length, d = (k - i + n) % n; return d === 0 ? [0, 1] : reduce ? [0, 0] : d === n - 1 ? [-100, 0] : [100, 0]; };
     const place = () => [...win.children].forEach((el, k) => { const [y, o] = pos(k); el.style.transform = `translateY(${y}%)`; el.style.opacity = o; });
     const sync = () => { const show = words.length > 0 && !input.value; ph.hidden = !show; input.placeholder = show ? '' : native; };
     const tick = () => { if (document.hidden || input.value || words.length < 2) return; i = (i + 1) % words.length; place(); };
@@ -538,7 +551,7 @@
         i = 0;
         win.innerHTML = words.map((w, k) => { const [y, o] = pos(k); return `<span style="transform:translateY(${y}%);opacity:${o}">${esc(w)}</span>`; }).join('');
         sync(); clearInterval(timer);
-        if (!reduce && words.length > 1) timer = setInterval(tick, STEP_MS);
+        if (words.length > 1) timer = setInterval(tick, reduce ? STEP_MS + 800 : STEP_MS);
       },
       sync,
       current: () => (words.length ? words[i] : ''),
