@@ -44,7 +44,7 @@ const PW = 'rahasia-uji';
 const sessionOf = (r) => r.headers['set-cookie'][0].split(';')[0];
 
 test('URL bersih menyajikan halaman, termasuk sub-rute SPA', async () => {
-  for (const [p, mark] of [['/', 'Pilih pintu masuk'], ['/pengunjung', 'data-base="/pengunjung"'], ['/pengunjung/', 'data-base="/pengunjung"'], ['/pengunjung/e/EVT-01/kursi', 'data-base="/pengunjung"'], ['/masuk?role=pengelola', 'id="f-login"']]) {
+  for (const [p, mark] of [['/', 'data-path="/pengunjung"'], ['/pengunjung', 'data-base="/pengunjung"'], ['/pengunjung/', 'data-base="/pengunjung"'], ['/pengunjung/e/EVT-01/kursi', 'data-base="/pengunjung"'], ['/masuk?role=pengelola', 'id="f-login"']]) {
     const r = await req('GET', p);
     assert.equal(r.status, 200, p);
     assert.match(r.headers['content-type'], /text\/html/);

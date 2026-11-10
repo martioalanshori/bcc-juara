@@ -7,13 +7,13 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Summarecon Mall Bandung · Event &amp; Command Center</title>
   <!-- Halaman pilih path. Aset lokal (tanpa internet). -->
-  <script src="/app/js/core/theme.js?v=55"></script>
+  <script src="/app/js/core/theme.js?v=59"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=55" />
-  <link rel="stylesheet" href="/app/css/app.css?v=55" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=59" />
+  <link rel="stylesheet" href="/app/css/app.css?v=59" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col">
-  <main class="flex-1 w-full max-w-6xl mx-auto px-5 py-10 md:py-16">
+  <main class="flex-1 w-full max-w-6xl mx-auto px-5 py-10 md:py-6">
     <div class="flex items-center justify-between gap-3 mb-3">
       <div class="flex items-center gap-3">
         <span class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined">domain</span></span>
@@ -22,39 +22,36 @@
       <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
     </div>
     <h1 class="font-headline-lg text-headline-lg md:text-[34px] md:leading-[42px] mb-2">Event Ticketing &amp; Integrated Command Center</h1>
-    <p class="font-body-md text-body-md text-on-surface-variant max-w-3xl mb-8">Pilih pintu masuk sesuai peran. Keempatnya membaca data acara yang sama, jadi tiket yang dibeli pengunjung langsung muncul di konsol pengelola, gate, dan Command Center.</p>
-
     <div class="roles-grid">
       <a href="/pengunjung" data-path="/pengunjung" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">local_activity</span></span><span class="font-label-sm text-label-sm text-on-surface-variant">1 · /pengunjung</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Pengunjung</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Beli tiket acara dari ponsel.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Lihat acara, jadwal, harga &amp; sisa tiket</li><li>• Pilih kategori &amp; kursi di denah</li><li>• Bayar (simulasi sandbox)</li><li>• E-ticket QR, pengingat &amp; waiting list</li></ul>
-        <span class="btn justify-center mt-auto">Buka portal tiket</span></a>
+        <span class="btn justify-center mt-auto">Masuk</span></a>
 
       <a href="/pengelola" data-path="/pengelola" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">admin_panel_settings</span></span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span>2 · /pengelola</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Event Organizer</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Panitia acara mengelola event-nya.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Buat, publish, batalkan &amp; hapus acara</li><li>• Jenis tiket, harga, kuota, denah &amp; periode jual</li><li>• Peserta, pembayaran, refund &amp; ekspor CSV</li><li>• Check-in QR &amp; lapor ke Command Center</li></ul>
-        <span class="btn justify-center mt-auto">Masuk sebagai pengelola</span></a>
+        <span class="btn justify-center mt-auto">Masuk</span></a>
 
       <a href="/checkin" data-path="/checkin" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-amber-500/15 text-amber-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">qr_code_scanner</span></span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span>3 · /checkin</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Petugas gate</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Staf pintu masuk memindai e-ticket.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Pindai QR, kode tiket, atau kode booking</li><li>• Hasil VALID / sudah digunakan / tidak valid</li><li>• Statistik &amp; log pindaian per gate</li><li>• Lapor kejadian ke Command Center</li></ul>
-        <span class="btn justify-center mt-auto">Masuk sebagai petugas gate</span></a>
+        <span class="btn justify-center mt-auto">Masuk</span></a>
 
       <a href="/command-center/event" data-path="/command-center" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">hub</span></span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span>4 · /command-center</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Command Center · Mall 360</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Sudut pandang manajemen mal.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Pantau semua acara (read-only)</li><li>• Dampak ke parkir, crowd, BMS &amp; tenant</li><li>• Keamanan gate jadi tiket insiden &amp; SOP</li><li>• 9 dashboard operasional, SOP &amp; use case</li></ul>
-        <span class="btn justify-center mt-auto">Masuk ke Command Center</span></a>
+        <span class="btn justify-center mt-auto">Masuk</span></a>
     </div>
 
-    <p class="font-label-sm text-label-sm text-on-surface-variant mt-8">Staf masuk dengan email &amp; password di <a class="text-primary hover:underline" href="/masuk">halaman masuk staf</a>; akun demo tersedia di sana. Pengunjung boleh membeli tiket tanpa akun. Prototype untuk Bandung Build Challenge 2026: data contoh, pembayaran simulasi.</p>
   </main>
 </body>
 </html>

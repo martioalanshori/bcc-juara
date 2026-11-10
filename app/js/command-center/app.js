@@ -44,7 +44,9 @@
     document.getElementById('tele-status').textContent = bad ? bad + ' alarm aset' : 'Semua normal';
     document.getElementById('tele-status').className = 'font-label-sm text-label-sm ' + (bad ? 'text-tertiary' : 'text-secondary');
     const h = new Date().getHours();
-    document.getElementById('shift').textContent = h >= 7 && h < 15 ? 'Shift A (07-15)' : h >= 15 && h < 23 ? 'Shift B (15-23)' : 'Shift C (23-07)';
+    const shift = h >= 7 && h < 15 ? 'Shift A (07-15)' : h >= 15 && h < 23 ? 'Shift B (15-23)' : 'Shift C (23-07)';
+    document.getElementById('shift').textContent = shift;
+    const sm = document.getElementById('shift-menu'); if (sm) sm.textContent = shift; // juga di menu profil (chip header hanya di layar lebar)
     // ticker
     const crit = act.filter((t) => t.priority === 'P1' || t.priority === 'P2').sort((a, b) => a.priority.localeCompare(b.priority) || b.createdAt - a.createdAt);
     const top = crit[0];
@@ -67,6 +69,7 @@
     renderHeader();
     tick();
     document.title = V.title + ' · Summarecon Mall Command Center';
+    const ht = document.getElementById('hdr-title'); if (ht) ht.textContent = V.title; // nama halaman di header
   }
   let rerenderT = null;
   function rerender() {
@@ -167,4 +170,14 @@
     document.getElementById('tele-lat').textContent = l + 'ms';
   }, 1000);
   route();
+
+  // Menu profil operator di header: buka/tutup, tutup saat klik di luar atau Esc. Keluar ditangani core/auth.js.
+  const pb = document.getElementById('cc-prof-btn'), pm = document.getElementById('cc-prof-menu');
+  if (pb && pm) {
+    const open = (on) => { pm.hidden = !on; pb.setAttribute('aria-expanded', String(on)); if (on) { const f = pm.querySelector('a, button:not([hidden])'); if (f) f.focus(); } };
+    pb.addEventListener('click', () => open(pm.hidden));
+    document.addEventListener('click', (e) => { if (!e.target.closest('#cc-prof')) open(false); });
+    document.getElementById('cc-prof').addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pm.hidden) { e.stopPropagation(); open(false); pb.focus(); } });
+    pm.addEventListener('click', (e) => { if (e.target.closest('[data-logout]')) open(false); });
+  }
 })();

@@ -7,11 +7,11 @@
   <title>Summarecon Mall · Integrated Command Center Ticketing System</title>
   <!-- Semua aset lokal (tanpa internet): font di vendor/fonts, Tailwind hasil build statis.
        Tema "Papan Petunjuk": token di css/tokens.css, build di tools/tailwind/tailwind.config.js -->
-  <script src="/app/js/core/theme.js?v=55"></script>
-  <script src="/app/js/core/router.js?v=55"></script>
+  <script src="/app/js/core/theme.js?v=59"></script>
+  <script src="/app/js/core/router.js?v=59"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=55" />
-  <link rel="stylesheet" href="/app/css/app.css?v=55" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=59" />
+  <link rel="stylesheet" href="/app/css/app.css?v=59" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <!-- SIDEBAR -->
@@ -42,15 +42,12 @@
   <div class="pl-72">
     <!-- HEADER -->
     <header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 px-6 border-b border-outline-variant flex items-center justify-between gap-4">
-      <div class="flex items-center gap-6 min-w-0">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary text-[22px]">domain</span>
-          <div class="flex flex-col leading-tight"><span class="font-headline-sm text-headline-sm text-on-surface whitespace-nowrap">Summarecon Mall</span><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Integrated Command Center</span></div>
-        </div>
-        <div class="h-6 w-px bg-surface-container-highest"></div>
-        <div class="hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-md bg-surface-container whitespace-nowrap"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="text-outline font-label-sm text-label-sm">•</span><span class="font-label-sm text-label-sm text-on-surface-variant">Fasilitas &amp; Keamanan</span></div>
+      <!-- kiri: halaman yang sedang dibuka + shift jaga (identitas mal sudah ada di sidebar) -->
+      <div class="flex items-center gap-4 min-w-0">
+        <div class="flex flex-col leading-tight shrink-0"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Command Center</span><h1 class="font-headline-sm text-headline-sm text-on-surface whitespace-nowrap" id="hdr-title">Memuat…</h1></div>
+        <div class="hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-md bg-surface-container whitespace-nowrap" title="Shift jaga saat ini"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="font-label-sm text-label-sm text-on-surface-variant">Fasilitas &amp; Keamanan</span></div>
       </div>
-      <div class="flex items-center gap-5">
+      <div class="flex items-center gap-4">
         <div class="hidden xl:flex items-center gap-5">
           <a href="/command-center/ticketing" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Tiket aktif</span><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-label-md text-label-md" id="hdr-active">0</span></a>
           <a href="/command-center/owner360" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Okupansi mal</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-label-md text-label-md">94.2%</span></a>
@@ -58,10 +55,14 @@
         </div>
         <button id="btn-broadcast" class="btn-danger whitespace-nowrap"><span class="material-symbols-outlined text-[18px]">campaign</span>Kirim siaran</button>
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
-        <button type="button" data-logout="command-center" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari akun"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
-        <div class="flex items-center gap-3">
-          <div class="hidden 2xl:flex flex-col items-end leading-tight whitespace-nowrap"><span class="font-label-lg text-label-lg text-on-surface">Aris Thorne</span><span class="font-label-sm text-label-sm text-on-surface-variant">Kepala operasional (L4)</span></div>
-          <div class="w-9 h-9 rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">person</span></div>
+        <!-- profil operator: satu tombol, Keluar ada di dalam menu -->
+        <div class="pg-prof" id="cc-prof">
+          <button type="button" class="pg-prof-btn" id="cc-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="cc-prof-menu" aria-label="Menu profil Aris Thorne"><span class="pg-av">AT</span><span class="cc-prof-txt"><b>Aris Thorne</b><small>Kepala operasional (L4)</small></span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
+          <div class="pg-prof-menu" id="cc-prof-menu" hidden>
+            <div class="pg-prof-head"><b>Aris Thorne</b><small>Kepala operasional (L4), cc@example.com</small><span class="cc-shift"><i></i><span>Jaga <span id="shift-menu">Shift A</span>, Fasilitas &amp; Keamanan</span></span></div>
+            <a href="/" class="cc-prof-item"><span class="material-symbols-outlined text-[20px]">apps</span>Pilih peran lain</a>
+            <button type="button" data-logout="command-center" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
+          </div>
         </div>
       </div>
     </header>
@@ -76,28 +77,28 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
 
-  <script src="/app/vendor/qrcode.js?v=55"></script>
-  <script src="/app/vendor/jsQR.js?v=55"></script>
-  <script src="/app/js/command-center/sop-data.js?v=55"></script>
-  <script src="/app/js/command-center/data.js?v=55"></script>
-  <script src="/app/js/command-center/store.js?v=55"></script>
-  <script src="/app/js/core/ui.js?v=55"></script>
-  <script src="/app/js/command-center/views/ticketing.js?v=55"></script>
-  <script src="/app/js/command-center/views/bms.js?v=55"></script>
-  <script src="/app/js/command-center/views/tenant.js?v=55"></script>
-  <script src="/app/js/command-center/views/cctv.js?v=55"></script>
-  <script src="/app/js/command-center/views/energy.js?v=55"></script>
-  <script src="/app/js/command-center/views/analytics.js?v=55"></script>
-  <script src="/app/js/command-center/views/parking.js?v=55"></script>
-  <script src="/app/js/command-center/views/owner360.js?v=55"></script>
-  <script src="/app/js/event/engine.js?v=55"></script>
-  <script src="/app/js/event/checkin-ui.js?v=55"></script>
-  <script src="/app/js/event/admin.js?v=55"></script>
-  <script src="/app/js/event/cc-bridge.js?v=55"></script>
-  <script src="/app/js/command-center/views/sop.js?v=55"></script>
-  <script src="/app/js/command-center/views/usecase.js?v=55"></script>
-  <script src="/app/js/command-center/sim.js?v=55"></script>
-  <script src="/app/js/core/auth.js?v=55"></script>
-  <script src="/app/js/command-center/app.js?v=55"></script>
+  <script src="/app/vendor/qrcode.js?v=59"></script>
+  <script src="/app/vendor/jsQR.js?v=59"></script>
+  <script src="/app/js/command-center/sop-data.js?v=59"></script>
+  <script src="/app/js/command-center/data.js?v=59"></script>
+  <script src="/app/js/command-center/store.js?v=59"></script>
+  <script src="/app/js/core/ui.js?v=59"></script>
+  <script src="/app/js/command-center/views/ticketing.js?v=59"></script>
+  <script src="/app/js/command-center/views/bms.js?v=59"></script>
+  <script src="/app/js/command-center/views/tenant.js?v=59"></script>
+  <script src="/app/js/command-center/views/cctv.js?v=59"></script>
+  <script src="/app/js/command-center/views/energy.js?v=59"></script>
+  <script src="/app/js/command-center/views/analytics.js?v=59"></script>
+  <script src="/app/js/command-center/views/parking.js?v=59"></script>
+  <script src="/app/js/command-center/views/owner360.js?v=59"></script>
+  <script src="/app/js/event/engine.js?v=59"></script>
+  <script src="/app/js/event/checkin-ui.js?v=59"></script>
+  <script src="/app/js/event/admin.js?v=59"></script>
+  <script src="/app/js/event/cc-bridge.js?v=59"></script>
+  <script src="/app/js/command-center/views/sop.js?v=59"></script>
+  <script src="/app/js/command-center/views/usecase.js?v=59"></script>
+  <script src="/app/js/command-center/sim.js?v=59"></script>
+  <script src="/app/js/core/auth.js?v=59"></script>
+  <script src="/app/js/command-center/app.js?v=59"></script>
 </body>
 </html>
