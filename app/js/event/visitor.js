@@ -91,13 +91,13 @@
   const back = (href, label) => `<a href="${href}" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-primary mb-3">${ic('arrow_back', 'text-[16px]')} ${label}</a>`;
   const statusChip = (st) => {
     const m = {
-      PENDING: [L('Menunggu pembayaran', 'Awaiting payment'), 'bg-amber-500/15 text-amber-300'],
-      PAID: [L('Lunas, e-ticket terbit', 'Paid, e-ticket issued'), 'bg-emerald-500/15 text-emerald-300'],
-      EXPIRED: [L('Kedaluwarsa', 'Expired'), 'bg-slate-500/20 text-slate-300'],
-      CANCELLED: [L('Dibatalkan', 'Cancelled'), 'bg-slate-500/20 text-slate-300'],
-      REFUNDED: ['Refund', 'bg-rose-500/15 text-rose-300'],
+      PENDING: [L('Menunggu pembayaran', 'Awaiting payment'), 'warning'],
+      PAID: [L('Lunas', 'Paid'), 'success'],
+      EXPIRED: [L('Kedaluwarsa', 'Expired'), 'neutral'],
+      CANCELLED: [L('Dibatalkan', 'Cancelled'), 'neutral'],
+      REFUNDED: ['Refund', 'danger'],
     }[st];
-    return `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm ${m[1]}">${m[0]}</span>`;
+    return `<span class="lp-badge lp-b-${m[1]}">${m[0]}</span>`;
   };
   const avail = (e) => { const s = E.stats(e.id); const sale = e.types.filter((t) => t.onSale).map((t) => s.per[t.id]); const total = sale.reduce((a, p) => a + p.total - p.blocked, 0); const left = sale.reduce((a, p) => a + p.available, 0); return { left, total, pct: total ? (left / total) * 100 : 0 }; };
 
@@ -319,18 +319,20 @@
     return homeSections(all);
   };
 
+  // Detail acara. Ponsel: satu kolom + bilah harga di bawah. Desktop: konten kiri, kotak beli menempel di kanan.
   V.event = (id) => {
     const e = E.ev(id); if (!e) return notFound();
     const s = E.stats(id); const sale = E.saleState(e);
     const onSale = e.types.filter((t) => t.onSale);
-    const row = (icon, html) => `<div class="flex gap-2.5 items-start">${ic(icon, 'text-primary text-[20px]')}<span>${html}</span></div>`;
+    const x = areaOf(e);
+    const row = (icon, html) => `<div class="lp-fact">${ic(icon, 'text-[20px]')}<div>${html}</div></div>`;
     const tix = (t) => {
       const p = s.per[t.id]; const sold = t.onSale && p.available === 0;
-      const st = !t.onSale ? [L('Tidak dijual', 'Not for sale'), 'text-on-surface-variant'] : sold ? [L('Habis terjual', 'Sold out'), 'text-rose-300'] : p.available < 10 ? [left(p.available), 'text-amber-300'] : [L('Tersedia', 'Available'), 'text-emerald-300'];
-      return `<div class="pv-tix" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div><span class="font-label-md text-label-md whitespace-nowrap ${st[1]}">${st[0]}</span></div>
-          <div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${esc(perks(t))}</div></div>
+      const st = !t.onSale ? badge(L('Tidak dijual', 'Not for sale'), 'neutral') : sold ? badge(L('Habis terjual', 'Sold out'), 'danger') : p.available < 10 ? badge(L('Sisa ' + p.available, p.available + ' left'), 'warning') : badge(L('Tersedia', 'Available'), 'success');
+      return `<div class="pv-tix" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div>${st}</div>
+          <div class="lp-help mt-1">${esc(perks(t))}</div></div>
         <div class="pv-dash mx-4"></div>
-        <div class="px-4 py-3 flex items-center justify-between gap-2"><span class="font-headline-sm text-headline-sm">${t.price ? rp(t.price) : free()}</span><span class="font-label-sm text-label-sm text-on-surface-variant text-right">${L('Penjualan berakhir', 'Sales end')}<br>${fDT(e.saleEnd)} WIB</span></div></div>`;
+        <div class="px-4 py-3 flex items-center justify-between gap-2"><span class="lp-price">${t.price ? rp(t.price) : free()}</span><span class="lp-help text-right">${L('Penjualan berakhir', 'Sales end')}<br>${fDT(e.saleEnd)} WIB</span></div></div>`;
     };
     const sk = en() ? [
       'One e-ticket is valid for one person and one entry.',
@@ -350,38 +352,47 @@
       'Prototipe: pembayaran memakai simulasi sandbox, tidak ada uang yang ditarik.',
     ];
     const terms = L('Syarat & ketentuan', 'Terms & conditions');
+    const a = avail(e);
+    const cta = sale.open && a.left > 0 ? `<a href="/pengunjung/e/${id}/kategori" class="btn lp-cta">${ic('confirmation_number', 'text-[18px]')}${L('Beli tiket', 'Buy tickets')}</a>`
+      : sale.open ? `<a href="/pengunjung/e/${id}/kategori" class="btn-ghost lp-cta">${ic('hourglass_top', 'text-[18px]')}${L('Daftar tunggu', 'Waiting list')}</a>`
+      : `<span class="lp-cta-note">${ic('info', 'text-[18px]')}${esc(saleLabel(e))}</span>`;
     return `${back('/pengunjung', L('Semua acara', 'All events'))}
-      <div class="pv-bleed mb-4">${banner(e)}</div>
-      <h1 class="font-headline-md text-headline-md">${esc(e.name)}</h1>
-      ${e.tagline ? `<p class="font-body-sm text-body-sm text-on-surface-variant">${esc(e.tagline)}</p>` : ''}
-      <div class="flex flex-col gap-2.5 mt-4 font-body-sm text-body-sm">
-        ${row('location_on', esc(e.venue))}
-        ${row('calendar_month', `${fDate(e.start)}<br><span class="text-on-surface-variant">${L(`Mulai ${fTime(e.start)} WIB, gate dibuka ${fTime(e.doors)} WIB`, `Starts ${fTime(e.start)} WIB, gates open ${fTime(e.doors)} WIB`)}</span>`)}
-        ${row('category', esc(catName(e.cat)))}
+      <div class="lp-detail"><div class="lp-detail-main">
+        <div class="lp-detail-img">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span></div>
+        <h1 class="lp-title-lg lp-detail-title">${esc(e.name)}</h1>
+        ${e.tagline ? `<p class="lp-lead">${esc(e.tagline)}</p>` : ''}
+        <div class="lp-facts">
+          ${row('calendar_month', `<b>${fDate(e.start)}</b><span>${L(`Mulai ${fTime(e.start)} WIB, gate dibuka ${fTime(e.doors)} WIB`, `Starts ${fTime(e.start)} WIB, gates open ${fTime(e.doors)} WIB`)}</span>`)}
+          ${row('location_on', `<b class="flex items-center gap-2">${plate(x.floor)}${esc(x.key)}</b><span>Summarecon Mall Bandung${x.note ? ' · ' + esc(tx2(x.note)) : ''}</span>`)}
+          ${row('storefront', `<b>${esc(e.org || 'Summarecon Mall Bandung')}</b><span>${L('Penyelenggara', 'Organiser')}</span>`)}
+        </div>
+        <button type="button" id="share" class="lp-more">${ic('share', 'text-[18px]')}<span class="ml-1">${L('Bagikan acara', 'Share event')}</span></button>
+        <nav class="pv-tabs" aria-label="${L('Bagian acara', 'Event sections')}"><button type="button" data-jump="desk" class="on">${L('Deskripsi', 'Description')}</button><button type="button" data-jump="tiket">${L('Tiket', 'Tickets')}</button><button type="button" data-jump="sk">${terms}</button></nav>
+        <section id="sec-desk" class="pv-sec"><h2 class="lp-title mb-2">${L('Deskripsi', 'Description')}</h2><p class="lp-body whitespace-pre-line">${esc(e.desc || L('Belum ada deskripsi.', 'No description yet.'))}</p></section>
+        <section id="sec-tiket" class="pv-sec"><h2 class="lp-title">${L('Tiket', 'Tickets')}</h2>
+          <p class="lp-lead mb-3">${L(`${onSale.length} kategori tiket, harga mulai dari ${priceTxt(e)}`, `${onSale.length} ticket ${onSale.length === 1 ? 'category' : 'categories'}, from ${priceTxt(e)}`)}</p>
+          <div class="lp-tix-grid">${e.types.map(tix).join('')}</div></section>
+        <section id="sec-sk" class="pv-sec"><h2 class="lp-title mb-2">${terms}</h2>
+          <ol class="list-decimal pl-5 flex flex-col gap-1.5 lp-body-sm">${sk.map((y) => `<li>${esc(y)}</li>`).join('')}</ol></section>
       </div>
-      <button type="button" id="share" class="mt-3 inline-flex items-center gap-1.5 font-label-md text-label-md text-primary">${ic('share', 'text-[18px]')} ${L('Bagikan acara', 'Share event')}</button>
-      <div class="pv-dash mt-4 pt-3 flex items-center gap-3"><span class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">${ic('storefront', 'text-[20px]')}</span><div><div class="font-label-sm text-label-sm text-on-surface-variant">${L('Diselenggarakan oleh', 'Organised by')}</div><div class="font-label-lg text-label-lg">${esc(e.org || 'Summarecon Mall Bandung')}</div></div></div>
-      <nav class="pv-tabs" aria-label="${L('Bagian acara', 'Event sections')}"><button type="button" data-jump="desk" class="on">${L('Deskripsi', 'Description')}</button><button type="button" data-jump="tiket">${L('Tiket', 'Tickets')}</button><button type="button" data-jump="sk">${terms}</button></nav>
-      <section id="sec-desk" class="pv-sec"><h2 class="font-headline-sm text-headline-sm mb-2">${L('Deskripsi', 'Description')}</h2><p class="font-body-md text-body-md text-on-surface-variant whitespace-pre-line">${esc(e.desc || L('Belum ada deskripsi.', 'No description yet.'))}</p></section>
-      <section id="sec-tiket" class="pv-sec"><h2 class="font-headline-sm text-headline-sm">${L('Tiket', 'Tickets')}</h2>
-        <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${L(`${onSale.length} kategori tiket, harga mulai dari ${priceTxt(e)}`, `${onSale.length} ticket ${onSale.length === 1 ? 'category' : 'categories'}, from ${priceTxt(e)}`)}</p>
-        <div class="flex flex-col gap-3">${e.types.map(tix).join('')}</div></section>
-      <section id="sec-sk" class="pv-sec"><h2 class="font-headline-sm text-headline-sm mb-2">${terms}</h2>
-        <ol class="list-decimal pl-5 flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">${sk.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></section>
-      <div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex items-center justify-between gap-3">
-        <div><div class="font-label-sm text-label-sm text-on-surface-variant">${L('Harga mulai dari', 'Prices from')}</div><div class="font-headline-sm text-headline-sm">${priceTxt(e)}</div></div>
-        ${sale.open ? `<a href="/pengunjung/e/${id}/kategori" class="btn !px-6 !py-3">${ic('confirmation_number', 'text-[18px]')} ${L('Beli tiket', 'Buy tickets')}</a>` : `<span class="font-label-md text-label-md text-on-surface-variant text-right">${ic('info', 'text-[16px] align-middle')} ${esc(saleLabel(e))}</span>`}</div></div></div>`;
+      <aside class="lp-side"><div class="lp-cartbar lp-buybox">
+        <div class="lp-buybox-info"><p class="lp-from">${L('Harga mulai dari', 'Prices from')}</p><p class="lp-price lp-price-lg">${priceTxt(e)}</p>
+          <ul class="lp-buybox-facts"><li>${ic('calendar_month', 'text-[18px]')}${when(e)}</li><li>${ic('door_open', 'text-[18px]')}${L('Gate dibuka', 'Gates open')} ${fTime(e.doors)} WIB</li><li>${ic('confirmation_number', 'text-[18px]')}${a.left ? L(`Sisa ${a.left} dari ${a.total} tiket`, `${a.left} of ${a.total} tickets left`) : L('Habis terjual', 'Sold out')}</li></ul></div>
+        ${cta}</div></aside></div>`;
   };
 
-  // Bilah bawah (langkah kategori & kursi): tiket yang sedang ditahan, sisa waktu tahan, total, tombol Lanjut.
+  // Keranjang (langkah kategori & kursi): tiket yang ditahan, total, tombol Lanjut.
+  // Ponsel: bilah tetap di bawah. Desktop: panel menempel di kolom kanan.
   function cartBar(e, id, h) {
     const pr = E.price(e, h.items);
     const sumByType = {}; h.items.forEach((i) => (sumByType[i.type] = (sumByType[i.type] || 0) + 1));
     const n = h.items.length;
-    return `<div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex flex-col gap-2">
-        ${n ? `<div class="flex flex-wrap gap-1.5">${h.items.filter((i) => i.seat).map((i) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm" style="background:${E.typeById(e, i.type).color}33;border:1px solid ${E.typeById(e, i.type).color}">${i.seat}</span>`).join('')}${Object.entries(sumByType).filter(([tid]) => !E.typeById(e, tid).seated).map(([tid, k]) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm bg-white/10">${k}× ${esc(E.typeById(e, tid).name)}</span>`).join('')}</div>` : `<div class="font-body-sm text-body-sm text-on-surface-variant">${L('Belum ada tiket dipilih.', 'No tickets selected yet.')}</div>`}
-        <div class="flex items-center justify-between gap-3"><div><div class="font-label-sm text-label-sm text-on-surface-variant">${L(n + ' tiket', n + (n === 1 ? ' ticket' : ' tickets'))}${pr.fee ? L(' + biaya layanan', ' + service fee') : ''}</div><div class="font-headline-sm text-headline-sm">${n ? rp(pr.total) : '–'}</div></div>
-          <a href="/pengunjung/e/${id}/data" class="btn ${n ? '' : 'pointer-events-none opacity-40'}">${L('Lanjut', 'Continue')} ${ic('arrow_forward', 'text-[18px]')}</a></div></div></div></div>`;
+    return `<aside class="lp-side"><div class="lp-cartbar">
+        <h2 class="lp-cart-h">${L('Pesananmu', 'Your order')}</h2>
+        <div class="lp-cart-event">${photo(e)}<div class="min-w-0"><b>${esc(e.name)}</b><span>${when(e)}</span></div></div>
+        ${n ? `<div class="lp-cart-items">${h.items.filter((i) => i.seat).map((i) => `<span class="lp-seatchip" style="--c:${esc(E.typeById(e, i.type).color)}">${i.seat}</span>`).join('')}${Object.entries(sumByType).filter(([tid]) => !E.typeById(e, tid).seated).map(([tid, k]) => `<span class="lp-seatchip" style="--c:${esc(E.typeById(e, tid).color)}">${k}× ${esc(E.typeById(e, tid).name)}</span>`).join('')}</div>` : `<p class="lp-help lp-cart-empty">${L('Belum ada tiket dipilih.', 'No tickets selected yet.')}</p>`}
+        <div class="lp-cart-foot"><div><p class="lp-from">${L(n + ' tiket', n + (n === 1 ? ' ticket' : ' tickets'))}${pr.fee ? L(' + biaya layanan', ' + service fee') : ''}</p><p class="lp-price lp-price-lg">${n ? rp(pr.total) : '–'}</p></div>
+          <a href="/pengunjung/e/${id}/data" class="btn ${n ? '' : 'is-disabled'}" ${n ? '' : 'aria-disabled="true" tabindex="-1"'}>${L('Lanjut', 'Continue')}${ic('arrow_forward', 'text-[18px]')}</a></div></div></aside>`;
   }
   // Bilah "Ditahan untukmu": tepat di bawah header (ikut menempel saat digulir), berisi sisa waktu tahan.
   const holdBar = (h, canClear) => (h.items.length ? `<div class="lp-holdbar" role="status"><div class="lp-holdbar-in">${ic('lock_clock', 'text-[20px]')}
@@ -410,12 +421,12 @@
     const intro = hasSeats(e)
       ? L('Pilih kategori dulu. Untuk kategori bernomor kursi, kursinya kamu pilih di langkah berikutnya.', 'Choose a category first. For numbered-seat categories you pick your seats in the next step.')
       : L('Tentukan jumlah tiket untuk tiap kategori.', 'Set the number of tickets for each category.');
-    return `${holdBar(h, true)}${back('/pengunjung/e/' + id, esc(e.name))}${steps('kategori', e)}
+    return `${holdBar(h, true)}<div class="lp-flow"><div class="lp-flow-main">${back('/pengunjung/e/' + id, esc(e.name))}${steps('kategori', e)}
       <h1 class="font-headline-md text-headline-md">${L('Pilih kategori tiket', 'Choose a ticket category')}</h1>
       <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${intro} ${L(`Maksimal ${e.maxPerOrder} tiket per pesanan.`, `Maximum ${e.maxPerOrder} tickets per order.`)}</p>
       ${!sale.open ? saleNotice(e) : ''}
       <div class="flex flex-col gap-3 mb-3">${e.types.filter((t) => t.onSale).map(card).join('')}</div>
-      ${cartBar(e, id, h)}`;
+      </div>${cartBar(e, id, h)}</div>`;
   };
 
   // Langkah 2: pilih kursi, hanya untuk kategori yang dipilih (kursi kategori lain samar dan tidak bisa diketuk).
@@ -429,7 +440,7 @@
     const intro = en()
       ? `${price} per seat, ${p.available} seats left${n ? ', ' + n + ' chosen by you' : ''}. Tap a coloured seat to choose it; seats are held for you for ${e.holdMin} minutes. Seats in other categories are dimmed.`
       : `${price} per kursi, sisa ${p.available} kursi${n ? ', ' + n + ' sudah kamu pilih' : ''}. Ketuk kursi berwarna untuk memilih; kursi ditahan untukmu selama ${e.holdMin} menit. Kursi kategori lain tampil samar.`;
-    return `${holdBar(h, true)}${back('/pengunjung/e/' + id + '/kategori', L('Ganti kategori', 'Change category'))}${steps('kursi', e)}
+    return `${holdBar(h, true)}<div class="lp-flow"><div class="lp-flow-main">${back('/pengunjung/e/' + id + '/kategori', L('Ganti kategori', 'Change category'))}${steps('kursi', e)}
       <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full shrink-0" style="background:${esc(t.color)}"></span><h1 class="font-headline-md text-headline-md">${L('Pilih kursi', 'Choose seats:')} ${esc(t.name)}</h1></div>
       <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${intro}</p>
       ${!sale.open ? saleNotice(e) : ''}
@@ -448,7 +459,7 @@
           <li>Setiap pemesanan dicatat sebagai transaksi dengan nomor versi. Bila dua orang menekan kursi yang sama pada detik yang sama, server hanya menerima yang pertama; yang kedua otomatis ditolak.</li>
           <li>Saat pembayaran, sistem memeriksa ulang bahwa kursi masih ditahan untuk pesananmu dan belum kedaluwarsa, lalu kursi menjadi <b>terjual</b>.</li>
           <li>Jika waktu penahanan kursi atau batas pembayaran habis, kursi kembali tersedia untuk orang lain.</li>`}</ol></details>
-      ${cartBar(e, id, h)}`;
+      </div>${cartBar(e, id, h)}</div>`;
   };
 
   const seatOf = (seat) => L(', kursi ', ', seat ') + '<b>' + seat + '</b>';
@@ -459,6 +470,7 @@
     if (!h.items.length) return `${back('/pengunjung/e/' + id + '/kategori', again)}<div class="card p-6 text-center">${ic('timer_off', 'text-[40px] text-amber-300')}<h2 class="font-headline-sm text-headline-sm mt-2">${L('Waktu penahanan kursi habis', 'Your seat hold has expired')}</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${L('Kursi sudah dilepas dan kini bisa dipesan orang lain.', 'The seats were released and can now be booked by others.')}</p><a href="/pengunjung/e/${id}/kategori" class="btn mt-4">${again}</a></div>`;
     const pr = E.price(e, h.items);
     const saved = JSON.parse(sessionStorage.getItem('smicc-evt-form') || '{}');
+    if (me && !saved.email) Object.assign(saved, { name: me.name, email: me.email, phone: me.phone, cc: me.cc }); // isi dari akun yang masuk
     const cc = CC.find((x) => x.k === saved.cc) || CC[0];
     const go = pr.total ? L('Buat pesanan & bayar', 'Place order & pay') : L('Konfirmasi pendaftaran', 'Confirm registration');
     const field = (name, label, input, help) => `<div class="lp-field" data-field="${name}"><label for="f-${name}" class="lp-label">${label}</label>${input}<p class="lp-help" id="h-${name}" data-help="${esc(help)}">${help}</p></div>`;
@@ -590,20 +602,147 @@
       <div class="grid grid-cols-2 gap-2 mb-4"><button class="btn-ghost justify-center" id="ics">${ic('event', 'text-[16px]')} ${L('Simpan ke kalender', 'Add to calendar')}</button><button class="btn-ghost justify-center" id="resend">${ic('forward_to_inbox', 'text-[16px]')} ${L('Kirim ulang', 'Resend')}</button></div>`;
   }
 
+  // ---------------------------------------------------------------- akun pengunjung (demo, tanpa server)
+  // Prototipe: login dicek di browser terhadap daftar akun demo dan sesi disimpan di localStorage. Versi baru
+  // (docs/rewrite/PRD.md bagian 2.2) memakai Supabase Auth. Password demo memang ditampilkan di halaman masuk.
+  const ACC_KEY = 'smicc-visitor';
+  const DEMO_PASS = 'smicc-demo-2026';
+  const DEMO = [
+    { email: 'pengunjung@example.com', name: 'Rizky Pratama', cc: 'ID', phone: '812 0000 1001', label: ['Pengunjung', 'Visitor'], note: ['Punya 2 pesanan lunas', 'Has 2 paid orders'] },
+    { email: 'nadia@example.com', name: 'Nadia Putri', cc: 'ID', phone: '813 0000 2002', label: ['Pengunjung baru', 'New visitor'], note: ['Belum ada pesanan', 'No orders yet'] },
+  ];
+  let me = null;
+  try { me = JSON.parse(localStorage.getItem(ACC_KEY) || 'null'); } catch (_) { me = null; }
+  const signIn = (d) => { me = { email: d.email, name: d.name, cc: d.cc, phone: d.phone }; try { localStorage.setItem(ACC_KEY, JSON.stringify(me)); } catch (_) { /* sesi hanya untuk tab ini */ } };
+  const signOut = () => { me = null; try { localStorage.removeItem(ACC_KEY); } catch (_) { /* abaikan */ } };
+  const initialsOf = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  let loginFails = 0, loginLock = 0;
+  // Pesanan milik pengunjung: yang dibuat di perangkat ini + yang emailnya sama dengan akun yang masuk.
+  function myOrderList() {
+    const ids = new Set(E.myOrders());
+    if (me) Object.values(E.s.orders).forEach((o) => { if (String(o.email).toLowerCase() === me.email) ids.add(o.id); });
+    return [...ids].map((id) => E.s.orders[id]).filter(Boolean).sort((a, b) => b.createdAt - a.createdAt);
+  }
+  // Tombol akun di header: "Masuk" atau inisial + nama depan bila sudah masuk.
+  function syncHead() {
+    const d = document.getElementById('h-login'), m = document.getElementById('h-login-m');
+    // Navigasi bawah hanya untuk pengunjung yang sudah masuk; badge = pesanan yang menunggu pembayaran.
+    const bn = document.querySelector('.pv-bnav');
+    document.body.classList.toggle('has-bnav', !!me);
+    if (bn) bn.hidden = !me;
+    const badgeEl = document.querySelector('[data-nav-badge]');
+    if (badgeEl) { const n = me && E.s ? myOrderList().filter((o) => o.status === 'PENDING' && o.until > E.now()).length : 0; badgeEl.hidden = !n; badgeEl.textContent = n; badgeEl.setAttribute('aria-label', L(n + ' menunggu pembayaran', n + ' awaiting payment')); }
+    if (!d || !m) return;
+    if (me) {
+      const first = me.name.split(' ')[0];
+      d.className = 'btn-ghost lp-acct'; d.href = '/pengunjung/tiket'; d.innerHTML = `<span class="lp-avatar" aria-hidden="true">${esc(initialsOf(me.name))}</span>${esc(first)}`;
+      m.className = 'pv-hbtn pv-hround lp-acct-m'; m.href = '/pengunjung/tiket'; m.setAttribute('aria-label', L('Akun: ', 'Account: ') + me.name); m.innerHTML = `<span class="lp-avatar" aria-hidden="true">${esc(initialsOf(me.name))}</span>`;
+    } else {
+      const next = encodeURIComponent(Router.path() === '/masuk' ? '/tiket' : Router.path());
+      d.className = 'btn'; d.href = '/pengunjung/masuk?next=' + next; d.innerHTML = `${ic('login', 'text-[18px]')}<span>${L('Masuk', 'Log in')}</span>`;
+      m.className = 'pv-hbtn pv-hround'; m.href = '/pengunjung/masuk?next=' + next; m.setAttribute('aria-label', L('Masuk', 'Log in')); m.innerHTML = ic('person', 'text-[20px]');
+    }
+  }
+
+  V.masuk = () => {
+    const back2 = back('/pengunjung', L('Beranda', 'Home'));
+    if (me) {
+      return `${back2}<div class="lp-auth"><div class="lp-auth-card lp-auth-done"><span class="lp-avatar lp-avatar-lg" aria-hidden="true">${esc(initialsOf(me.name))}</span>
+        <h1 class="lp-title-lg">${L('Kamu sudah masuk', 'You are logged in')}</h1><p class="lp-lead">${esc(me.name)} · ${esc(me.email)}</p>
+        <div class="lp-auth-btns"><a class="btn lp-cta" href="/pengunjung/tiket">${ic('confirmation_number', 'text-[18px]')}${L('Lihat tiket saya', 'See my tickets')}</a><button type="button" class="btn-ghost lp-cta" data-logout>${ic('logout', 'text-[18px]')}${L('Keluar', 'Log out')}</button></div></div></div>`;
+    }
+    return `${back2}<div class="lp-auth"><div class="lp-auth-card">
+      <h1 class="lp-title-lg">${L('Masuk', 'Log in')}</h1>
+      <p class="lp-lead mb-4">${L('Masuk untuk melihat semua tiketmu dan mengisi data pemesan otomatis.', 'Log in to see all your tickets and fill in booker details automatically.')}</p>
+      <form id="f-login" class="flex flex-col gap-4" novalidate>
+        <div class="lp-field"><label for="l-email" class="lp-label">Email</label><input id="l-email" class="inp" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="nama@gmail.com"></div>
+        <div class="lp-field"><label for="l-pass" class="lp-label">Password</label><div class="lp-pass"><input id="l-pass" class="inp" name="password" type="password" autocomplete="current-password"><button type="button" class="lp-pass-eye" data-eye aria-label="${L('Tampilkan password', 'Show password')}" aria-pressed="false">${ic('visibility', 'text-[20px]')}</button></div></div>
+        <p class="lp-err" id="login-err" role="alert" hidden></p>
+        <button class="btn lp-cta" id="login-btn">${ic('login', 'text-[18px]')}<span>${L('Masuk', 'Log in')}</span></button>
+      </form>
+      <p class="lp-auth-alt">${L('Belum punya akun? Kamu tetap bisa membeli tiket tanpa akun.', 'No account? You can still buy tickets without one.')} <a href="/pengunjung">${L('Lihat acara', 'Browse events')}</a></p>
+      <div class="lp-demo"><p class="lp-demo-h"><span>${L('Akun demo', 'Demo accounts')}</span></p>
+        <p class="lp-help mb-3">${L('Klik untuk mengisi email & password, lalu tekan Masuk.', 'Click to fill in the email & password, then press Log in.')}</p>
+        <div class="lp-demo-grid">${DEMO.map((d, i) => `<button type="button" class="lp-demo-card" data-demo="${i}"><span class="lp-avatar" aria-hidden="true">${esc(initialsOf(d.name))}</span><span class="lp-demo-txt"><b>${esc(tx2(d.label))}</b><span>${esc(d.email)}</span><small>${esc(d.name)} · ${esc(tx2(d.note))}</small></span></button>`).join('')}</div></div>
+    </div></div>`;
+  };
+  function bindLogin() {
+    app.querySelectorAll('[data-logout]').forEach((b) => b.addEventListener('click', () => { signOut(); syncHead(); toast(L('Kamu sudah keluar.', 'You have logged out.'), 'info'); Router.go('/'); }));
+    const f = app.querySelector('#f-login'); if (!f) return;
+    const em = f.querySelector('#l-email'), pw = f.querySelector('#l-pass'), btn = f.querySelector('#login-btn'), err = f.querySelector('#login-err');
+    const say = (m) => { err.hidden = !m; err.innerHTML = m ? ic('error', 'text-[16px]') + '<span>' + m + '</span>' : ''; };
+    app.querySelectorAll('[data-demo]').forEach((b) => b.addEventListener('click', () => {
+      const d = DEMO[+b.dataset.demo]; em.value = d.email; pw.value = DEMO_PASS; say('');
+      app.querySelectorAll('[data-demo]').forEach((x) => x.classList.toggle('on', x === b));
+      btn.focus();
+    }));
+    f.querySelector('[data-eye]').addEventListener('click', (ev) => {
+      const b = ev.currentTarget; const show = pw.type === 'password'; pw.type = show ? 'text' : 'password';
+      b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? L('Sembunyikan password', 'Hide password') : L('Tampilkan password', 'Show password'));
+      b.innerHTML = ic(show ? 'visibility_off' : 'visibility', 'text-[20px]');
+    });
+    const lockTick = () => {
+      const rem = Math.ceil((loginLock - Date.now()) / 1000);
+      if (rem > 0) { btn.disabled = true; say(L(`Terlalu banyak percobaan. Coba lagi dalam ${rem} detik.`, `Too many attempts. Try again in ${rem} seconds.`)); setTimeout(lockTick, 1000); } else if (btn.disabled) { btn.disabled = false; say(''); loginFails = 0; }
+    };
+    lockTick();
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (Date.now() < loginLock) return;
+      const email = em.value.trim().toLowerCase();
+      if (!email || !pw.value) return say(L('Isi email dan password.', 'Enter your email and password.'));
+      if (!email.includes('@')) return say(L('Email harus mengandung tanda @.', 'The email must contain an @ sign.'));
+      const d = DEMO.find((x) => x.email === email);
+      if (!d || pw.value !== DEMO_PASS) {
+        loginFails++;
+        if (loginFails >= 5) { loginLock = Date.now() + 60000; return lockTick(); }
+        return say(L('Email atau password salah.', 'Wrong email or password.'));
+      }
+      signIn(d); syncHead();
+      toast(L(`Halo, ${esc(d.name.split(' ')[0])}. Kamu sudah masuk.`, `Hi ${esc(d.name.split(' ')[0])}, you are logged in.`), 'ok');
+      const next = Router.query().next;
+      Router.go(next && next.startsWith('/') && !next.startsWith('//') && next !== '/masuk' ? next : '/tiket');
+    });
+  }
+
+  const guestCard = (next) => `<section class="lp-acct-card lp-acct-guest">${ic('account_circle', 'text-[32px]')}<div class="min-w-0 flex-1"><b>${L('Masuk untuk melihat semua tiket & pesanmu', 'Log in to see all your tickets & messages')}</b><span>${L('Tanpa masuk, hanya pesanan dari perangkat ini yang tampil.', 'Without logging in, only orders from this device are shown.')}</span></div><a class="btn" href="/pengunjung/masuk?next=${encodeURIComponent(next)}">${L('Masuk', 'Log in')}</a></section>`;
+  // Tiket saya: dikelompokkan akan datang, menunggu bayar, selesai/batal.
   V.tiket = () => {
-    const mine = E.myOrders().map((id) => E.s.orders[id]).filter(Boolean);
-    return `<h1 class="font-headline-md text-headline-md mb-3">${L('Tiket saya', 'My tickets')}</h1>
-      <div class="flex flex-col gap-3 mb-5">${mine.length ? mine.map((o) => { const e = E.ev(o.ev); const k = o.items.length; return `<a href="/pengunjung/o/${o.id}" class="card p-4 block"><div class="flex items-start justify-between gap-2"><div><div class="font-label-lg text-label-lg">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${fShort(e.start)} · ${L(k + ' tiket', k + (k === 1 ? ' ticket' : ' tickets'))} · ${o.items.map((i) => i.seat || E.typeById(e, i.type).name).join(', ')}</div></div>${statusChip(o.status === 'PENDING' && o.until < E.now() ? 'EXPIRED' : o.status)}</div><div class="font-label-md text-label-md text-on-surface-variant mt-2">${o.id} · ${rp(o.total)}</div></a>`; }).join('') : `<div class="inner p-4 font-body-sm text-body-sm text-on-surface-variant">${L('Belum ada pesanan di perangkat ini.', 'No orders on this device yet.')}</div>`}</div>
-      <section class="card p-4"><h2 class="font-headline-sm text-headline-sm mb-2">${L('Cari pesanan', 'Find an order')}</h2><p class="font-label-sm text-label-sm text-on-surface-variant mb-3">${L('Pesan dari perangkat lain? Masukkan kode booking dan email pemesan.', 'Booked on another device? Enter the booking code and the booker\'s email.')}</p>
-        <form id="f-find" class="flex flex-col gap-2"><input class="inp" name="code" placeholder="BK-XXXXXX" required><input class="inp" name="email" type="email" placeholder="${L('Email pemesan', 'Booker\'s email')}" required><button class="btn justify-center">${ic('search')} ${L('Cari', 'Search')}</button></form></section>`;
+    const list = myOrderList();
+    const now = E.now();
+    const state = (o) => (o.status === 'PENDING' && o.until < now ? 'EXPIRED' : o.status);
+    const groups = [
+      ['pending', L('Menunggu pembayaran', 'Awaiting payment'), list.filter((o) => state(o) === 'PENDING')],
+      ['soon', L('Akan datang', 'Upcoming'), list.filter((o) => state(o) === 'PAID' && E.ev(o.ev) && E.ev(o.ev).start > now - 3 * 3600000)],
+      ['done', L('Selesai & batal', 'Past & cancelled'), list.filter((o) => !(state(o) === 'PENDING' || (state(o) === 'PAID' && E.ev(o.ev) && E.ev(o.ev).start > now - 3 * 3600000)))],
+    ].filter((g) => g[2].length);
+    const row = (o) => { const e = E.ev(o.ev); if (!e) return ''; const k = o.items.length; return `<a href="/pengunjung/o/${o.id}" class="lp-order">
+        <div class="lp-order-img">${photo(e)}</div>
+        <div class="lp-order-main"><div class="flex items-start justify-between gap-2"><b class="lp-order-title">${esc(e.name)}</b>${statusChip(state(o))}</div>
+          <p class="lp-meta">${ic('calendar_month', 'text-[16px]')}<span>${when(e)}</span></p>
+          <p class="lp-help">${L(k + ' tiket', k + (k === 1 ? ' ticket' : ' tickets'))} · ${esc(o.items.map((i) => i.seat || E.typeById(e, i.type).name).join(', '))}</p>
+          <p class="lp-order-foot"><span>${o.id}</span><b>${rp(o.total)}</b></p></div></a>`; };
+    const acct = me ? `<section class="lp-acct-card"><span class="lp-avatar lp-avatar-lg" aria-hidden="true">${esc(initialsOf(me.name))}</span><div class="min-w-0 flex-1"><b>${esc(me.name)}</b><span>${esc(me.email)}</span></div><button type="button" class="btn-ghost" data-logout>${ic('logout', 'text-[18px]')}${L('Keluar', 'Log out')}</button></section>`
+      : guestCard('/tiket');
+    return `<h1 class="lp-title-lg">${L('Tiket saya', 'My tickets')}</h1>${acct}
+      ${groups.length ? groups.map(([k, title, l]) => `<section class="lp-order-group"><h2 class="lp-title">${title} <span class="lp-count">${l.length}</span></h2><div class="lp-orders">${l.map(row).join('')}</div></section>`).join('')
+        : `<div class="lp-empty mt-4"><p>${L('Belum ada pesanan.', 'No orders yet.')}</p><a class="btn" href="/pengunjung">${L('Cari acara', 'Find events')}</a></div>`}
+      <section class="card p-4 mt-8"><h2 class="font-headline-sm text-headline-sm mb-1">${L('Cari pesanan', 'Find an order')}</h2><p class="lp-help mb-3">${L('Pesan dari perangkat lain tanpa akun? Masukkan kode booking dan email pemesan.', 'Booked on another device without an account? Enter the booking code and the booker\'s email.')}</p>
+        <form id="f-find" class="lp-find"><input class="inp" name="code" placeholder="BK-XXXXXX" aria-label="${L('Kode booking', 'Booking code')}" required><input class="inp" name="email" type="email" placeholder="${L('Email pemesan', 'Booker\'s email')}" aria-label="${L('Email pemesan', 'Booker\'s email')}" required><button class="btn">${ic('search', 'text-[18px]')}${L('Cari', 'Search')}</button></form></section>`;
   };
 
   V.inbox = () => {
-    const mine = E.myOrders().map((id) => E.s.orders[id]).filter(Boolean);
+    const mine = myOrderList();
     const to = new Set(mine.flatMap((o) => [o.email, o.phone]));
+    if (me) { to.add(me.email); }
     const msgs = E.s.outbox.filter((m) => to.has(m.to)).slice(0, 60);
-    return `<h1 class="font-headline-md text-headline-md">${L('Kotak masuk', 'Inbox')}</h1><p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${L('Simulasi email & WhatsApp untuk pesanan di perangkat ini. Tidak ada pesan yang benar-benar dikirim.', 'Simulated email & WhatsApp for orders on this device. No messages are actually sent. Messages are written in Indonesian.')}</p>
-      <div class="flex flex-col gap-2">${msgs.length ? msgs.map((m) => `<div class="card p-3 flex gap-3">${ic(m.ch === 'Email' ? 'mail' : 'chat', 'text-[20px] ' + (m.ch === 'Email' ? 'text-primary' : 'text-emerald-300'))}<div class="min-w-0"><div class="font-label-sm text-label-sm text-on-surface-variant">${m.ch} · ${esc(m.to)} · ${fDT(m.ts)}</div><div class="font-label-lg text-label-lg">${esc(m.subject)}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(m.body)}</div>${m.order && m.order.startsWith('BK-') ? `<a class="font-label-md text-label-md text-primary" href="/pengunjung/o/${m.order}">${L('Buka', 'Open')} ${m.order}</a>` : ''}</div></div>`).join('') : `<div class="inner p-4 font-body-sm text-body-sm text-on-surface-variant">${L('Belum ada pesan.', 'No messages yet.')}</div>`}</div>`;
+    const msg = (m) => { const mail = m.ch === 'Email'; return `<article class="lp-msg"><span class="lp-msg-ic ${mail ? '' : 'is-wa'}">${ic(mail ? 'mail' : 'chat', 'text-[20px]')}</span>
+      <div class="min-w-0 flex-1"><p class="lp-msg-meta"><b>${mail ? 'Email' : 'WhatsApp'}</b><span class="lp-dot"></span><span>${fDT(m.ts)}</span></p><h2 class="lp-msg-title">${esc(m.subject)}</h2><p class="lp-body-sm">${esc(m.body)}</p>
+        ${m.order && m.order.startsWith('BK-') ? `<a class="lp-more" href="/pengunjung/o/${m.order}">${L('Buka pesanan', 'Open order')} ${m.order}${ic('chevron_right', 'text-[18px]')}</a>` : ''}</div></article>`; };
+    return `<h1 class="lp-title-lg">${L('Kotak masuk', 'Inbox')}</h1>
+      <p class="lp-lead">${L('Simulasi email & WhatsApp untuk pesananmu. Tidak ada pesan yang benar-benar dikirim.', 'Simulated email & WhatsApp for your orders. No messages are actually sent. Messages are written in Indonesian.')}</p>
+      ${me ? '' : guestCard('/inbox')}
+      <div class="lp-msgs">${msgs.length ? msgs.map(msg).join('') : `<div class="lp-empty"><p>${L('Belum ada pesan.', 'No messages yet.')}</p><a class="btn" href="/pengunjung">${L('Cari acara', 'Find events')}</a></div>`}</div>`;
   };
   const notFound = (m) => `<div class="card p-6 text-center">${ic('search_off', 'text-[40px] text-on-surface-variant')}<p class="mt-2">${esc(m || L('Halaman tidak ditemukan.', 'Page not found.'))}</p><a class="btn mt-4" href="/pengunjung">${L('Ke daftar acara', 'Go to events')}</a></div>`;
 
@@ -623,6 +762,7 @@
     if (p[0] === 'o') return { name: 'order', args: [p[1]] };
     if (p[0] === 'tiket') return { name: 'tiket', args: [] };
     if (p[0] === 'inbox') return { name: 'inbox', args: [] };
+    if (p[0] === 'masuk') return { name: 'masuk', args: [] };
     return { name: 'home', args: [] };
   }
   // Hero carousel: titik mengikuti posisi geser, klik titik melompat, geser otomatis tiap 6 dtk
@@ -673,17 +813,23 @@
     const y = window.scrollY;
     const rails = {}; app.querySelectorAll('[data-rail]').forEach((r) => (rails[r.dataset.rail] = r.scrollLeft));
     app.innerHTML = E.modeBanner() + V[cur.name](...cur.args);
-    document.body.classList.toggle('pv-wide', cur.name === 'home'); // beranda selebar desktop, langkah beli tetap sempit
+    // Lebar konten desktop: beranda, detail, kategori & kursi selebar 1200 px (dua kolom); data, pesanan, tiket,
+    // kotak masuk 720 px; halaman masuk sempit. Ponsel selalu satu kolom.
+    document.body.classList.toggle('pv-wide', ['home', 'event', 'cats', 'seats'].includes(cur.name));
+    document.body.classList.toggle('pv-mid', ['data', 'order', 'tiket', 'inbox', 'masuk'].includes(cur.name));
+    document.body.dataset.view = cur.name;
+    syncHead();
     bind();
     tick();
-    const nav = { home: 'home', event: 'home', cats: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox' }[cur.name];
-    document.querySelectorAll('[data-nav]').forEach((a) => { a.classList.toggle('text-primary', a.dataset.nav === nav); a.classList.toggle('text-on-surface-variant', a.dataset.nav !== nav); });
+    const nav = { home: 'home', event: 'home', cats: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox', masuk: 'tiket' }[cur.name];
+    document.querySelectorAll('[data-nav]').forEach((a) => { const on = a.dataset.nav === nav; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     if (keepScroll) { window.scrollTo(0, y); app.querySelectorAll('[data-rail]').forEach((r) => { if (rails[r.dataset.rail]) r.scrollLeft = rails[r.dataset.rail]; }); }
     syncTabs();
     const sm = app.querySelector('.seatmap-wrap'); if (sm) sm.scrollLeft = keepScroll && render.sx != null ? render.sx : (sm.scrollWidth - sm.clientWidth) / 2;
   }
   function bind() {
     const id = cur.args[0];
+    bindLogin();
     const sm = app.querySelector('.seatmap-wrap'); if (sm) sm.addEventListener('scroll', () => (render.sx = sm.scrollLeft));
     app.querySelectorAll('[data-seat]').forEach((b) => b.addEventListener('click', async () => {
       const st = b.dataset.st, seat = b.dataset.seat;

@@ -4,49 +4,25 @@
  *
  * Jalankan:  node server.js                  (0.0.0.0:8765, bisa diakses PC/ponsel lain di LAN)
  *            node server.js 9000 127.0.0.1   (hanya komputer ini)
- * Ganti PIN: node server.js --set-pin pengelola 123456
- *            node server.js --set-pin command-center 654321
- * Data (state event, hash PIN, kunci sesi) ada di data/. Jangan dibagikan.
+ * Login staf: email + password di /masuk (akun di server/config.js; password demo smicc-demo-2026,
+ *             ganti lewat variabel lingkungan STAFF_PASSWORD).
+ * Data (state event, kunci sesi) ada di data/. Jangan dibagikan.
  */
 const http = require('http');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const { ROLES } = require('./server/config');
 const { createApp } = require('./server/app');
 const { fileStore } = require('./server/store');
-const { createAuth, setPin, ensureInitialPins } = require('./server/auth');
+const { createAuth } = require('./server/auth');
 
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data');
-const PIN_NOTE = path.join(DATA, 'PIN_AWAL.txt');
 const DEV = process.argv.includes('--dev'); // npm run dev: aset tidak di-cache
 const args = process.argv.slice(2).filter((a) => a !== '--dev');
 
-if (args[0] === '--set-pin') {
-  const [, role, pin] = args;
-  if (args.length !== 3 || !ROLES[role] || !/^\d{4,8}$/.test(pin)) {
-    console.error('Pemakaian: node server.js --set-pin {' + Object.keys(ROLES).join('|') + '} <PIN 4-8 digit>');
-    process.exit(1);
-  }
-  setPin(DATA, role, pin);
-  console.log('PIN ' + role + ' diperbarui dan semua sesi lama berakhir. Restart server agar berlaku.');
-  if (fs.existsSync(PIN_NOTE)) { // buang PIN awal peran ini dari catatan; hapus file bila sudah kosong
-    const lines = fs.readFileSync(PIN_NOTE, 'utf8').split(/(?<=\n)/).filter((ln) => !ln.trim().startsWith(role + ' '));
-    if (lines.some((ln) => ln.startsWith('  '))) fs.writeFileSync(PIN_NOTE, lines.join(''));
-    else { fs.unlinkSync(PIN_NOTE); console.log('data/PIN_AWAL.txt dihapus (semua PIN awal sudah diganti).'); }
-  }
-  process.exit(0);
-}
-
 const port = +args[0] || 8765;
 const host = args[1] || '0.0.0.0';
-const fresh = ensureInitialPins(DATA);
-if (Object.keys(fresh).length) {
-  console.log('PIN awal dibuat (simpan, lalu ganti bila perlu) -> data/PIN_AWAL.txt');
-  for (const [r, p] of Object.entries(fresh)) console.log('  ' + r.padEnd(15) + ' ' + p);
-}
-
 const handler = createApp({ root: ROOT, store: fileStore(DATA), auth: createAuth({ dataDir: DATA }), dev: DEV });
 http.createServer((req, res) => {
   if (req.method === 'POST') res.on('finish', () => console.log(req.socket.remoteAddress, req.method, req.url, res.statusCode));
@@ -60,8 +36,8 @@ http.createServer((req, res) => {
     console.log('  1. Pengunjung (beli tiket)  : ' + base + '/pengunjung');
     console.log('  2. Pengelola acara (EO)     : ' + base + '/pengelola');
     console.log('  3. Command Center mall 360  : ' + base + '/command-center');
-    console.log('     Check-in gate (ponsel)   : ' + base + '/checkin');
+    console.log('  4. Petugas gate (check-in)  : ' + base + '/checkin');
   }
   if (DEV) console.log('Mode dev: aset tidak di-cache, server restart otomatis saat file server/ berubah.');
-  console.log('Path 2 & 3 (dan /checkin) meminta PIN peran. Ganti PIN: node server.js --set-pin <peran> <PIN>');
+  console.log('Pengelola, Command Center & /checkin meminta login staf di /masuk (password demo: smicc-demo-2026, ganti lewat STAFF_PASSWORD).');
 });

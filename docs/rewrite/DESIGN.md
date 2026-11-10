@@ -96,9 +96,8 @@ Command Center memakai turunan gelap dari token yang sama.
 
 ## 3. Tipografi
 
-Dua font, satu keluarga: **Barlow Condensed** untuk display dan angka, **Barlow** untuk teks dan
-antarmuka. Barlow dirancang dari huruf rambu jalan, jadi cocok dengan konsep papan petunjuk.
-Keduanya OFL dan dimuat lewat `next/font`.
+Satu keluarga huruf: **Inter** untuk semua teks, judul, dan angka (diganti dari Barlow pada 11 Nov 2026 atas
+permintaan pemilik produk). File font disimpan lokal di `app/vendor/fonts/` (`tools/vendor_fonts.py`).
 
 ### Skala tetap
 
@@ -106,15 +105,15 @@ Ukuran mengikuti skala klasik (12, 14, 16, 18, 24, 36, 48). Line-height selalu k
 
 | Token | Font | Ukuran / line-height | Berat | Dipakai untuk |
 |---|---|---|---|---|
-| `display` | Barlow Condensed | 48/52 (mobile 36/40) | 700 | Judul acara di hero |
-| `title-lg` | Barlow Condensed | 36/40 (mobile 28/32) | 700 | Judul halaman, judul detail acara |
-| `title` | Barlow Condensed | 24/28 | 700 | Judul bagian landing |
-| `heading` | Barlow | 18/24 | 600 | Judul kartu besar, judul modal |
-| `body` | Barlow | 16/24 | 400 | Paragraf, deskripsi acara |
-| `body-sm` | Barlow | 14/20 | 400 | Meta kartu, keterangan |
-| `label` | Barlow | 14/20 | 600 | Tombol, chip, label input |
-| `caption` | Barlow | 12/16 | 500 | Badge, plat kecil, teks bantuan |
-| `numeral` | Barlow Condensed | ikut konteks | 600-700 | Harga, tanggal, nomor lantai, hitung mundur. Pakai `tabular-nums` |
+| `display` | Inter | 48/52 (mobile 36/40) | 700 | Judul acara di hero |
+| `title-lg` | Inter | 36/40 (mobile 28/32) | 700 | Judul halaman, judul detail acara |
+| `title` | Inter | 24/28 | 700 | Judul bagian landing |
+| `heading` | Inter | 18/24 | 600 | Judul kartu besar, judul modal |
+| `body` | Inter | 16/24 | 400 | Paragraf, deskripsi acara |
+| `body-sm` | Inter | 14/20 | 400 | Meta kartu, keterangan |
+| `label` | Inter | 14/20 | 600 | Tombol, chip, label input |
+| `caption` | Inter | 12/16 | 500 | Badge, plat kecil, teks bantuan |
+| `numeral` | Inter | ikut konteks | 600-700 | Harga, tanggal, nomor lantai, hitung mundur. Pakai `tabular-nums` |
 
 Aturan:
 - Teks rata kiri. Rata tengah hanya untuk keadaan kosong dan hasil check-in.
@@ -122,7 +121,7 @@ Aturan:
 - Sentence case di semua judul dan tombol. Tidak ada huruf kapital semua, tidak ada label kecil
   berhuruf kapital di atas judul.
 - Judul tidak menyorot satu kata dengan warna atau gaya berbeda.
-- Kekuatan tipografi ada di Barlow Condensed yang besar dan rapat: tanggal di plat agenda, harga, dan
+- Kekuatan tipografi ada di Inter tebal yang besar: tanggal di plat agenda, harga, dan
   angka lantai.
 
 ## 4. Spacing, radius, elevasi
@@ -225,7 +224,7 @@ Kolom cari header: latar `surface-2` tanpa garis, menjadi putih + garis `primary
 
 ### Plat lantai (komponen khas)
 
-Kotak 24 × 24 (kecil) atau 32 × 32 (direktori), radius 4, latar `ink`, teks putih Barlow Condensed
+Kotak 24 × 24 (kecil) atau 32 × 32 (direktori), radius 4, latar `ink`, teks putih Inter
 700. Diikuti nama area. Di papan direktori, plat diberi garis kiri 4 px warna area.
 
 ```
@@ -234,7 +233,7 @@ Kotak 24 × 24 (kecil) atau 32 × 32 (direktori), radius 4, latar `ink`, teks pu
 
 ### Plat tanggal (agenda)
 
-Kotak 56 × 64, radius 4, garis `line`. Bulan `caption` `text-muted` di atas, tanggal Barlow Condensed
+Kotak 56 × 64, radius 4, garis `line`. Bulan `caption` `text-muted` di atas, tanggal Inter
 700 28/32 `ink`. Hari ini: latar `signal`, teks `ink`.
 
 ### Chip filter
@@ -359,8 +358,9 @@ Papan direktori: baris diurutkan dari L3 ke GF seperti di lift. Hover/fokus pada
 - **Foto**: rasio 16:9 untuk kartu, 21:9 untuk hero desktop, 4:3 untuk hero mobile. Lapisan gelap
   `linear-gradient(to top, rgb(20 33 61 / .75), transparent 60%)` di bawah teks. `alt` kosong bila
   foto dekoratif, judul acara bila foto menjadi satu-satunya penanda.
-- **Gerak**: hanya satu gerak otomatis, yaitu hero bergeser tiap 6 detik (berhenti saat disentuh,
-  diarahkan, tab tersembunyi, atau reduced motion; ada titik navigasi). Logo tenant berjalan dengan tombol
+- **Gerak**: hanya satu gerak otomatis, yaitu hero bergeser tiap 2,5 detik tanpa tombol jeda (berhenti
+  sementara saat disentuh, diarahkan, difokus, atau tab tersembunyi; reduced motion: pindah tanpa animasi
+  geser; ada titik navigasi). Logo tenant berjalan dengan tombol
   Jeda. Selain itu, gerak hanya sebagai jawaban aksi: kursi berubah status, menu terbuka, toast muncul.
   Tidak ada animasi muncul per bagian saat digulir.
 
@@ -368,7 +368,7 @@ Papan direktori: baris diurutkan dari L3 ke GF seperti di lift. Hover/fokus pada
 
 - Kontras sesuai bagian 2. Target sentuh 44 × 44.
 - Semua aksi bisa dijangkau keyboard dengan urutan logis, fokus terlihat.
-- Carousel: tombol jeda/titik bisa difokus, `aria-roledescription="carousel"`.
+- Carousel: titik navigasi bisa difokus, `aria-roledescription="carousel"`.
 - Status (sisa waktu, hasil check-in) diumumkan dengan `aria-live="polite"`.
 - `lang` di `<html>` ikut bahasa aktif.
 - Layout utuh di 320 px tanpa gulir horizontal halaman.

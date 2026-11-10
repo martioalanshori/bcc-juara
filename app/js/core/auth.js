@@ -1,5 +1,5 @@
-/* Sesi PIN per peran (server.js). Menampilkan tombol "Keluar" pada elemen [data-logout="<peran>"].
- * Tanpa server.js (mode lokal) tombol disembunyikan karena akses PIN tidak berlaku. */
+/* Sesi login staf per peran (server.js). Menampilkan tombol "Keluar" pada elemen [data-logout="<peran> [peran lain]"]:
+ * dipakai peran pertama dalam daftar yang sesinya aktif. Tanpa server.js (mode lokal) tombol disembunyikan. */
 (function () {
   async function me() {
     try { const r = await fetch('/api/auth/me', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; }
@@ -13,9 +13,15 @@
     const els = document.querySelectorAll('[data-logout]'); if (!els.length) return;
     const m = await me();
     els.forEach((el) => {
-      if (!m || !m.server || !m.roles.includes(el.dataset.logout)) { el.hidden = true; return; }
+      const role = m && m.server ? el.dataset.logout.split(/\s+/).find((r) => m.roles.includes(r)) : null;
+      if (!role) { el.hidden = true; return; }
       el.hidden = false;
-      el.addEventListener('click', () => { if (confirm('Keluar dari ' + (m.labels[el.dataset.logout] || 'sesi ini') + '?')) logout(el.dataset.logout); });
+      el.addEventListener('click', async () => {
+        const name = m.labels[role] || 'sesi ini';
+        // Dialog bertema bila halaman memuat core/ui.js (konsol & Command Center), selain itu confirm() bawaan.
+        const ok = window.UI && UI.confirm ? await UI.confirm({ title: 'Keluar dari ' + name + '?', body: 'Anda perlu masuk lagi dengan email dan password untuk membuka portal ini.', confirmText: 'Keluar' }) : confirm('Keluar dari ' + name + '?');
+        if (ok) logout(role);
+      });
     });
   });
 })();

@@ -1,49 +1,60 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-base="/pengelola">
 <head>
   <meta charset="utf-8" />
   <link rel="icon" href="data:," />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#181b1f" />
   <title>Konsol Pengelola Acara · Summarecon Mall Bandung</title>
-  <!-- Path 2 · Pengelola / Event Organizer: tambah, hapus, batalkan & kelola acara. Aset lokal (tanpa internet). -->
-  <script src="/app/js/core/theme.js?v=37"></script>
-  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=37" />
-  <link rel="stylesheet" href="/app/css/app.css?v=37" />
+  <!-- Path 2 · Pengelola / Event Organizer. Rute: /pengelola/acara, /pengelola/e/EVT-01/<menu> (app/js/event/admin.js). -->
+  <script src="/app/js/core/theme.js?v=55"></script>
+  <script src="/app/js/core/router.js?v=55"></script>
+  <script>try { if (localStorage.getItem('smicc-pengelola-nav') === 'mini' || (localStorage.getItem('smicc-pengelola-nav') == null && innerWidth < 1280)) document.documentElement.classList.add('pg-mini'); } catch (e) { /* tanpa storage */ }</script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=55" />
+  <link rel="stylesheet" href="/app/css/app.css?v=55" />
 </head>
-<body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-  <header class="sticky top-0 z-40 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant">
-    <div class="max-w-[1680px] mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
-      <a href="/pengelola" class="flex items-center gap-3 min-w-0">
-        <span class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span></span>
-        <span class="flex flex-col leading-tight min-w-0"><span class="font-headline-sm text-headline-sm truncate">Konsol Pengelola Acara</span><span class="font-label-sm text-label-sm text-secondary truncate">Penyelenggara acara · Summarecon Mall Bandung</span></span>
-      </a>
-      <div class="flex items-center gap-4 shrink-0">
-        <a href="/" class="hidden md:flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">apps</span>Pilih peran</a>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased pg-body">
+  <a href="#view" class="pg-skip">Lewati ke konten</a>
+  <aside id="pg-side" class="pg-side" aria-label="Navigasi konsol"></aside>
+  <div class="pg-scrim scrim" id="pg-scrim" hidden></div>
+
+  <div class="pg-main">
+    <header class="pg-top">
+      <button type="button" class="pg-menu-btn" id="pg-menu" aria-label="Buka menu" aria-controls="pg-side" aria-expanded="false"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex flex-col leading-tight min-w-0 flex-1">
+        <span class="font-label-sm text-label-sm text-on-surface-variant truncate" id="pg-crumb">Konsol Pengelola Acara</span>
+        <h1 class="font-headline-sm text-headline-sm truncate" id="pg-title">Memuat…</h1>
+      </div>
+      <button type="button" class="pg-search-btn" id="pg-cmdk-btn" aria-keyshortcuts="Control+K Meta+K" aria-haspopup="dialog" title="Cari acara, menu, atau kode booking"><span class="material-symbols-outlined text-[20px]">search</span><span class="pg-search-txt">Cari</span><kbd data-kbd>Ctrl K</kbd></button>
+      <div class="flex items-center gap-1 shrink-0">
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
-        <button type="button" data-logout="pengelola" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari sesi PIN"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
-        <div class="hidden lg:flex items-center gap-3">
-          <div class="flex flex-col items-end leading-tight"><span class="font-label-lg text-label-lg">Panitia Acara</span><span class="font-label-sm text-label-sm text-on-surface-variant">Petugas acara (EO)</span></div>
-          <div class="w-9 h-9 rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">badge</span></div>
+        <div class="pg-prof" id="pg-prof">
+          <button type="button" class="pg-prof-btn" id="pg-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="pg-prof-menu"><span class="pg-av" id="pg-av">EO</span><span class="pg-prof-name" id="pg-prof-name">Pengelola acara</span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
+          <div class="pg-prof-menu" id="pg-prof-menu" hidden>
+            <div class="pg-prof-head"><b id="pg-prof-n2">Pengelola acara</b><small id="pg-prof-sub"></small></div>
+            <button type="button" id="pg-prof-edit"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
+            <button type="button" data-logout="pengelola" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
+          </div>
         </div>
       </div>
-    </div>
-  </header>
-
-  <main class="max-w-[1680px] mx-auto px-4 md:px-6 pt-5 pb-10 min-h-screen"><div id="view"></div></main>
+    </header>
+    <main class="pg-content" id="view" tabindex="-1"></main>
+  </div>
+  <nav class="pg-bnav" id="pg-bnav" aria-label="Navigasi cepat"></nav>
 
   <div id="modal-root"></div>
-  <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
+  <div id="toast-root" class="fixed bottom-6 right-4 sm:right-6 z-[90] flex flex-col gap-2 items-end pg-toasts"></div>
 
-  <script src="/app/vendor/qrcode.js?v=37"></script>
-  <script src="/app/vendor/jsQR.js?v=37"></script>
-  <script src="/app/js/command-center/sop-data.js?v=37"></script>
-  <script src="/app/js/core/ui.js?v=37"></script>
-  <script src="/app/js/core/auth.js?v=37"></script>
-  <script src="/app/js/event/engine.js?v=37"></script>
-  <script src="/app/js/event/checkin-ui.js?v=37"></script>
-  <script src="/app/js/event/admin.js?v=37"></script>
+  <script src="/app/vendor/qrcode.js?v=55"></script>
+  <script src="/app/vendor/jsQR.js?v=55"></script>
+  <script src="/app/js/command-center/sop-data.js?v=55"></script>
+  <script src="/app/js/core/ui.js?v=55"></script>
+  <script src="/app/js/core/pdf.js?v=55"></script>
+  <script src="/app/js/core/auth.js?v=55"></script>
+  <script src="/app/js/event/engine.js?v=55"></script>
+  <script src="/app/js/event/checkin-ui.js?v=55"></script>
+  <script src="/app/js/event/admin.js?v=55"></script>
   <script>EvtAdmin.mount(document.getElementById('view'), 'pengelola');</script>
 </body>
 </html>

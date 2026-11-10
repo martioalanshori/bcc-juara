@@ -1,19 +1,29 @@
-/* Satu-satunya tabel rute & peran aplikasi. Dipakai server/app.js (LAN maupun Vercel).
- * Menambah halaman baru: tambahkan ke PAGES; halaman berperan otomatis dilindungi PIN. */
+/* Satu-satunya tabel rute, peran & akun staf. Dipakai server/app.js (LAN maupun Vercel).
+ * Menambah halaman baru: tambahkan ke PAGES; halaman berperan otomatis dilindungi login. */
 
-// Peran PIN. home = tujuan default setelah login. env = variabel PIN (opsional, menimpa data/access.json).
+// Peran staf. home = tujuan default setelah login.
 const ROLES = {
-  pengelola: { label: 'Konsol Pengelola Acara', home: '/pengelola', env: 'PIN_PENGELOLA' },
-  'command-center': { label: 'Command Center · Mall 360', home: '/command-center', env: 'PIN_COMMAND_CENTER' },
+  pengelola: { label: 'Konsol Pengelola Acara', home: '/pengelola' },
+  gate: { label: 'Check-in Gate', home: '/checkin' },
+  'command-center': { label: 'Command Center · Mall 360', home: '/command-center' },
 };
+
+// Akun staf (data contoh, domain example.com). Password sama untuk semua akun: STAFF_PASSWORD bila diisi,
+// selain itu DEMO_PASSWORD yang memang ditampilkan di halaman /masuk (prototipe untuk demo juri).
+const DEMO_PASSWORD = 'smicc-demo-2026';
+const ACCOUNTS = [
+  { email: 'pengelola@example.com', role: 'pengelola', name: 'Tim Event Summarecon Mall Bandung' },
+  { email: 'gate@example.com', role: 'gate', name: 'Petugas Gate A' },
+  { email: 'cc@example.com', role: 'command-center', name: 'Operator Command Center' },
+];
 
 // URL bersih -> file halaman (app/pages/). spa: sub-path (mis. /pengunjung/e/EVT-01) tetap menyajikan
 // halaman yang sama, router di browser (app/js/core/router.js) yang memilih layar.
 const PAGES = {
   '/': { file: 'app/pages/beranda.html' },
   '/pengunjung': { file: 'app/pages/pengunjung.html', spa: true },
-  '/pengelola': { file: 'app/pages/pengelola.html', role: 'pengelola' },
-  '/checkin': { file: 'app/pages/checkin.html', role: 'pengelola' },
+  '/pengelola': { file: 'app/pages/pengelola.html', role: 'pengelola', spa: true }, // /pengelola/acara, /pengelola/e/EVT-01/ringkasan
+  '/checkin': { file: 'app/pages/checkin.html', role: ['gate', 'pengelola'] }, // petugas gate & pengelola
   '/command-center': { file: 'app/pages/command-center.html', role: 'command-center', spa: true },
   '/masuk': { file: 'app/pages/masuk.html' },
 };
@@ -47,4 +57,7 @@ function pageFor(pathname) {
   return pg && pg.spa ? { key: top, ...pg } : null;
 }
 
-module.exports = { ROLES, PAGES, LEGACY, STATIC_DIRS, SESSION_TTL, MAX_FAIL, LOCK_SEC, pageFor };
+// Peran yang boleh membuka halaman (role bisa satu string atau daftar).
+const pageRoles = (page) => (page && page.role ? [].concat(page.role) : []);
+
+module.exports = { ROLES, ACCOUNTS, DEMO_PASSWORD, PAGES, LEGACY, STATIC_DIRS, SESSION_TTL, MAX_FAIL, LOCK_SEC, pageFor, pageRoles };

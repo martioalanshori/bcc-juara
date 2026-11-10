@@ -138,3 +138,11 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
   - Kursi SOLD dan e-ticket baru hanya diterima untuk pesanan yang lunas di penulisan itu (sebelumnya PENDING atau baru), dan kursinya harus ada di item pesanan. Hold kursi, hold kuota, dan batas bayar pesanan PENDING paling lama 60 menit ke depan. Bentuk data (array/objek di level atas, item/log/tiket pesanan) diperiksa supaya penulisan rusak tidak membuat semua halaman gagal.
 - Batasan yang tersisa (prototipe): aturan bisnis tetap dijalankan di browser; server hanya menolak perubahan di luar peran. Kunci tanda tangan QR ada di `engine.js`, jadi orang yang membaca kode bisa membuat QR yang lolos verifikasi; pembayaran sandbox juga bisa ditandai lunas dari browser. Produksi perlu akun per orang, API per aksi, tanda tangan QR (HMAC) dan konfirmasi pembayaran dari gateway di server, serta otorisasi per acara (EO hanya acaranya sendiri).
 - Kunci tanda tangan QR ada di sisi klien demi kesederhanaan prototype. Pada produksi, tanda tangan & validasi dilakukan di server.
+
+## Pengaturan acara (konsol pengelola)
+
+- Semua isian Pengaturan disimpan sekaligus lewat `Evt.saveEvent` dalam satu transaksi: data acara, perubahan
+  jenis tiket, dan jenis tiket baru. Bila satu bagian ditolak, tidak ada yang tersimpan.
+- Jenis tiket baru selalu berupa kuota tanpa kursi bernomor; kursi bernomor tetap mengikuti denah templat.
+- Kuota jenis tiket tanpa kursi tidak boleh lebih kecil dari tiket yang sudah lunas ditambah yang sedang di-hold.
+- Poster acara dipotong ke 16:9 dan diperkecil ke 960 x 540 piksel (JPEG) di browser sebelum disimpan.

@@ -6,72 +6,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#181b1f" />
   <meta name="robots" content="noindex" />
-  <title>Masuk dengan PIN · Summarecon Mall Bandung</title>
-  <!-- Halaman PIN untuk path 2 (pengelola) & 3 (Command Center). Verifikasi PIN dilakukan server.js. -->
-  <script src="/app/js/core/theme.js?v=37"></script>
-  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=37" />
-  <link rel="stylesheet" href="/app/css/app.css?v=37" />
+  <title>Masuk staf · Summarecon Mall Bandung</title>
+  <!-- Login staf (pengelola, petugas gate, Command Center) dengan email & password. Verifikasi di server (server/auth.js). -->
+  <script src="/app/js/core/theme.js?v=55"></script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=55" />
+  <link rel="stylesheet" href="/app/css/app.css?v=55" />
 </head>
-<body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex items-center justify-center px-4 py-10">
-  <main class="w-full max-w-sm">
-    <div class="flex items-center justify-between mb-4"><a href="/" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Pilih peran</a><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
-    <section class="card p-6 flex flex-col gap-5">
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex justify-center px-4 py-8 sm:items-center">
+  <main class="w-full max-w-md">
+    <div class="flex items-center justify-between mb-4"><a href="/" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface min-h-[44px]"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Pilih peran</a><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
+    <section class="card auth-card">
       <div class="flex items-center gap-3">
-        <span id="role-icon" class="w-11 h-11 rounded-xl bg-surface-container-high text-primary flex items-center justify-center"><span class="material-symbols-outlined">lock</span></span>
-        <div class="flex flex-col leading-tight"><span class="font-label-sm text-label-sm text-secondary">Masuk dengan PIN</span><h1 id="role-label" class="font-headline-sm text-headline-sm">Summarecon Mall</h1></div>
+        <span id="role-icon" class="auth-role-ic"><span class="material-symbols-outlined">badge</span></span>
+        <div class="flex flex-col leading-tight min-w-0"><h1 class="font-headline-md text-headline-md">Masuk staf</h1><span id="role-label" class="font-body-sm text-body-sm text-on-surface-variant">Pengelola, petugas gate &amp; Command Center</span></div>
       </div>
-      <form id="f" class="flex flex-col gap-4" autocomplete="off">
-        <label class="f">PIN peran
-          <input class="inp text-center tracking-[0.6em] text-[22px] font-bold" id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" required autofocus aria-describedby="msg">
+      <form id="f-login" class="flex flex-col gap-4" novalidate>
+        <label class="f">Email
+          <input class="inp" id="email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="nama@example.com" required>
         </label>
-        <div id="msg" role="alert" class="font-body-sm text-body-sm min-h-[20px]"></div>
-        <button class="btn justify-center" id="go"><span class="material-symbols-outlined text-[18px]">login</span>Masuk</button>
+        <label class="f">Password
+          <span class="auth-pass"><input class="inp" id="password" name="password" type="password" autocomplete="current-password" required><button type="button" class="auth-eye" id="eye" aria-label="Tampilkan password" aria-pressed="false"><span class="material-symbols-outlined text-[20px]">visibility</span></button></span>
+        </label>
+        <p id="msg" role="alert" class="auth-msg" hidden></p>
+        <button class="btn justify-center auth-go" id="go"><span class="material-symbols-outlined text-[18px]">login</span>Masuk</button>
       </form>
-      <p id="hint" class="font-label-sm text-label-sm text-on-surface-variant">PIN diberikan oleh admin. Sesi berlaku 12 jam di perangkat ini. Salah 5 kali, akses dikunci 60 detik.</p>
+
+      <div class="auth-demo">
+        <p class="auth-demo-h"><span>Akun demo</span></p>
+        <p class="font-label-sm text-label-sm text-on-surface-variant">Klik untuk mengisi email &amp; password, lalu tekan Masuk.</p>
+        <div class="auth-demo-list" id="demo"></div>
+        <p class="font-label-sm text-label-sm text-on-surface-variant">Password semua akun demo: <code class="auth-code">smicc-demo-2026</code></p>
+      </div>
+      <a href="/pengunjung/masuk" class="auth-alt"><span class="material-symbols-outlined text-[18px]">local_activity</span>Pengunjung? Masuk di portal tiket</a>
     </section>
+    <p class="font-label-sm text-label-sm text-on-surface-variant mt-4 text-center">Sesi berlaku 12 jam di perangkat ini. Salah 5 kali, masuk dikunci 60 detik.</p>
   </main>
   <script>
     (function () {
-      const ROLES = {
-        pengelola: { label: 'Konsol Pengelola Acara', icon: 'admin_panel_settings', home: '/pengelola', who: 'panitia/EO dan petugas gate' },
-        'command-center': { label: 'Command Center', icon: 'hub', home: '/command-center', who: 'manajemen mal dan operator Command Center' },
-      };
+      // Akun demo (data contoh, domain example.com). Daftar akun & peran yang sebenarnya ada di server/config.js.
+      const DEMO_PASS = 'smicc-demo-2026';
+      const ACCOUNTS = [
+        { role: 'pengelola', email: 'pengelola@example.com', label: 'Pengelola acara', icon: 'admin_panel_settings', text: 'Buat & jual acara, peserta, keuangan' },
+        { role: 'gate', email: 'gate@example.com', label: 'Petugas gate', icon: 'qr_code_scanner', text: 'Pindai e-ticket & lapor kejadian di gate' },
+        { role: 'command-center', email: 'cc@example.com', label: 'Command Center', icon: 'hub', text: 'Pantau acara, insiden & operasional mal' },
+      ];
       const q = new URLSearchParams(location.search);
-      const role = ROLES[q.get('role')] ? q.get('role') : 'pengelola';
-      const R = ROLES[role];
-      // hanya path lokal; server memvalidasi ulang tujuan sesuai peran
-      let next = q.get('next') || R.home;
-      if (!next.startsWith('/') || next.startsWith('//')) next = R.home;
-      document.getElementById('role-label').textContent = R.label;
-      document.querySelector('#role-icon span').textContent = R.icon;
-      document.getElementById('hint').insertAdjacentText('afterbegin', 'Untuk ' + R.who + '. ');
-      document.title = 'Masuk · ' + R.label;
-      const f = document.getElementById('f'), pin = document.getElementById('pin'), msg = document.getElementById('msg'), go = document.getElementById('go');
-      const say = (t, cls) => { msg.className = 'font-body-sm text-body-sm min-h-[20px] ' + (cls || 'text-rose-300'); msg.textContent = t; };
+      const want = ACCOUNTS.find((a) => a.role === q.get('role'));
+      // hanya path lokal; server memvalidasi ulang tujuan sesuai peran akun
+      let next = q.get('next') || '';
+      if (!next.startsWith('/') || next.startsWith('//')) next = '';
+      if (want) {
+        document.getElementById('role-label').textContent = 'Untuk membuka portal ' + want.label;
+        document.querySelector('#role-icon span').textContent = want.icon;
+        document.title = 'Masuk · ' + want.label;
+      }
+      const f = document.getElementById('f-login'), em = document.getElementById('email'), pw = document.getElementById('password');
+      const msg = document.getElementById('msg'), go = document.getElementById('go'), list = document.getElementById('demo');
+      const say = (t, ok) => { msg.hidden = !t; msg.className = 'auth-msg' + (ok ? ' ok' : ''); msg.textContent = t || ''; };
+      // Kartu akun demo: yang sesuai portal tujuan diletakkan paling atas.
+      const order = want ? [want].concat(ACCOUNTS.filter((a) => a !== want)) : ACCOUNTS;
+      list.innerHTML = order.map((a) => '<button type="button" class="auth-demo-card' + (a === want ? ' is-target' : '') + '" data-email="' + a.email + '">'
+        + '<span class="auth-demo-ic"><span class="material-symbols-outlined text-[22px]">' + a.icon + '</span></span>'
+        + '<span class="auth-demo-txt"><b>' + a.label + (a === want ? ' <small class="auth-tag">Portal ini</small>' : '') + '</b><span>' + a.email + '</span><small>' + a.text + '</small></span></button>').join('');
+      list.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', () => {
+        em.value = b.dataset.email; pw.value = DEMO_PASS; say('');
+        list.querySelectorAll('[data-email]').forEach((x) => x.classList.toggle('on', x === b));
+        go.focus();
+      }));
+      document.getElementById('eye').addEventListener('click', (ev) => {
+        const b = ev.currentTarget, show = pw.type === 'password'; pw.type = show ? 'text' : 'password';
+        b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+        b.firstElementChild.textContent = show ? 'visibility_off' : 'visibility';
+      });
       let timer = null;
       function lock(sec) {
-        go.disabled = true; pin.disabled = true; clearInterval(timer);
+        go.disabled = true; clearInterval(timer);
         const end = Date.now() + sec * 1000;
-        timer = setInterval(() => { const left = Math.ceil((end - Date.now()) / 1000); if (left <= 0) { clearInterval(timer); go.disabled = false; pin.disabled = false; pin.focus(); say('Silakan coba lagi.', 'text-on-surface-variant'); } else say('Terlalu banyak percobaan. Coba lagi dalam ' + left + ' detik.'); }, 250);
+        const step = () => { const left = Math.ceil((end - Date.now()) / 1000); if (left <= 0) { clearInterval(timer); go.disabled = false; say('Silakan coba lagi.'); } else say('Terlalu banyak percobaan. Coba lagi dalam ' + left + ' detik.'); };
+        step(); timer = setInterval(step, 250);
       }
-      pin.addEventListener('input', () => { pin.value = pin.value.replace(/\D/g, '').slice(0, 8); });
       f.addEventListener('submit', async (ev) => {
         ev.preventDefault();
-        if (!/^\d{4,8}$/.test(pin.value)) return say('PIN berupa 4-8 angka.');
+        if (!em.value.trim() || !pw.value) return say('Isi email dan password.');
+        if (!em.value.includes('@')) return say('Email harus mengandung tanda @.');
         go.disabled = true;
         try {
-          const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role, pin: pin.value, next }) });
+          const r = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: em.value, password: pw.value, next }) });
           if (r.status === 404 || r.status === 501) throw new Error('no-server');
           const j = await r.json().catch(() => ({}));
-          if (r.ok && j.ok) { say('Berhasil. Membuka ' + R.label + '…', 'text-emerald-300'); location.replace(j.next + location.hash); return; }
-          pin.value = '';
+          if (r.ok && j.ok) { say('Berhasil. Membuka portal…', true); location.replace(j.next + location.hash); return; }
           if (r.status === 429) return lock(j.retry || 60);
-          say(j.error || 'PIN tidak dapat diverifikasi. Coba lagi.');
+          say(j.error || 'Tidak dapat masuk. Coba lagi.');
         } catch (e) {
-          say('Server PIN tidak tersedia. Jalankan node server.js untuk memakai akses PIN.');
+          say('Server tidak tersedia. Jalankan node server.js untuk memakai login staf.');
         }
-        go.disabled = false; pin.focus();
+        go.disabled = false;
       });
     })();
   </script>

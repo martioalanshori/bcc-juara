@@ -3,7 +3,7 @@
  *
  * Variabel lingkungan:
  *   KV_REST_API_URL, KV_REST_API_TOKEN   (atau UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN)
- *   PIN_PENGELOLA, PIN_COMMAND_CENTER    (4-8 digit)
+ *   STAFF_PASSWORD                        (opsional; tanpa ini password demo smicc-demo-2026)
  *   SESSION_SECRET                        (string acak panjang)
  */
 const path = require('path');

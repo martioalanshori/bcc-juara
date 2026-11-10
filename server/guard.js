@@ -3,6 +3,8 @@
  * peran tertentu datang dari sesi peran itu, dan bentuk data tidak dirusak. Kasus uji:
  * tests/guard_cases.json.
  *   - pengelola: boleh semua (acara, refund, check-in, reset).
+ *   - gate (petugas gate): seperti tanpa login, ditambah pindaian, check-in e-ticket (hanya checkedInAt & gate)
+ *     dan laporan gate.
  *   - command-center: seperti tanpa login, ditambah laporan gate (klaim & tautan tiket insiden).
  *   - tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan PENDING,
  *     daftar tunggu, outbox. Tidak boleh mengubah acara, versi skema, e-ticket yang sudah ada,
@@ -34,8 +36,9 @@ function guard(old, next, roles, now) {
   if (old.v !== next.v || old.seededAt !== next.seededAt) return 'Versi data contoh hanya diubah pengelola (reset).';
   if (ARRS.some((k) => !Array.isArray(next[k])) || OBJS.some((k) => !isObj(next[k]))) return 'Format data tidak valid.';
   if (!same(old.events, next.events) || !same(old.order, next.order)) return 'Perubahan data acara hanya untuk pengelola.';
-  if (!same(old.scans, next.scans)) return 'Check-in hanya dari halaman Check-in (login pengelola).';
-  if (!roles.includes('command-center') && !same(old.reports, next.reports)) return 'Laporan gate hanya dari Command Center atau petugas gate.';
+  const gate = roles.includes('gate');
+  if (!gate && !same(old.scans, next.scans)) return 'Check-in hanya dari halaman Check-in (login petugas gate atau pengelola).';
+  if (!roles.includes('command-center') && !gate && !same(old.reports, next.reports)) return 'Laporan gate hanya dari Command Center atau petugas gate.';
   const oo = isObj(old.orders) ? old.orders : {}, no = next.orders;
   const ot = isObj(old.tickets) ? old.tickets : {}, nt = next.tickets;
   // pesanan yang lunas di penulisan ini (sebelumnya PENDING atau belum ada)
@@ -53,7 +56,13 @@ function guard(old, next, roles, now) {
     if (!Array.isArray(b.items) || !Array.isArray(b.tickets) || !Array.isArray(b.log)) return 'Format pesanan tidak valid.';
     if (b.status === 'PENDING' && !okUntil(b.until, lim)) return 'Batas waktu pembayaran tidak valid.';
   }
-  for (const id of Object.keys(ot)) if (!same(ot[id], nt[id]) || !own(nt, id)) return 'Perubahan e-ticket hanya untuk pengelola.';
+  // Petugas gate hanya boleh mengubah status check-in e-ticket (checkedInAt & gate), termasuk mengembalikan uji 2 gate.
+  const checkinOnly = (a, b) => isObj(a) && isObj(b) && same({ ...a, checkedInAt: 0, gate: 0 }, { ...b, checkedInAt: 0, gate: 0 });
+  for (const id of Object.keys(ot)) {
+    if (own(nt, id) && same(ot[id], nt[id])) continue;
+    if (gate && own(nt, id) && checkinOnly(ot[id], nt[id])) continue;
+    return 'Perubahan e-ticket hanya untuk pengelola.';
+  }
   for (const id of Object.keys(nt)) {
     if (own(ot, id)) continue;
     const x = nt[id];

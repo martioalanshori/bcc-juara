@@ -8,8 +8,8 @@ const tokens = ['surface-container-highest', 'surface-bright', 'on-background', 
   'primary-container', 'outline', 'surface-variant', 'on-primary-container', 'surface-container-low', 'on-surface-variant',
   'surface-dim', 'primary', 'surface', 'on-surface', 'tertiary', 'secondary-container', 'surface-container-high',
   'surface-container-lowest', 'error', 'outline-variant', 'error-container', 'surface-container', 'background'];
-const SANS = ['Barlow', 'system-ui', 'sans-serif'];
-const COND = ['"Barlow Condensed"', 'Barlow', 'system-ui', 'sans-serif'];
+const SANS = ['Inter', 'system-ui', 'sans-serif'];
+const COND = SANS; // judul & angka memakai Inter juga (satu keluarga huruf)
 
 module.exports = {
   content: ['./app/pages/*.html', './app/js/**/*.js'],

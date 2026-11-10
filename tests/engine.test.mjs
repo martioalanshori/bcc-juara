@@ -325,3 +325,27 @@ test('data contoh: 27 acara di 5 area mal, foto demo ada di disk, beberapa hampi
   assert.ok(hot.length >= 2, 'beranda "Laku keras" terisi');
   assert.ok(JSON.stringify(Evt.s).length < 350 * 1024, 'state contoh tetap kecil (kuota gratis)');
 });
+
+// ------------------------------------------------------------------ Pengaturan: simpan semua dalam satu transaksi
+test('saveEvent: data acara, harga, dan jenis tiket baru tersimpan sekaligus', async () => {
+  const { Evt } = await loadEvt();
+  const before = Evt.ev('EVT-01').types.length;
+  await Evt.saveEvent('EVT-01', { patch: { tagline: 'Baru', img: 'data:image/jpeg;base64,AAAA' }, types: { VIP: { price: 800000 } }, add: [{ name: 'Early bird', price: 99000, quota: 50 }] });
+  const e = Evt.ev('EVT-01');
+  assert.equal(e.tagline, 'Baru');
+  assert.equal(e.img, 'data:image/jpeg;base64,AAAA');
+  assert.equal(e.types.find((t) => t.id === 'VIP').price, 800000);
+  assert.equal(e.types.length, before + 1);
+  const nt = e.types[e.types.length - 1];
+  assert.equal(nt.seated, false); assert.equal(nt.quota, 50); assert.equal(Evt.stats('EVT-01').per[nt.id].available, 50);
+  assert.ok(!e.types.slice(0, -1).some((t) => t.id === nt.id), 'ID jenis tiket baru unik');
+});
+
+test('saveEvent: kuota di bawah tiket terjual ditolak dan tidak ada yang tersimpan', async () => {
+  const { Evt } = await loadEvt();
+  const sold = Evt.stats('EVT-01').per.FES.sold;
+  assert.ok(sold > 0);
+  await assert.rejects(Evt.saveEvent('EVT-01', { patch: { tagline: 'Tidak boleh tersimpan' }, types: { FES: { quota: sold - 1 } } }), /Kuota/);
+  assert.notEqual(Evt.ev('EVT-01').tagline, 'Tidak boleh tersimpan');
+  await assert.rejects(Evt.saveEvent('EVT-01', { add: [{ name: '', quota: 10 }] }), /nama dan kuota/);
+});

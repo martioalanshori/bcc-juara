@@ -74,7 +74,7 @@
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
-  const SAMPLE_VER = 3;
+  const SAMPLE_VER = 4;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
@@ -102,7 +102,7 @@
     let ni = 0;
     const person = () => { const n = NAMES[ni++ % NAMES.length]; const u = n.toLowerCase().replace(/[^a-z]+/g, '.') + (ni > NAMES.length ? Math.ceil(ni / NAMES.length) : ''); return { name: n, email: u + '@example.com', phone: '0812-0000-' + String(1000 + ni).slice(-4) }; };
     const mkOrder = (ev, items, opts) => {
-      const p = person();
+      const p = opts.who || person();
       const id = 'BK-' + rand(6);
       items.forEach((it) => (it.price = typeById(ev, it.type).price));
       const sub = items.reduce((a, it) => a + it.price, 0);
@@ -174,6 +174,8 @@
     kids: 'Kids Zone, Lt. 2 · Summarecon Mall Bandung',
   };
   const ORG_MALL = 'Tim Event Summarecon Mall Bandung';
+  // Akun demo pengunjung di portal (visitor.js: DEMO). Pesanannya tampil di Tiket saya setelah masuk.
+  const DEMO_VISITOR = { name: 'Rizky Pratama', email: 'pengunjung@example.com', phone: '+62 812-0000-1001' };
   const GATES = { atrium: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'], hall: ['Gate Hall Lt. 3'], plaza: ['Gate Plaza Timur'], expo: ['Gate Exhibition Lt. 1'], kids: ['Gate Kids Zone'] };
   function seedMore(s, t, mkOrder, R) {
     const H = 3600000, D = 24 * H;
@@ -291,6 +293,20 @@
     sell(E('EVT-24'), 'KLS', 10);
     sell(E('EVT-26'), 'PST', 6);
     sell(E('EVT-27'), 'KLS', 8);
+    mkOrder(E('EVT-01'), [{ type: 'FES' }, { type: 'FES' }], { who: DEMO_VISITOR, paidAt: t - 2 * D });
+    mkOrder(E('EVT-19'), [{ type: 'RGS' }], { who: DEMO_VISITOR, paidAt: t - 5 * H });
+    demoFollowUps(s, t);
+  }
+  // Contoh "Perlu tindakan" di konsol pengelola yang tidak hilang sendiri (pesanan tertunda & anomali gate kedaluwarsa
+  // dalam hitungan menit): laporan gate EVT-01 yang belum ditangani (lebih tua dari 30 menit, jadi jembatan CC tidak
+  // memprosesnya otomatis) dan daftar tunggu EVT-11 yang belum dikabari padahal masih ada kursi.
+  const DEMO_FOLLOW_UPS = {
+    reports: [{ id: 'GR-D01', ev: 'EVT-01', gate: 'Gate B (Sisi Food Court)', ago: 45, text: 'Antrean di Gate B memanjang sampai area food court. Mohon tambahan petugas dan pembatas antrean.' }],
+    waitlist: [['WL-D01', 'Sinta Rahayu', 'sinta@example.com', 2, 26], ['WL-D02', 'Bima Ardiansyah', 'bima@example.com', 1, 20], ['WL-D03', 'Nurul Hidayah', 'nurul@example.com', 3, 9]],
+  };
+  function demoFollowUps(s, t) {
+    DEMO_FOLLOW_UPS.reports.forEach((r) => { if (s.events[r.ev] && !s.reports.some((x) => x.id === r.id)) s.reports.push({ id: r.id, ts: t - r.ago * 60000, ev: r.ev, gate: r.gate, text: r.text, ticketId: null }); });
+    DEMO_FOLLOW_UPS.waitlist.forEach(([id, name, contact, qty, hoursAgo]) => { if (s.events['EVT-11'] && !s.waitlist.some((w) => w.id === id)) s.waitlist.push({ id, ev: 'EVT-11', type: 'PRM', name, contact, qty, ts: t - hoursAgo * 3600000, notified: null }); });
   }
 
   // ------------------------------------------------------------------ query helpers (read-only)
@@ -673,6 +689,27 @@
     },
     updateEvent(evId, patch) { return tx((d) => { Object.assign(d.events[evId], patch); }); },
     updateType(evId, typeId, patch) { return tx((d) => { const ty = d.events[evId].types.find((x) => x.id === typeId); Object.assign(ty, patch); }); },
+    // Simpan seluruh halaman Pengaturan dalam satu transaksi: data acara, perubahan jenis tiket, dan jenis tiket
+    // baru (kuota tanpa kursi bernomor). Kuota tidak boleh di bawah tiket yang sudah terjual/dipegang.
+    saveEvent(evId, { patch, types, add } = {}) {
+      return tx((d, t) => {
+        const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
+        if (e.status === 'CANCELLED') fail('Acara yang dibatalkan tidak bisa diubah.');
+        Object.assign(e, patch || {});
+        Object.entries(types || {}).forEach(([id, p]) => {
+          const ty = e.types.find((x) => x.id === id); if (!ty) return;
+          if (!ty.seated && p.quota != null) { const used = Object.values(d.orders).filter((o) => o.ev === evId && o.status === 'PAID').reduce((a, o) => a + o.items.filter((i) => i.type === id).length, 0) + (d.qholds[evId] || []).filter((h) => h.type === id && h.until > t).reduce((a, h) => a + h.qty, 0); if (p.quota < used) fail(`Kuota ${ty.name} minimal ${used} (sudah terjual atau sedang dipesan).`); }
+          Object.assign(ty, p);
+        });
+        const COLORS = ['#38bdf8', '#a78bfa', '#34d399', '#f59e0b', '#f472b6', '#60a5fa', '#fb923c', '#2dd4bf'];
+        (add || []).forEach((a) => {
+          if (!a.name || !(a.quota > 0)) fail('Jenis tiket baru perlu nama dan kuota.');
+          let n = e.types.length + 1, id; do { id = 'T' + n++; } while (e.types.some((x) => x.id === id));
+          const used = new Set(e.types.map((x) => x.color));
+          e.types.push({ id, name: a.name, price: Math.max(0, a.price || 0), color: COLORS.find((c) => !used.has(c)) || COLORS[e.types.length % COLORS.length], seated: false, onSale: a.onSale !== false, quota: a.quota, perks: a.perks || '' });
+        });
+      });
+    },
     toggleBlock(evId, seat) {
       return tx((d) => {
         const e = d.events[evId]; const x = d.seats[evId][seat];

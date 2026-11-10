@@ -775,7 +775,7 @@
       "C1": {
        "st": "HELD",
        "cart": "X",
-       "until": 9000000000000000.0
+       "until": 9000000000000000
       }
      }
     }
@@ -848,6 +848,113 @@
      }
     }
    },
+   "ok": false
+  },
+  {
+   "name": "petugas gate: check-in tiket + pindaian boleh",
+   "roles": [
+    "gate"
+   ],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": 5,
+      "gate": "Gate A"
+     }
+    },
+    "scans": [
+     {
+      "ts": 5,
+      "ev": "E",
+      "gate": "Gate A",
+      "result": "VALID",
+      "ticket": "T-1"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "petugas gate: kembalikan check-in (uji 2 gate) boleh",
+   "roles": [
+    "gate"
+   ],
+   "old": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": 5,
+      "gate": "Gate A"
+     }
+    }
+   },
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "ACTIVE",
+      "checkedInAt": null,
+      "gate": null
+     }
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "petugas gate: laporan gate boleh",
+   "roles": [
+    "gate"
+   ],
+   "next": {
+    "reports": [
+     {
+      "id": "GR-1",
+      "text": "antrean"
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "petugas gate: VOID tiket ditolak",
+   "roles": [
+    "gate"
+   ],
+   "next": {
+    "tickets": {
+     "T-1": {
+      "id": "T-1",
+      "order": "BK-1",
+      "status": "VOID",
+      "checkedInAt": null,
+      "gate": null
+     }
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "petugas gate: ubah acara ditolak",
+   "roles": [
+    "gate"
+   ],
+   "next": {
+    "events": {}
+   },
+   "ok": false
+  },
+  {
+   "name": "petugas gate: reset ditolak",
+   "roles": [
+    "gate"
+   ],
+   "nextNull": true,
    "ok": false
   }
  ]

@@ -7,11 +7,11 @@
   <title>Summarecon Mall · Integrated Command Center Ticketing System</title>
   <!-- Semua aset lokal (tanpa internet): font di vendor/fonts, Tailwind hasil build statis.
        Tema "Papan Petunjuk": token di css/tokens.css, build di tools/tailwind/tailwind.config.js -->
-  <script src="/app/js/core/theme.js?v=37"></script>
-  <script src="/app/js/core/router.js?v=37"></script>
-  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=37" />
-  <link rel="stylesheet" href="/app/css/app.css?v=37" />
+  <script src="/app/js/core/theme.js?v=55"></script>
+  <script src="/app/js/core/router.js?v=55"></script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=55" />
+  <link rel="stylesheet" href="/app/css/app.css?v=55" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <!-- SIDEBAR -->
@@ -58,7 +58,7 @@
         </div>
         <button id="btn-broadcast" class="btn-danger whitespace-nowrap"><span class="material-symbols-outlined text-[18px]">campaign</span>Kirim siaran</button>
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
-        <button type="button" data-logout="command-center" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari sesi PIN"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
+        <button type="button" data-logout="command-center" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari akun"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
         <div class="flex items-center gap-3">
           <div class="hidden 2xl:flex flex-col items-end leading-tight whitespace-nowrap"><span class="font-label-lg text-label-lg text-on-surface">Aris Thorne</span><span class="font-label-sm text-label-sm text-on-surface-variant">Kepala operasional (L4)</span></div>
           <div class="w-9 h-9 rounded-full bg-primary-container/20 border border-primary-container/40 flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">person</span></div>
@@ -76,28 +76,28 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
 
-  <script src="/app/vendor/qrcode.js?v=37"></script>
-  <script src="/app/vendor/jsQR.js?v=37"></script>
-  <script src="/app/js/command-center/sop-data.js?v=37"></script>
-  <script src="/app/js/command-center/data.js?v=37"></script>
-  <script src="/app/js/command-center/store.js?v=37"></script>
-  <script src="/app/js/core/ui.js?v=37"></script>
-  <script src="/app/js/command-center/views/ticketing.js?v=37"></script>
-  <script src="/app/js/command-center/views/bms.js?v=37"></script>
-  <script src="/app/js/command-center/views/tenant.js?v=37"></script>
-  <script src="/app/js/command-center/views/cctv.js?v=37"></script>
-  <script src="/app/js/command-center/views/energy.js?v=37"></script>
-  <script src="/app/js/command-center/views/analytics.js?v=37"></script>
-  <script src="/app/js/command-center/views/parking.js?v=37"></script>
-  <script src="/app/js/command-center/views/owner360.js?v=37"></script>
-  <script src="/app/js/event/engine.js?v=37"></script>
-  <script src="/app/js/event/checkin-ui.js?v=37"></script>
-  <script src="/app/js/event/admin.js?v=37"></script>
-  <script src="/app/js/event/cc-bridge.js?v=37"></script>
-  <script src="/app/js/command-center/views/sop.js?v=37"></script>
-  <script src="/app/js/command-center/views/usecase.js?v=37"></script>
-  <script src="/app/js/command-center/sim.js?v=37"></script>
-  <script src="/app/js/core/auth.js?v=37"></script>
-  <script src="/app/js/command-center/app.js?v=37"></script>
+  <script src="/app/vendor/qrcode.js?v=55"></script>
+  <script src="/app/vendor/jsQR.js?v=55"></script>
+  <script src="/app/js/command-center/sop-data.js?v=55"></script>
+  <script src="/app/js/command-center/data.js?v=55"></script>
+  <script src="/app/js/command-center/store.js?v=55"></script>
+  <script src="/app/js/core/ui.js?v=55"></script>
+  <script src="/app/js/command-center/views/ticketing.js?v=55"></script>
+  <script src="/app/js/command-center/views/bms.js?v=55"></script>
+  <script src="/app/js/command-center/views/tenant.js?v=55"></script>
+  <script src="/app/js/command-center/views/cctv.js?v=55"></script>
+  <script src="/app/js/command-center/views/energy.js?v=55"></script>
+  <script src="/app/js/command-center/views/analytics.js?v=55"></script>
+  <script src="/app/js/command-center/views/parking.js?v=55"></script>
+  <script src="/app/js/command-center/views/owner360.js?v=55"></script>
+  <script src="/app/js/event/engine.js?v=55"></script>
+  <script src="/app/js/event/checkin-ui.js?v=55"></script>
+  <script src="/app/js/event/admin.js?v=55"></script>
+  <script src="/app/js/event/cc-bridge.js?v=55"></script>
+  <script src="/app/js/command-center/views/sop.js?v=55"></script>
+  <script src="/app/js/command-center/views/usecase.js?v=55"></script>
+  <script src="/app/js/command-center/sim.js?v=55"></script>
+  <script src="/app/js/core/auth.js?v=55"></script>
+  <script src="/app/js/command-center/app.js?v=55"></script>
 </body>
 </html>

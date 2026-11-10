@@ -1,4 +1,4 @@
-// Uji server tunggal (server/app.js): URL bersih, gerbang PIN, alamat lama, aset statis, API CAS.
+// Uji server tunggal (server/app.js): URL bersih, gerbang login staf, alamat lama, aset statis, API CAS.
 // Server sungguhan di port acak dengan penyimpanan file di folder sementara. Tanpa dependensi npm.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,8 +18,9 @@ const { createAuth } = require('../server/auth.js');
 let srv, port, dir;
 before(async () => {
   dir = mkdtempSync(path.join(tmpdir(), 'smicc-'));
-  const env = { PIN_PENGELOLA: '1234', PIN_COMMAND_CENTER: '5678' };
-  const app = createApp({ root: ROOT, store: fileStore(dir), auth: createAuth({ dataDir: dir, env }) });
+  const env = { STAFF_PASSWORD: 'rahasia-uji' };
+  // Alamat klien dari header uji, agar uji kunci salah login tidak mengunci uji lain.
+  const app = createApp({ root: ROOT, store: fileStore(dir), auth: createAuth({ dataDir: dir, env }), clientIp: (r) => r.headers['x-test-ip'] || 'utama' });
   srv = http.createServer(app);
   await new Promise((r) => srv.listen(0, '127.0.0.1', r));
   port = srv.address().port;
@@ -27,21 +28,23 @@ before(async () => {
 after(() => { srv.close(); rmSync(dir, { recursive: true, force: true }); });
 
 // http.request mentah: path dikirim apa adanya (fetch akan menormalkan ../).
-function req(method, p, { body, cookie } = {}) {
+function req(method, p, { body, cookie, ip } = {}) {
   return new Promise((resolve, reject) => {
     const data = body === undefined ? null : JSON.stringify(body);
-    const r = http.request({ host: '127.0.0.1', port, method, path: p, headers: { ...(cookie ? { Cookie: cookie } : {}), ...(data ? { 'Content-Type': 'application/json' } : {}) } }, (res) => {
+    const r = http.request({ host: '127.0.0.1', port, method, path: p, headers: { ...(ip ? { 'X-Test-Ip': ip } : {}), ...(cookie ? { Cookie: cookie } : {}), ...(data ? { 'Content-Type': 'application/json' } : {}) } }, (res) => {
       let s = ''; res.setEncoding('utf8'); res.on('data', (c) => (s += c));
       res.on('end', () => { let j = null; try { j = JSON.parse(s); } catch (e) { /* bukan JSON */ } resolve({ status: res.statusCode, headers: res.headers, text: s, json: j }); });
     });
     r.on('error', reject); r.end(data);
   });
 }
-const login = async (role, pin, next) => req('POST', '/api/auth/login', { body: { role, pin, next } });
+const EMAIL = { pengelola: 'pengelola@example.com', gate: 'gate@example.com', 'command-center': 'cc@example.com' };
+const login = async (role, password, next, ip) => req('POST', '/api/auth/login', { body: { email: EMAIL[role] || role, password, next }, ip });
+const PW = 'rahasia-uji';
 const sessionOf = (r) => r.headers['set-cookie'][0].split(';')[0];
 
 test('URL bersih menyajikan halaman, termasuk sub-rute SPA', async () => {
-  for (const [p, mark] of [['/', 'Pilih pintu masuk'], ['/pengunjung', 'data-base="/pengunjung"'], ['/pengunjung/', 'data-base="/pengunjung"'], ['/pengunjung/e/EVT-01/kursi', 'data-base="/pengunjung"'], ['/masuk?role=pengelola', 'Masuk dengan PIN']]) {
+  for (const [p, mark] of [['/', 'Pilih pintu masuk'], ['/pengunjung', 'data-base="/pengunjung"'], ['/pengunjung/', 'data-base="/pengunjung"'], ['/pengunjung/e/EVT-01/kursi', 'data-base="/pengunjung"'], ['/masuk?role=pengelola', 'id="f-login"']]) {
     const r = await req('GET', p);
     assert.equal(r.status, 200, p);
     assert.match(r.headers['content-type'], /text\/html/);
@@ -63,7 +66,10 @@ test('halaman berperan tanpa sesi diarahkan ke /masuk dengan tujuan lengkap', as
   assert.equal(r.headers.location, '/masuk?role=command-center&next=' + encodeURIComponent('/command-center/sop?id=SOP-EVT-01'));
   assert.equal((await req('GET', '/pengelola')).status, 302);
   assert.equal((await req('GET', '/checkin')).status, 302);
-  assert.equal((await req('GET', '/pengelola/apa-saja')).status, 404, 'pengelola bukan SPA');
+  const deep = await req('GET', '/pengelola/e/EVT-01/peserta');
+  assert.equal(deep.status, 302, 'sub-path konsol (SPA) tetap butuh login');
+  assert.equal(deep.headers.location, '/masuk?role=pengelola&next=' + encodeURIComponent('/pengelola/e/EVT-01/peserta'));
+  assert.equal((await req('GET', '/checkin/apa-saja')).status, 404, 'checkin bukan SPA');
 });
 
 test('aset statis tersaji; file di luar folder aset & .html mentah tidak', async () => {
@@ -77,30 +83,43 @@ test('aset statis tersaji; file di luar folder aset & .html mentah tidak', async
   }
 });
 
-test('login PIN: salah, benar, validasi tujuan, sesi membuka halaman perannya saja', async () => {
-  const bad = await login('pengelola', '0000');
+test('login email & password: salah, benar, validasi tujuan, sesi membuka halaman perannya saja', async () => {
+  const bad = await login('pengelola', 'salah');
   assert.equal(bad.status, 401);
-  assert.match(bad.json.error, /Sisa percobaan: 4/);
-  assert.equal((await login('pengelola', '1234', '/pengunjung')).json.next, '/pengelola', 'tujuan peran lain ditolak');
-  assert.equal((await login('pengelola', '1234', '//evil.example')).json.next, '/pengelola');
-  assert.equal((await login('command-center', '5678', '/command-center/sop?id=X')).json.next, '/command-center/sop?id=X');
-  const ok = await login('pengelola', '1234', '/checkin');
+  assert.equal(bad.json.error, 'Email atau password salah.');
+  assert.equal((await login('orang@example.com', PW)).status, 401, 'email tak terdaftar');
+  assert.equal((await login('pengelola', 'smicc-demo-2026')).status, 401, 'STAFF_PASSWORD menggantikan password demo');
+  assert.equal((await login('pengelola', PW, '/pengunjung')).json.next, '/pengelola', 'tujuan peran lain ditolak');
+  assert.equal((await login('pengelola', PW, '//evil.example')).json.next, '/pengelola');
+  assert.equal((await login('command-center', PW, '/command-center/sop?id=X')).json.next, '/command-center/sop?id=X');
+  const ok = await login('pengelola', PW, '/checkin');
   assert.equal(ok.status, 200);
   assert.equal(ok.json.next, '/checkin');
   const c = sessionOf(ok);
   assert.match(ok.headers['set-cookie'][0], /HttpOnly; SameSite=Strict/);
   assert.equal((await req('GET', '/pengelola', { cookie: c })).status, 200);
+  assert.match((await req('GET', '/pengelola/e/EVT-01/ringkasan', { cookie: c })).text, /data-base="\/pengelola"/, 'rute dalam konsol menyajikan halaman yang sama');
   assert.equal((await req('GET', '/checkin', { cookie: c })).status, 200);
   assert.equal((await req('GET', '/command-center', { cookie: c })).status, 302);
-  assert.deepEqual((await req('GET', '/api/auth/me', { cookie: c })).json.roles, ['pengelola']);
+  const me = (await req('GET', '/api/auth/me', { cookie: c })).json;
+  assert.deepEqual(me.roles, ['pengelola']);
+  assert.equal(me.accounts.pengelola.email, 'pengelola@example.com');
   assert.equal((await req('GET', '/pengelola', { cookie: c.replace(/.$/, (x) => (x === 'A' ? 'B' : 'A')) })).status, 302, 'tanda tangan rusak');
+  const g = await login('GATE@example.com ', PW, '/pengelola');
+  assert.equal(g.json.role, 'gate');
+  assert.equal(g.json.next, '/checkin', 'petugas gate tidak bisa diarahkan ke konsol pengelola');
+  const gc = sessionOf(g);
+  assert.equal((await req('GET', '/checkin', { cookie: gc })).status, 200);
+  assert.equal((await req('GET', '/pengelola', { cookie: gc })).status, 302);
 });
 
-test('salah PIN 5 kali mengunci peran', async () => {
+test('salah password 5 kali mengunci login dari alamat itu', async () => {
   let r;
-  for (let i = 0; i < 5; i++) r = await login('command-center', '1111');
+  for (let i = 0; i < 5; i++) r = await login('command-center', 'xxxx', null, 'penebak');
   assert.equal(r.status, 429);
-  assert.equal((await login('command-center', '5678')).status, 429, 'PIN benar pun ditolak selama terkunci');
+  assert.equal((await login('command-center', PW, null, 'penebak')).status, 429, 'password benar pun ditolak selama terkunci');
+  assert.equal((await login('pengelola', PW, null, 'penebak')).status, 429, 'ganti email tidak membuka kunci');
+  assert.equal((await login('pengelola', PW)).status, 200, 'alamat lain tidak ikut terkunci');
 });
 
 test('API state: CAS berversi, 409 saat basi, 403 dari guard, reset hanya pengelola', async () => {
@@ -119,7 +138,7 @@ test('API state: CAS berversi, 409 saat basi, 403 dari guard, reset hanya pengel
   assert.equal(evil.status, 403);
   assert.equal((await req('POST', '/api/evt/state', { body: { base: 'x', state: seed } })).status, 400);
   assert.equal((await req('POST', '/api/evt/reset')).status, 401);
-  const c = sessionOf(await login('pengelola', '1234'));
+  const c = sessionOf(await login('pengelola', PW));
   const rs = await req('POST', '/api/evt/reset', { cookie: c });
   assert.equal(rs.status, 200);
   assert.equal((await req('GET', '/api/evt/state')).json.state, null);

@@ -1,4 +1,4 @@
-"""Unduh Google Fonts (Barlow, Barlow Condensed, JetBrains Mono, Material Symbols)
+"""Unduh Google Fonts (Inter, JetBrains Mono, Material Symbols)
 ke app/vendor/fonts agar aplikasi berjalan tanpa internet (jaringan lokal saja).
 
 Jalankan sekali saat masih ada internet:  python3 tools/vendor_fonts.py
@@ -15,8 +15,8 @@ UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/124.0 Safari/537.36")  # agar Google mengirim woff2
 CSS_URLS = [
     "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200",
-    "https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700"
-    "&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400..700&display=swap",
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400..700"
+    "&family=JetBrains+Mono:wght@400..700&display=swap",
 ]
 # Subset yang dipakai aplikasi (teks Indonesia/Inggris); cyrillic/greek/vietnamese dilewati.
 KEEP_SUBSETS = {"latin", "latin-ext", "fallback", None}

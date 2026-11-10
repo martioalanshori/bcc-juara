@@ -1,6 +1,8 @@
 /* UI helpers: badge, kartu, chart SVG, scene kamera, modal, toast, panel relasi. */
 (function () {
   const REF = window.SMICC_REF;
+  let pending = null; // resolve UI.confirm yang sedang terbuka
+  const settle = (v) => { if (pending) { const p = pending; pending = null; p(v); } };
   const DBMAP = {};
   REF.dashboards.forEach((d) => (DBMAP[d.code] = d));
   const ICON = { TIC: 'confirmation_number', BMS: 'hvac', TEN: 'storefront', CCTV: 'videocam', ENE: 'bolt', ANL: 'analytics', PARK: 'local_parking', O360: 'apartment', EVT: 'local_activity' };
@@ -39,12 +41,14 @@
     chip(text, cls) { return `<span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-label-sm text-label-sm ${cls || 'bg-surface-container-high text-on-surface-variant'}">${text}</span>`; },
     card(inner, cls) { return `<section class="card ${cls || ''}">${inner}</section>`; },
     h(title, sub, right, ic) {
-      return `<div class="flex items-start justify-between gap-3 mb-4"><div class="flex items-start gap-3">${ic ? `<div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">${icon(ic, 'text-[20px]')}</div>` : ''}<div><h3 class="font-headline-sm text-headline-sm text-on-surface">${title}</h3>${sub ? `<p class="font-body-sm text-body-sm text-on-surface-variant">${sub}</p>` : ''}</div></div>${right || ''}</div>`;
+      return `<div class="sec-h flex flex-wrap items-start justify-between gap-3 mb-4"><div class="flex items-start gap-3">${ic ? `<div class="sec-ic w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">${icon(ic, 'text-[20px]')}</div>` : ''}<div><h3 class="font-headline-sm text-headline-sm text-on-surface">${title}</h3>${sub ? `<p class="font-body-sm text-body-sm text-on-surface-variant">${sub}</p>` : ''}</div></div>${right || ''}</div>`;
     },
     kpi(o) {
-      return `<div class="card p-4 flex flex-col gap-2 ${o.cls || ''}">
-        <div class="flex items-start justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">${o.label}</span>${o.icon ? `<span class="text-primary">${icon(o.icon, 'text-[20px]')}</span>` : ''}</div>
-        <div class="flex items-end gap-2"><span class="font-display-lg ${String(o.value).length > 7 ? 'text-[26px] leading-[34px] font-bold' : 'text-display-lg'} whitespace-nowrap ${o.vcls || 'text-on-surface'}">${o.value}</span>${o.unit ? `<span class="font-label-md text-label-md text-on-surface-variant pb-2">${o.unit}</span>` : ''}${o.delta ? `<span class="ml-auto font-label-sm text-label-sm px-2 py-0.5 rounded ${o.dcls || 'bg-secondary/15 text-secondary'}">${o.delta}</span>` : ''}</div>
+      // o.key: kartu menjadi tombol (role=button) yang membuka rincian; pemanggil mengikat [data-kpi].
+      const btn = o.key ? ` role="button" tabindex="0" aria-haspopup="dialog" data-kpi="${o.key}" title="Lihat rincian ${o.label}"` : '';
+      return `<div class="card p-4 flex flex-col gap-2 ${o.key ? 'kpi-btn ' : ''}${o.cls || ''}"${btn}>
+        <div class="flex items-start justify-between"><span class="font-label-sm text-label-sm text-on-surface-variant">${o.label}</span>${o.icon ? `<span class="kpi-ic text-primary">${icon(o.icon, 'text-[20px]')}</span>` : ''}</div>
+        <div class="flex items-end gap-2"><span class="kpi-val font-display-lg ${String(o.value).length > 7 ? 'text-[26px] leading-[34px] font-bold' : 'text-display-lg'} whitespace-nowrap ${o.vcls || 'text-on-surface'}">${o.value}</span>${o.unit ? `<span class="font-label-md text-label-md text-on-surface-variant pb-2">${o.unit}</span>` : ''}${o.delta ? `<span class="ml-auto font-label-sm text-label-sm px-2 py-0.5 rounded ${o.dcls || 'bg-secondary/15 text-secondary'}">${o.delta}</span>` : ''}</div>
         ${o.bar != null ? `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-md ${o.barcls || 'bg-secondary'}" style="width:${Math.max(2, Math.min(100, o.bar))}%"></div></div>` : ''}
         ${o.foot ? `<div class="font-label-sm text-label-sm text-on-surface-variant">${o.foot}</div>` : ''}</div>`;
     },
@@ -133,25 +137,65 @@
     // ------------------------------------------------ modal & toast
     modal(title, body, opts) {
       opts = opts || {};
+      settle(null); // dialog konfirmasi yang masih terbuka dianggap batal
       const root = document.getElementById('modal-root');
-      root.innerHTML = `<div class="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto scrim p-6" data-close>
-        <div class="card-elev w-full ${opts.wide ? 'max-w-4xl' : 'max-w-2xl'} mt-10" onclick="event.stopPropagation()">
+      root.innerHTML = `<div class="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto scrim p-4 sm:p-6" data-close>
+        <div class="card-elev w-full ${opts.wide ? 'max-w-4xl' : opts.small ? 'max-w-lg' : 'max-w-2xl'} mt-6 sm:mt-10" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
           <div class="flex items-center justify-between px-6 py-4 border-b border-white/10"><h3 class="font-headline-md text-headline-md">${title}</h3><button class="btn-ghost !px-2" data-close>${icon('close')}</button></div>
           <div class="p-6">${body}</div></div></div>`;
       root.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', (e) => { if (e.target === el || el.tagName === 'BUTTON') UI.closeModal(); }));
       return root;
     },
-    closeModal() { document.getElementById('modal-root').innerHTML = ''; },
+    closeModal() { document.getElementById('modal-root').innerHTML = ''; settle(null); },
+    /* Dialog konfirmasi bertema, pengganti confirm()/prompt() bawaan browser. Hasil: Promise
+     * {reason} bila dikonfirmasi, null bila batal (tombol Batal, Esc, klik latar).
+     *   title, body (HTML, sudah di-escape pemanggil), impact: [[label, nilai]], confirmText, cancelText,
+     *   danger, reason: {label, value, required}, typeToConfirm: teks yang wajib diketik (mis. ID acara) */
+    confirm(o) {
+      return new Promise((resolve) => {
+        const imp = (o.impact || []).map(([k, v]) => `<div class="cf-row"><span>${k}</span><b>${v}</b></div>`).join('');
+        const root = UI.modal((o.danger ? icon('warning', 'text-rose-300 text-[22px] align-middle') + ' ' : '') + esc(o.title), `<form class="cf" novalidate>
+          ${o.body ? `<p class="cf-body">${o.body}</p>` : ''}
+          ${imp ? `<div class="inner cf-impact">${imp}</div>` : ''}
+          ${o.reason ? `<label class="f">${esc(o.reason.label)}<input class="inp" name="reason" value="${esc(o.reason.value || '')}" maxlength="160" autocomplete="off"></label>` : ''}
+          ${o.typeToConfirm ? `<label class="f"><span>Ketik <code class="cf-code">${esc(o.typeToConfirm)}</code> untuk melanjutkan</span><input class="inp" name="typed" autocomplete="off" autocapitalize="off" spellcheck="false"></label>` : ''}
+          <p class="cf-err" role="alert" hidden></p>
+          <div class="cf-actions"><button type="button" class="btn-ghost" data-close>${esc(o.cancelText || 'Batal')}</button><button class="${o.danger ? 'btn-danger' : 'btn'}" data-cf-ok>${esc(o.confirmText || 'Lanjutkan')}</button></div></form>`, { small: true });
+        pending = resolve;
+        const f = root.querySelector('form.cf'), ok = f.querySelector('[data-cf-ok]'), err = f.querySelector('.cf-err');
+        const typed = f.querySelector('[name=typed]'), reason = f.querySelector('[name=reason]');
+        const sync = () => { if (typed) ok.disabled = typed.value.trim() !== o.typeToConfirm; };
+        if (typed) typed.addEventListener('input', sync); sync();
+        f.addEventListener('submit', (ev) => {
+          ev.preventDefault();
+          const r = reason ? reason.value.trim() : '';
+          if (o.reason && o.reason.required && !r) { err.hidden = false; err.textContent = 'Isi ' + o.reason.label.toLowerCase() + '.'; reason.focus(); return; }
+          if (typed && typed.value.trim() !== o.typeToConfirm) return;
+          const p = pending; pending = null; UI.closeModal(); p({ reason: r });
+        });
+        (reason || typed || ok).focus();
+      });
+    },
+    // Notifikasi singkat. sev: P1/P2 = gagal/penting (merah), P3 = peringatan, P4/lainnya = berhasil.
+    // Garis tipis di bawah menunjukkan sisa waktu tampil; berhenti saat diarahkan mouse, bisa ditutup.
     toast(text, sev, sub) {
       const root = document.getElementById('toast-root');
+      const kind = sev === 'P1' || sev === 'P2' ? 'bad' : sev === 'P3' ? 'warn' : 'ok';
+      const ms = kind === 'bad' ? 6500 : 4200;
       const el = document.createElement('div');
-      const col = (PRIO[sev] || {}).hex || '#38bdf8';
-      el.className = 'toast card-elev px-4 py-3 flex gap-3 items-start w-[380px]';
-      el.style.borderLeft = '3px solid ' + col;
-      el.innerHTML = `<span class="w-2 h-2 rounded-full mt-1.5 shrink-0" style="background:${col}"></span><div class="min-w-0"><div class="font-body-md text-body-md text-on-surface">${text}</div>${sub ? `<div class="font-label-md text-label-md text-on-surface-variant mt-0.5">${sub}</div>` : ''}</div>`;
+      el.className = 'tst tst-' + kind;
+      el.setAttribute('role', kind === 'bad' ? 'alert' : 'status');
+      el.style.setProperty('--d', ms + 'ms');
+      el.innerHTML = `<span class="tst-ic">${icon({ ok: 'check_circle', warn: 'warning', bad: 'error' }[kind], 'text-[20px]')}</span><div class="tst-body"><div class="tst-text">${text}</div>${sub ? `<div class="tst-sub">${sub}</div>` : ''}</div><button type="button" class="tst-x" aria-label="Tutup notifikasi">${icon('close', 'text-[18px]')}</button><i class="tst-bar" aria-hidden="true"></i>`;
       root.appendChild(el);
-      setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; }, 4200);
-      setTimeout(() => el.remove(), 4700);
+      while (root.children.length > 4) root.firstElementChild.remove();
+      let left = ms, t0 = Date.now(), timer = null;
+      const close = () => { clearTimeout(timer); el.classList.add('out'); setTimeout(() => el.remove(), 200); };
+      const run = () => { t0 = Date.now(); el.classList.remove('paused'); timer = setTimeout(close, left); };
+      el.addEventListener('mouseenter', () => { clearTimeout(timer); left = Math.max(800, left - (Date.now() - t0)); el.classList.add('paused'); });
+      el.addEventListener('mouseleave', run);
+      el.querySelector('.tst-x').addEventListener('click', close);
+      run();
     },
 
     // ------------------------------------------------ panel relasi antar dashboard (dipakai semua view)

@@ -1,20 +1,20 @@
-/* Aplikasi web tunggal (tanpa dependensi): halaman ber-URL bersih, aset statis, API Event Ticketing & PIN.
+/* Aplikasi web tunggal (tanpa dependensi): halaman ber-URL bersih, aset statis, API Event Ticketing & login staf.
  * Dipakai server.js (LAN, `node server.js`) dan api/index.js (Vercel). Hanya penyimpanan yang berbeda.
  *
  * API:
  *   GET  /api/health               -> {ok, now, poll}  (503 bila penyimpanan belum diatur -> browser pakai mode lokal)
  *       poll {min, max, hidden} = jadwal tarik state untuk browser (ms), lihat engine.js pollTick.
- *   GET  /api/auth/me              -> {ok, server, roles, labels}
+ *   GET  /api/auth/me              -> {ok, server, roles, labels, accounts: {peran: {name, email}}}
  *   GET  /api/evt/state[?v=N]      -> {version, now, state?}  (state hanya bila versi berubah)
  *   POST /api/evt/state  {base, state} -> 200 {ok, version} | 409 {ok:false, version, state} | 403 {ok:false, error}
  *       Compare-and-swap berversi: dua pembeli yang mengunci kursi sama bersamaan -> satu commit berhasil,
  *       yang lain 409, membaca ulang, dan mendapati kursi sudah dipegang orang lain (anti double-booking).
  *   POST /api/evt/reset            -> hapus state (sesi pengelola)
- *   POST /api/auth/login {role, pin, next} | /api/auth/logout {role}
+ *   POST /api/auth/login {email, password, next} -> {ok, role, name, next} | /api/auth/logout {role}
  */
 const fs = require('fs');
 const path = require('path');
-const { ROLES, LEGACY, STATIC_DIRS, SESSION_TTL, MAX_FAIL, LOCK_SEC, pageFor } = require('./config');
+const { ROLES, ACCOUNTS, LEGACY, STATIC_DIRS, SESSION_TTL, MAX_FAIL, LOCK_SEC, pageFor, pageRoles } = require('./config');
 const { guard } = require('./guard');
 
 const TYPES = {
@@ -37,7 +37,7 @@ function assetCache(file, versioned, dev) {
 }
 
 // opts: root (folder proyek), store (lihat store.js; null = belum diatur), auth (auth.js),
-//       secureCookie (true di HTTPS), clientIp(req) (alamat untuk kunci salah PIN),
+//       secureCookie (true di HTTPS), clientIp(req) (alamat untuk kunci salah login),
 //       poll (jadwal tarik state di browser; default LAN = tiap 1 detik, juga saat tab tersembunyi),
 //       dev (true = aset tidak di-cache, untuk npm run dev).
 const LAN_POLL = { min: 1000, max: 1000, hidden: true };
@@ -51,7 +51,7 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
   const safeNext = (next, role) => {
     const n = String(next || '');
     const pg = n.startsWith('/') && !n.startsWith('//') ? pageFor(n.split(/[?#]/)[0]) : null;
-    return pg && pg.role === role ? n : ROLES[role].home;
+    return pg && pageRoles(pg).includes(role) ? n : ROLES[role].home;
   };
 
   async function readBody(req) {
@@ -72,7 +72,8 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
     const roles = auth.roles(req);
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (p === '/api/health') return json(res, store ? 200 : 503, { ok: !!store, now: now(), poll });
-      if (p === '/api/auth/me') return json(res, 200, { ok: true, server: true, roles, labels: Object.fromEntries(Object.entries(ROLES).map(([r, c]) => [r, c.label])) });
+      if (p === '/api/auth/me') return json(res, 200, { ok: true, server: true, roles, labels: Object.fromEntries(Object.entries(ROLES).map(([r, c]) => [r, c.label])),
+        accounts: Object.fromEntries(roles.map((r) => { const a = ACCOUNTS.find((x) => x.role === r); return [r, a ? { name: a.name, email: a.email } : null]; })) });
       if (p === '/api/evt/state') {
         if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });
         const known = url.searchParams.has('v') ? parseInt(url.searchParams.get('v'), 10) : null;
@@ -95,7 +96,7 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
       return json(res, 409, { ok: false, version: r.version, state: r.state, now: now() });
     }
     if (p === '/api/evt/reset') {
-      if (!roles.includes('pengelola')) return json(res, 401, { ok: false, error: 'Reset data event hanya untuk pengelola (masuk dengan PIN pengelola).' });
+      if (!roles.includes('pengelola')) return json(res, 401, { ok: false, error: 'Reset data event hanya untuk pengelola (masuk dengan akun pengelola).' });
       if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });
       const r = await store.write('*', null);
       return json(res, 200, { ok: true, version: r.version });
@@ -105,23 +106,24 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
       return json(res, 200, { ok: true }, ROLES[role] ? { 'Set-Cookie': cookie(role, '', 0) } : null);
     }
     if (p === '/api/auth/login') {
-      const role = body.role, pin = String(body.pin || '');
-      if (!ROLES[role]) return json(res, 400, { ok: false, error: 'Peran tidak dikenal.' });
+      const email = String(body.email || '').trim().toLowerCase(), pass = String(body.password || '');
+      if (!email || !pass) return json(res, 400, { ok: false, error: 'Isi email dan password.' });
       if (!auth.ready) return json(res, 500, { ok: false, error: 'SESSION_SECRET belum diatur.' });
       if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });
-      const key = clientIp(req) + ':' + role;
+      const key = clientIp(req) + ':login'; // kunci per alamat, bukan per email (menebak banyak email tetap terkunci)
       const left = await store.lockLeft(key);
       if (left > 0) return json(res, 429, { ok: false, error: 'Terlalu banyak percobaan. Coba lagi dalam ' + left + ' detik.', retry: left });
-      if (!auth.checkPin(role, pin)) {
+      const acc = auth.checkLogin(email, pass);
+      if (!acc) {
         const n = await store.fail(key);
         if (n >= MAX_FAIL) {
           await store.lock(key, LOCK_SEC);
-          return json(res, 429, { ok: false, error: 'PIN salah ' + MAX_FAIL + ' kali. Akses dikunci ' + LOCK_SEC + ' detik.', retry: LOCK_SEC });
+          return json(res, 429, { ok: false, error: 'Salah ' + MAX_FAIL + ' kali. Masuk dikunci ' + LOCK_SEC + ' detik.', retry: LOCK_SEC });
         }
-        return json(res, 401, { ok: false, error: 'PIN salah. Sisa percobaan: ' + (MAX_FAIL - n) + '.' });
+        return json(res, 401, { ok: false, error: 'Email atau password salah.' });
       }
       await store.clear(key);
-      return json(res, 200, { ok: true, role, next: safeNext(body.next, role) }, { 'Set-Cookie': cookie(role, auth.token(role), SESSION_TTL) });
+      return json(res, 200, { ok: true, role: acc.role, name: acc.name, next: safeNext(body.next, acc.role) }, { 'Set-Cookie': cookie(acc.role, auth.token(acc.role), SESSION_TTL) });
     }
     return json(res, 404, { ok: false });
   }
@@ -142,7 +144,8 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
 
       const page = pageFor(p);
       if (page) {
-        if (page.role && !auth.roles(req).includes(page.role)) return redirect(res, 302, '/masuk?role=' + page.role + '&next=' + encodeURIComponent(p + qs));
+        const need = pageRoles(page), mine = auth.roles(req);
+        if (need.length && !need.some((r) => mine.includes(r))) return redirect(res, 302, '/masuk?role=' + need[0] + '&next=' + encodeURIComponent(p + qs));
         return serveFile(res, path.join(root, page.file), 'no-store');
       }
 
