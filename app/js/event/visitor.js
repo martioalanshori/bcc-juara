@@ -154,8 +154,10 @@
     // (WCAG 2.2.2). Seperti ticker Command Center, tetap berjalan walau sistem meminta kurangi gerakan.
     const T = (window.SMB_TENANTS || []).filter((x) => x && x.name);
     const logo = (x, hidden) => `<li class="pv-logo" ${hidden ? 'aria-hidden="true"' : ''} title="${esc(x.name)}${x.cat ? ' · ' + esc(x.cat) : ''}">${x.logo ? `<img src="${esc(x.logo)}" alt="${hidden ? '' : esc(x.name)}" loading="lazy" decoding="async">` : `<span>${esc(x.name)}</span>`}</li>`;
-    const marquee = T.length ? sec('tenant', 'Tenant di Summarecon Mall Bandung', 'storefront', `<div class="pv-marquee" style="--dur:${Math.max(30, T.length * 2.6)}s">
-        <ul class="pv-marquee-track" aria-label="Daftar tenant">${T.map((x) => logo(x)).join('')}${T.map((x) => logo(x, true)).join('')}</ul></div>`,
+    // Logo sedikit: ulangi sampai satu putaran lebih lebar dari layar desktop (+-1600px / 180px per logo), baru digandakan untuk loop.
+    let run = T.slice(); while (T.length && run.length < 10) run = run.concat(T);
+    const marquee = T.length ? sec('tenant', 'Tenant di Summarecon Mall Bandung', 'storefront', `<div class="pv-marquee" style="--dur:${Math.max(30, run.length * 3)}s">
+        <ul class="pv-marquee-track" aria-label="Daftar tenant">${run.map((x, i) => logo(x, i >= T.length)).join('')}${run.map((x) => logo(x, true)).join('')}</ul></div>`,
       `<button type="button" class="pv-more" data-marquee aria-pressed="false">${ic('pause', 'text-[18px]')} Jeda</button>`) : '';
     const promoHtml = sec('promo', 'Promo tenant untuk pemegang tiket', 'sell', `<p class="font-body-sm text-body-sm text-on-surface-variant -mt-1 mb-3">Contoh promo. Tunjukkan e-ticket di kasir tenant yang ikut serta.</p>
       <div class="pv-row4">${PROMOS.map((p) => `<article class="pv-promo"><img src="${img(p.img)}" alt="" loading="lazy"><div class="p-3"><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(p.place)}</div><div class="font-label-lg text-label-lg mt-0.5">${esc(p.title)}</div><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${esc(p.text)}</p></div></article>`).join('')}</div>`);

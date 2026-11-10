@@ -121,3 +121,19 @@ test('server mati: tarikan melambat (maks 30 dtk) dan banner terputus muncul, la
   assert.equal(Evt.modeBanner(), '', 'setelah pulih banner hilang');
   assert.ok((await run(10000)) >= 9, 'kembali tiap 1 dtk setelah pulih');
 });
+
+test('tenants.js: setiap logo tenant ada filenya di app/img/tenant', async () => {
+  const { existsSync } = await import('node:fs');
+  const vm = await import('node:vm');
+  const ctx = { window: {} };
+  vm.runInNewContext(readFileSync(new URL('../app/js/event/tenants.js', import.meta.url), 'utf8'), ctx);
+  const T = ctx.window.SMB_TENANTS;
+  assert.ok(Array.isArray(T));
+  for (const t of T) {
+    assert.ok(t.name, 'tenant wajib punya nama');
+    if (t.logo) {
+      assert.match(t.logo, /^\/app\/img\/tenant\/[\w.-]+\.(png|jpe?g|svg|webp)$/);
+      assert.ok(existsSync(new URL('..' + t.logo, import.meta.url)), 'file logo ' + t.logo + ' ada');
+    }
+  }
+});
