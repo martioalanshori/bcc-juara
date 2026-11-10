@@ -373,22 +373,30 @@
   // LAN: tiap 1 detik, juga saat tab tersembunyi. Vercel: min saat ada perubahan, melambat x1,5 sampai max
   // saat sepi, dan berhenti saat tab tersembunyi (hemat kuota gratis). Kebenaran tetap dijamin CAS, bukan polling.
   let poll = { min: 1000, max: 1000, hidden: true }, delay = 0, nextAt = 0;
+  // Server tidak terjangkau (server dimatikan, Wi-Fi putus): coba lagi dengan jeda makin panjang (2, 4, 8 ... maks 30 dtk)
+  // alih-alih tiap detik, dan tampilkan banner "Koneksi ke server terputus" setelah 2 kali gagal berturut-turut.
+  const OFFLINE_AFTER = 2, OFFLINE_MAX_MS = 30000;
+  let fails = 0;
   function pollFast() { delay = poll.min; nextAt = Date.now() + poll.min; }
+  function setFails(n) { const was = fails >= OFFLINE_AFTER; fails = n; if (was !== (fails >= OFFLINE_AFTER)) emit(); }
   // Tarik perubahan dari perangkat/tab lain. Dipanggil berkala, saat tab kembali aktif, dan saat event storage.
-  // Mengembalikan true bila ada perubahan.
+  // Mengembalikan true bila ada perubahan, 'error' bila server tidak terjangkau.
   async function pull() {
     if (busy) return false; busy = true;
     try {
-      if (mode === 'server') { if (adopt(await server.get(version))) { await ensureSeed(); emit(); return true; } }
+      if (mode === 'server') { const j = await server.get(version); setFails(0); if (adopt(j)) { await ensureSeed(); emit(); return true; } }
       else if (local.ver() !== version || !state) { const j = local.read(); if (j.version !== version || !state) { adopt(j); await ensureSeed(); emit(); return true; } }
-    } catch (e) { /* jaringan putus sementara: coba lagi di putaran berikutnya */ } finally { busy = false; }
+    } catch (e) {
+      if (mode === 'server') { setFails(fails + 1); return 'error'; }
+    } finally { busy = false; }
     return false;
   }
   async function pollTick() {
     if (mode !== 'server') return pull();
     if ((document.hidden && !poll.hidden) || Date.now() < nextAt || busy) return;
-    const changed = await pull();
-    delay = changed ? poll.min : Math.min(poll.max, Math.round((delay || poll.min) * 1.5));
+    const r = await pull();
+    if (r === 'error') delay = Math.min(OFFLINE_MAX_MS, poll.min * 2 ** fails);
+    else delay = r ? poll.min : Math.min(poll.max, Math.round((delay || poll.min) * 1.5));
     nextAt = Date.now() + delay;
   }
   const pullNow = () => { pollFast(); pull(); };
@@ -416,6 +424,10 @@
   const STALE_MS = 12 * 3600000;
   const demoStale = () => !!(state && state.seededAt && now() - state.seededAt > STALE_MS);
   function modeBanner() {
+    if (mode === 'server' && fails >= OFFLINE_AFTER) return `<div class="card p-3 mb-4 border border-rose-500/30 bg-rose-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-mode-banner role="status">
+      <span class="material-symbols-outlined text-rose-300 text-[20px]">cloud_off</span>
+      <span class="flex-1 min-w-[220px]"><b class="text-rose-300">Koneksi ke server terputus.</b> Data di layar mungkin sudah tidak terbaru dan perubahan belum bisa disimpan. Mencoba menyambung lagi otomatis; pastikan server masih berjalan.</span>
+      <button class="btn-ghost !py-1" onclick="location.reload()">Muat ulang</button></div>`;
     if (mode === 'server') return '';
     const file = location.protocol === 'file:';
     return `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-mode-banner>
@@ -749,11 +761,14 @@
       for (let c = 1; c <= row.n; c++) {
         const sid = row.r + c;
         const st = seatStatus(evId, sid, opts.cart, t);
-        const dim = opts.only && opts.only !== row.t ? ' dim' : '';
+        const other = !!opts.only && opts.only !== row.t;
+        const dim = other ? ' dim' : '';
+        // lock: kursi kategori lain tidak bisa dipilih (alur pengunjung: kategori dipilih dulu). Kursi milik sendiri tetap bisa dilepas.
+        const off = other && opts.lock && st !== 'mine' ? ' disabled' : '';
         const x = state.seats[evId][sid];
         const tip = `${sid} · ${ty.name} · ${rp(ty.price)} · ${STATUS_TXT[st]}${opts.admin && x && x.order ? ' · ' + x.order : ''}`;
         const inner = st === 'mine' ? '✓' : st === 'sold' ? (opts.admin ? c : '×') : st === 'held' || st === 'blocked' ? '' : c;
-        cells += `<button type="button" class="seat ${st}${dim}" style="--c:${ty.color}" data-seat="${sid}" data-st="${st}" title="${esc(tip)}" aria-label="${esc(tip)}">${inner}</button>`;
+        cells += `<button type="button" class="seat ${st}${dim}" style="--c:${ty.color}" data-seat="${sid}" data-st="${st}" title="${esc(tip)}" aria-label="${esc(tip)}"${off}>${inner}</button>`;
         if (c === half) cells += '<span class="aisle"></span>';
       }
       return `<div class="seat-row"><span class="row-lbl">${row.r}</span>${cells}<span class="row-lbl">${row.r}</span></div>`;

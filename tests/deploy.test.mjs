@@ -34,13 +34,14 @@ test('vercel.json: semua path selain aset diteruskan ke server/app.js', () => {
 
 // Polling adaptif: jadwal dari /api/health. Vercel melambat saat sepi & berhenti saat tab tersembunyi.
 async function serverEngine(poll) {
-  const db = { version: 0, state: null }; let gets = 0; const ticks = [];
+  const db = { version: 0, state: null, down: false }; let gets = 0; const ticks = [];
   const res = (code, obj) => ({ ok: code === 200, status: code, json: async () => obj });
   const fetch = async (url, init) => {
     const u = String(url);
     if (u.startsWith('/api/health')) return res(200, { ok: true, now: Date.now(), poll });
     if (init && init.method === 'POST') { const b = JSON.parse(init.body); db.version++; db.state = b.state; return res(200, { ok: true, version: db.version }); }
     gets++;
+    if (db.down) throw new TypeError('Failed to fetch'); // server mati: fetch ditolak (ERR_CONNECTION_REFUSED)
     const known = u.includes('?v=') ? +u.split('?v=')[1] : null;
     return res(200, known === db.version ? { version: db.version, now: Date.now() } : { version: db.version, state: db.state, now: Date.now() });
   };
@@ -106,4 +107,17 @@ test('vercel.json: aset /app di-cache immutable, tidak ada no-store untuk aset',
 // menambah latensi setiap panggilan Redis (1-2 per request). Pindah region = pindah keduanya (lihat README).
 test('vercel.json: region function dikunci sama dengan region Upstash', () => {
   assert.deepEqual(vercel.regions, ['iad1']);
+});
+
+test('server mati: tarikan melambat (maks 30 dtk) dan banner terputus muncul, lalu pulih', async () => {
+  const { Evt, run, db } = await serverEngine({ min: 1000, max: 1000, hidden: true });
+  assert.equal(Evt.modeBanner(), '', 'server sehat: tanpa banner');
+  db.down = true;
+  const n = await run(120000);
+  assert.ok(n <= 9, 'server mati 2 menit: paling banyak ~8 percobaan (1,2,4,8,16,30,30 dtk), dapat ' + n);
+  assert.match(Evt.modeBanner(), /Koneksi ke server terputus/);
+  db.down = false;
+  await run(31000);
+  assert.equal(Evt.modeBanner(), '', 'setelah pulih banner hilang');
+  assert.ok((await run(10000)) >= 9, 'kembali tiap 1 dtk setelah pulih');
 });

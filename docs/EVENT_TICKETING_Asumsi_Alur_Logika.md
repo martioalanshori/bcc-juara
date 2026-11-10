@@ -24,7 +24,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 
 ## 2. Alur pengunjung (mobile-first, `/pengunjung`)
 1. **Lihat acara**: jadwal, lokasi, kategori, harga, sisa tiket, status penjualan.
-2. **Pilih kategori & kursi** di denah. Filter kategori menyorot kursi; legenda membedakan *tersedia* (warna kategori + nomor), *pilihanmu* (✓), *sedang dipesan* (arsir oranye), *terjual* (abu-abu ×), *tidak dijual* (garis titik).
+2. **Pilih kategori dulu, baru kursi.** Langkah 1 (`/pengunjung/e/<id>/kategori`): daftar kategori tiket dengan harga dan sisa kuota; kategori tanpa nomor kursi (festival) diatur jumlahnya di sini. Langkah 2 (`/kursi?kat=<kategori>`): denah hanya untuk kategori yang dipilih, kursi kategori lain samar dan tidak bisa diketuk (kursi milikmu tetap bisa dilepas). Kursi yang sudah dipilih tetap tersimpan saat kembali menambah kategori lain; legenda membedakan *tersedia* (warna kategori + nomor), *pilihanmu* (✓), *sedang dipesan* (arsir oranye), *terjual* (abu-abu ×), *tidak dijual* (garis titik).
 3. **Isi data peserta**: nama, email, WhatsApp; nama pemegang per tiket bersifat opsional.
 4. **Ringkasan**: item, harga, biaya layanan, total, dan hitung mundur hold.
 5. **Pembayaran sandbox**: pilih metode, lalu simulasikan berhasil/gagal; pesanan juga bisa dibatalkan.

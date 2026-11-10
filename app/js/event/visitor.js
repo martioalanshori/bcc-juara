@@ -1,4 +1,4 @@
-/* Portal pengunjung (mobile-first): acara -> kategori & kursi -> data peserta -> ringkasan -> pembayaran sandbox -> e-ticket QR */
+/* Portal pengunjung (mobile-first): acara -> pilih kategori -> pilih kursi (kategori bernomor kursi) -> data peserta -> pembayaran sandbox -> e-ticket QR */
 (function () {
   const E = window.Evt;
   const { esc, rp } = E;
@@ -6,7 +6,6 @@
   const app = document.getElementById('app');
   const cart = E.cartId();
   let cur = { name: 'home', args: [] };
-  let filter = null; // kategori yang disorot di denah
   let payMethod = 'QRIS';
   let busy = false;
   let query = ''; // kata kunci pencarian di header
@@ -49,6 +48,7 @@
   const evIcon = (cat) => ICON[cat] || 'celebration';
   const shortVenue = (v) => String(v || '').split(' · ')[0];
   const priceFrom = (e) => { const p = e.types.filter((t) => t.onSale).map((t) => t.price); return p.length ? Math.min(...p) : null; };
+  const perks = (t) => (/kursi/i.test(t.perks || '') ? t.perks : [t.perks, t.seated ? 'Kursi bernomor' : 'Tanpa nomor kursi'].filter(Boolean).join('. '));
   const priceTxt = (e) => { const m = priceFrom(e); return m == null ? '-' : m === 0 ? 'Gratis' : rp(m); };
   function availChip(e) {
     const a = avail(e), sale = E.saleState(e);
@@ -66,7 +66,14 @@
       <div class="pv-dash mt-auto pt-2 flex items-end justify-between gap-2"><div><div class="font-label-sm text-label-sm text-on-surface-variant">Mulai dari</div><div class="font-label-lg text-label-lg text-primary">${priceTxt(e)}</div></div><span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm text-right ${c}">${esc(l)}</span></div></div></a>`; };
   const rail = (key, title, icon, list) => list.length ? `<section class="mb-6"><h2 class="font-headline-sm text-headline-sm mb-2 flex items-center gap-1.5">${icon ? ic(icon, 'text-[20px] text-primary') : ''}${title}</h2>
       <div class="pv-rail" data-rail="${key}">${list.map((e) => `<div class="pv-rail-item">${card(e)}</div>`).join('')}</div></section>` : '';
-  const steps = (n) => { const L = ['Pilih tiket', 'Data pemesan', 'Pembayaran']; return `<div class="mb-4"><div class="font-label-md text-label-md"><span class="text-on-surface-variant">Langkah ${n} dari 3</span><span class="pv-sep text-on-surface-variant"></span><b>${L[n - 1]}</b></div><div class="pv-steps mt-2">${L.map((_, i) => `<span class="${i < n ? 'on' : ''}"></span>`).join('')}</div></div>`; };
+  // Alur beli: kategori -> kursi (hanya bila acara punya kategori bernomor kursi) -> data pemesan -> pembayaran
+  const hasSeats = (e) => e.types.some((t) => t.seated && t.onSale);
+  const STEP = { kategori: 'Pilih kategori', kursi: 'Pilih kursi', data: 'Data pemesan', bayar: 'Pembayaran' };
+  const steps = (key, e) => {
+    const keys = hasSeats(e) ? ['kategori', 'kursi', 'data', 'bayar'] : ['kategori', 'data', 'bayar'];
+    const n = keys.indexOf(key) + 1;
+    return `<div class="mb-4"><div class="font-label-md text-label-md"><span class="text-on-surface-variant">Langkah ${n} dari ${keys.length}</span><span class="pv-sep text-on-surface-variant"></span><b>${STEP[key]}</b></div><div class="pv-steps mt-2" style="grid-template-columns:repeat(${keys.length},1fr)">${keys.map((_, i) => `<span class="${i < n ? 'on' : ''}"></span>`).join('')}</div></div>`;
+  };
 
   // ---------------------------------------------------------------- views
   const V = {};
@@ -101,7 +108,7 @@
       const p = s.per[t.id]; const sold = t.onSale && p.available === 0;
       const st = !t.onSale ? ['Tidak dijual', 'text-on-surface-variant'] : sold ? ['Habis terjual', 'text-rose-300'] : p.available < 10 ? ['Sisa ' + p.available, 'text-amber-300'] : ['Tersedia', 'text-emerald-300'];
       return `<div class="pv-tix" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div><span class="font-label-md text-label-md whitespace-nowrap ${st[1]}">${st[0]}</span></div>
-          <div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${esc(/kursi/i.test(t.perks || '') ? t.perks : [t.perks, t.seated ? 'Kursi bernomor' : 'Tanpa nomor kursi'].filter(Boolean).join('. '))}</div></div>
+          <div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${esc(perks(t))}</div></div>
         <div class="pv-dash mx-4"></div>
         <div class="px-4 py-3 flex items-center justify-between gap-2"><span class="font-headline-sm text-headline-sm">${t.price ? rp(t.price) : 'Gratis'}</span><span class="font-label-sm text-label-sm text-on-surface-variant text-right">Penjualan berakhir<br>${E.fmtDT(e.saleEnd)} WIB</span></div></div>`;
     };
@@ -134,52 +141,78 @@
         <ol class="list-decimal pl-5 flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">${sk.map((x) => `<li>${esc(x)}</li>`).join('')}</ol></section>
       <div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex items-center justify-between gap-3">
         <div><div class="font-label-sm text-label-sm text-on-surface-variant">Harga mulai dari</div><div class="font-headline-sm text-headline-sm">${priceTxt(e)}</div></div>
-        ${sale.open ? `<a href="/pengunjung/e/${id}/kursi" class="btn !px-6 !py-3">${ic('confirmation_number', 'text-[18px]')} Beli tiket</a>` : `<span class="font-label-md text-label-md text-on-surface-variant text-right">${ic('info', 'text-[16px] align-middle')} ${esc(sale.label)}</span>`}</div></div></div>`;
+        ${sale.open ? `<a href="/pengunjung/e/${id}/kategori" class="btn !px-6 !py-3">${ic('confirmation_number', 'text-[18px]')} Beli tiket</a>` : `<span class="font-label-md text-label-md text-on-surface-variant text-right">${ic('info', 'text-[16px] align-middle')} ${esc(sale.label)}</span>`}</div></div></div>`;
   };
 
-  V.seats = (id) => {
-    const e = E.ev(id); if (!e) return notFound();
-    const s = E.stats(id); const sale = E.saleState(e);
-    const h = E.cartHolds(id, cart);
+  // Bilah bawah (langkah kategori & kursi): tiket yang sedang ditahan, sisa waktu tahan, total, tombol Lanjut.
+  function cartBar(e, id, h) {
     const pr = E.price(e, h.items);
-    const fes = e.types.filter((t) => !t.seated && t.onSale);
-    const seated = e.types.filter((t) => t.seated && t.onSale);
-    const myQ = (tid) => h.items.filter((i) => i.type === tid && !i.seat).length;
     const sumByType = {}; h.items.forEach((i) => (sumByType[i.type] = (sumByType[i.type] || 0) + 1));
-    return `${back('/pengunjung/e/' + id, esc(e.name))}${steps(1)}
-      <h1 class="font-headline-md text-headline-md">Pilih kategori & kursi</h1>
-      <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Ketuk kursi untuk memilih. Kursi langsung ditahan untukmu selama ${e.holdMin} menit. Maksimal ${e.maxPerOrder} tiket per pesanan.</p>
-      ${!sale.open ? `<div class="inner p-3 mb-3 font-body-sm text-body-sm text-amber-300">${esc(sale.label)}. Denah hanya untuk dilihat.</div>` : ''}
-      <div class="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-4 px-4">
-        <button class="chip-btn ${!filter ? 'on' : ''}" data-filter="">Semua</button>
-        ${seated.map((t) => `<button class="chip-btn ${filter === t.id ? 'on' : ''}" data-filter="${t.id}"><span class="w-2 h-2 rounded-full" style="background:${t.color}"></span>${esc(t.name)} · ${rp(t.price)} · sisa ${s.per[t.id].available}</button>`).join('')}
-      </div>
-      <section class="card p-3 mb-3">${E.seatMap(id, { cart, only: filter })}
+    return `<div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex flex-col gap-2">
+        ${h.items.length ? `<div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">${ic('lock_clock', 'text-[16px] align-middle text-amber-300')} Ditahan untukmu <b class="text-amber-300" data-until="${h.until}">--:--</b></span><button class="text-on-surface-variant hover:text-rose-300 font-label-sm text-label-sm" id="clear">Lepas semua</button></div>
+          <div class="flex flex-wrap gap-1.5">${h.items.filter((i) => i.seat).map((i) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm" style="background:${E.typeById(e, i.type).color}33;border:1px solid ${E.typeById(e, i.type).color}">${i.seat}</span>`).join('')}${Object.entries(sumByType).filter(([tid]) => !E.typeById(e, tid).seated).map(([tid, n]) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm bg-white/10">${n}× ${esc(E.typeById(e, tid).name)}</span>`).join('')}</div>` : `<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada tiket dipilih.</div>`}
+        <div class="flex items-center justify-between gap-3"><div><div class="font-label-sm text-label-sm text-on-surface-variant">${h.items.length} tiket${pr.fee ? ' + biaya layanan' : ''}</div><div class="font-headline-sm text-headline-sm">${h.items.length ? rp(pr.total) : '–'}</div></div>
+          <a href="/pengunjung/e/${id}/data" class="btn ${h.items.length ? '' : 'pointer-events-none opacity-40'}">Lanjut ${ic('arrow_forward', 'text-[18px]')}</a></div></div></div></div>`;
+  }
+  const saleNotice = (sale) => `<div class="inner p-3 mb-3 font-body-sm text-body-sm text-amber-300">${esc(sale.label)}. Tiket belum bisa dipilih.</div>`;
+
+  // Langkah 1: pilih kategori. Kategori bernomor kursi -> lanjut ke denah kategori itu; tanpa nomor kursi -> atur jumlah di sini.
+  V.cats = (id) => {
+    const e = E.ev(id); if (!e) return notFound();
+    const s = E.stats(id); const sale = E.saleState(e); const h = E.cartHolds(id, cart);
+    const held = (tid) => h.items.filter((i) => i.type === tid).length;
+    const card = (t) => {
+      const p = s.per[t.id]; const n = held(t.id); const soldOut = p.available === 0 && !n;
+      const st = soldOut ? ['Habis terjual', 'text-rose-300'] : p.available < 10 ? ['Sisa ' + p.available, 'text-amber-300'] : ['Tersedia', 'text-emerald-300'];
+      const action = !sale.open ? ''
+        : soldOut ? `<button class="btn-ghost" data-wl="${t.id}">${ic('hourglass_top', 'text-[16px]')} Daftar tunggu</button>`
+        : t.seated ? `<a href="/pengunjung/e/${id}/kursi?kat=${encodeURIComponent(t.id)}" class="btn">${n ? n + ' kursi dipilih, ubah' : 'Pilih kursi'} ${ic('arrow_forward', 'text-[18px]')}</a>`
+        : `<div class="flex items-center gap-2"><button class="btn-ghost !px-2" data-qty="${t.id}" data-d="-1" ${n === 0 ? 'disabled' : ''} aria-label="Kurangi ${esc(t.name)}">${ic('remove')}</button><span class="w-6 text-center font-headline-sm text-headline-sm" aria-live="polite">${n}</span><button class="btn-ghost !px-2" data-qty="${t.id}" data-d="1" ${p.available === 0 ? 'disabled' : ''} aria-label="Tambah ${esc(t.name)}">${ic('add')}</button></div>`;
+      return `<div class="pv-tix ${n ? 'pv-tix-on' : ''}" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div><span class="font-label-md text-label-md whitespace-nowrap ${st[1]}">${st[0]}</span></div>
+          <div class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">${esc(perks(t))}</div></div>
+        <div class="pv-dash mx-4"></div>
+        <div class="px-4 py-3 flex items-center justify-between gap-3 flex-wrap"><span class="font-headline-sm text-headline-sm">${t.price ? rp(t.price) : 'Gratis'}</span>${action}</div></div>`;
+    };
+    return `${back('/pengunjung/e/' + id, esc(e.name))}${steps('kategori', e)}
+      <h1 class="font-headline-md text-headline-md">Pilih kategori tiket</h1>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${hasSeats(e) ? 'Pilih kategori dulu. Untuk kategori bernomor kursi, kursinya kamu pilih di langkah berikutnya.' : 'Tentukan jumlah tiket untuk tiap kategori.'} Maksimal ${e.maxPerOrder} tiket per pesanan.</p>
+      ${!sale.open ? saleNotice(sale) : ''}
+      <div class="flex flex-col gap-3 mb-3">${e.types.filter((t) => t.onSale).map(card).join('')}</div>
+      ${cartBar(e, id, h)}`;
+  };
+
+  // Langkah 2: pilih kursi, hanya untuk kategori yang dipilih (kursi kategori lain samar dan tidak bisa diketuk).
+  V.seats = (id, kat) => {
+    const e = E.ev(id); if (!e) return notFound();
+    const t = E.typeById(e, kat);
+    const s = E.stats(id); const sale = E.saleState(e); const h = E.cartHolds(id, cart); const p = s.per[t.id];
+    const n = h.items.filter((i) => i.type === t.id).length;
+    const more = e.types.some((x) => x.onSale && x.id !== t.id);
+    return `${back('/pengunjung/e/' + id + '/kategori', 'Ganti kategori')}${steps('kursi', e)}
+      <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full shrink-0" style="background:${esc(t.color)}"></span><h1 class="font-headline-md text-headline-md">Pilih kursi ${esc(t.name)}</h1></div>
+      <p class="font-body-sm text-body-sm text-on-surface-variant mb-3">${t.price ? rp(t.price) : 'Gratis'} per kursi, sisa ${p.available} kursi${n ? ', ' + n + ' sudah kamu pilih' : ''}. Ketuk kursi berwarna untuk memilih; kursi ditahan untukmu selama ${e.holdMin} menit. Kursi kategori lain tampil samar.</p>
+      ${!sale.open ? saleNotice(sale) : ''}
+      ${p.available === 0 && !n ? `<div class="inner p-3 mb-3 flex items-center justify-between gap-3 font-body-sm text-body-sm"><span>${esc(t.name)} habis terjual.</span><button class="btn-ghost" data-wl="${t.id}">${ic('hourglass_top', 'text-[16px]')} Daftar tunggu</button></div>` : ''}
+      <section class="card p-3 mb-3">${E.seatMap(id, { cart, only: t.id, lock: true })}
         <p class="font-label-sm text-label-sm text-on-surface-variant text-center mt-1 sm:hidden">${ic('swipe', 'text-[14px] align-middle')} Geser denah ke kiri/kanan untuk melihat semua kursi</p></section>
       <section class="card p-4 mb-3">${E.legend(e)}</section>
-      ${fes.map((t) => { const p = s.per[t.id]; const q = myQ(t.id); return `<section class="card p-4 mb-3 flex items-center gap-3"><span class="w-3 h-10 rounded" style="background:${t.color}"></span><div class="flex-1"><div class="font-label-lg text-label-lg">${esc(t.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${rp(t.price)} · sisa kuota ${p.available} dari ${p.total}</div></div>
-        <div class="flex items-center gap-2"><button class="btn-ghost !px-2" data-qty="${t.id}" data-d="-1" ${q === 0 || !sale.open ? 'disabled' : ''} aria-label="Kurangi">${ic('remove')}</button><span class="w-6 text-center font-headline-sm text-headline-sm">${q}</span><button class="btn-ghost !px-2" data-qty="${t.id}" data-d="1" ${!sale.open || p.available === 0 ? 'disabled' : ''} aria-label="Tambah">${ic('add')}</button></div></section>`; }).join('')}
-      ${e.types.filter((t) => t.onSale && s.per[t.id].available === 0).map((t) => `<div class="inner p-3 mb-3 flex items-center justify-between gap-3 font-body-sm text-body-sm"><span>${esc(t.name)} habis terjual.</span><button class="btn-ghost" data-wl="${t.id}">${ic('hourglass_top', 'text-[16px]')} Daftar tunggu</button></div>`).join('')}
+      ${more ? `<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Mau tambah kategori lain? <a class="text-primary" href="/pengunjung/e/${id}/kategori">Kembali ke pilihan kategori</a>. Kursi yang sudah kamu pilih tetap tersimpan.</p>` : ''}
       <details class="card p-4 mb-3"><summary class="flex items-center justify-between font-label-lg text-label-lg">${ic('verified_user', 'text-secondary text-[18px]')} <span class="flex-1 ml-2">Bagaimana kursi dijamin tidak dobel?</span>${ic('expand_more')}</summary>
         <ol class="list-decimal pl-5 mt-3 flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>Begitu kamu mengetuk kursi, kursi berstatus <b class="text-amber-300">sedang dipesan</b> untuk semua pengunjung lain selama ${e.holdMin} menit.</li>
           <li>Setiap pemesanan dicatat sebagai transaksi dengan nomor versi. Bila dua orang menekan kursi yang sama pada detik yang sama, server hanya menerima yang pertama; yang kedua otomatis ditolak.</li>
           <li>Saat pembayaran, sistem memeriksa ulang bahwa kursi masih ditahan untuk pesananmu dan belum kedaluwarsa, lalu kursi menjadi <b>terjual</b>.</li>
           <li>Jika waktu penahanan kursi atau batas pembayaran habis, kursi kembali tersedia untuk orang lain.</li></ol></details>
-      <div class="fixed bottom-[60px] inset-x-0 z-30" style="margin-bottom: env(safe-area-inset-bottom)"><div class="max-w-xl mx-auto px-3"><div class="card-elev p-3 flex flex-col gap-2">
-        ${h.items.length ? `<div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">${ic('lock_clock', 'text-[16px] align-middle text-amber-300')} Ditahan untukmu <b class="text-amber-300" data-until="${h.until}">--:--</b></span><button class="text-on-surface-variant hover:text-rose-300 font-label-sm text-label-sm" id="clear">Lepas semua</button></div>
-          <div class="flex flex-wrap gap-1.5">${h.items.filter((i) => i.seat).map((i) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm" style="background:${E.typeById(e, i.type).color}33;border:1px solid ${E.typeById(e, i.type).color}">${i.seat}</span>`).join('')}${Object.entries(sumByType).filter(([tid]) => !E.typeById(e, tid).seated).map(([tid, n]) => `<span class="px-2 py-0.5 rounded-md font-label-sm text-label-sm bg-white/10">${n}× ${esc(E.typeById(e, tid).name)}</span>`).join('')}</div>` : `<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada kursi dipilih.</div>`}
-        <div class="flex items-center justify-between gap-3"><div><div class="font-label-sm text-label-sm text-on-surface-variant">${h.items.length} tiket${pr.fee ? ' + biaya layanan' : ''}</div><div class="font-headline-sm text-headline-sm">${h.items.length ? rp(pr.total) : '–'}</div></div>
-          <a href="/pengunjung/e/${id}/data" class="btn ${h.items.length ? '' : 'pointer-events-none opacity-40'}">Lanjut ${ic('arrow_forward', 'text-[18px]')}</a></div></div></div></div>`;
+      ${cartBar(e, id, h)}`;
   };
 
   V.data = (id) => {
     const e = E.ev(id); if (!e) return notFound();
     const h = E.cartHolds(id, cart);
-    if (!h.items.length) return `${back('/pengunjung/e/' + id + '/kursi', 'Kembali ke denah')}<div class="card p-6 text-center">${ic('timer_off', 'text-[40px] text-amber-300')}<h2 class="font-headline-sm text-headline-sm mt-2">Waktu penahanan kursi habis</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Kursi sudah dilepas dan kini bisa dipesan orang lain.</p><a href="/pengunjung/e/${id}/kursi" class="btn mt-4">Pilih kursi lagi</a></div>`;
+    if (!h.items.length) return `${back('/pengunjung/e/' + id + '/kategori', 'Pilih tiket lagi')}<div class="card p-6 text-center">${ic('timer_off', 'text-[40px] text-amber-300')}<h2 class="font-headline-sm text-headline-sm mt-2">Waktu penahanan kursi habis</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Kursi sudah dilepas dan kini bisa dipesan orang lain.</p><a href="/pengunjung/e/${id}/kategori" class="btn mt-4">Pilih tiket lagi</a></div>`;
     const pr = E.price(e, h.items);
     const saved = JSON.parse(sessionStorage.getItem('smicc-evt-form') || '{}');
-    return `${back('/pengunjung/e/' + id + '/kursi', 'Ubah kursi')}${steps(2)}
+    return `${back('/pengunjung/e/' + id + '/kategori', 'Ubah tiket')}${steps('data', e)}
       <h1 class="font-headline-md text-headline-md mb-3">Data peserta & ringkasan</h1>
       <form id="f-order" class="flex flex-col gap-4">
         <section class="card p-4 flex flex-col gap-3"><h2 class="font-headline-sm text-headline-sm">Data pemesan</h2>
@@ -207,7 +240,7 @@
       <div class="mt-2 flex flex-col divide-y divide-white/5">${o.items.map((it) => `<div class="flex justify-between py-1.5 font-body-sm text-body-sm"><span>${esc(E.typeById(e, it.type).name)}${it.seat ? ', kursi <b>' + it.seat + '</b>' : ''}</span><span>${rp(E.typeById(e, it.type).price)}</span></div>`).join('')}
       ${o.fee ? `<div class="flex justify-between py-1.5 font-body-sm text-body-sm text-on-surface-variant"><span>Biaya layanan</span><span>${rp(o.fee)}</span></div>` : ''}<div class="flex justify-between py-2 font-headline-sm text-headline-sm"><span>Total</span><span>${rp(o.total)}</span></div></div>
       <div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.name)} · ${esc(o.email)} · ${esc(o.phone)}</div></section>`;
-    if (o.status === 'PENDING' && o.until > E.now()) return head.replace('</a>', '</a>' + steps(3)) + payView(o) + summary;
+    if (o.status === 'PENDING' && o.until > E.now()) return head.replace('</a>', '</a>' + steps('bayar', e)) + payView(o) + summary;
     if (o.status === 'PAID') return head + ticketsView(o, e) + summary;
     const msg = { EXPIRED: ['timer_off', 'Batas waktu pembayaran habis', 'Kursi sudah dilepas. Pesan ulang bila kursi masih tersedia.'], CANCELLED: ['cancel', 'Pesanan dibatalkan', 'Kursi sudah dilepas.'], REFUNDED: ['currency_exchange', 'Pesanan di-refund', (o.refundReason ? o.refundReason.replace(/\.?\s*$/, '. ') : '') + 'E-ticket tidak berlaku lagi.'], PENDING: ['timer_off', 'Batas waktu pembayaran habis', 'Kursi dilepas.'] }[o.status];
     return head + `<div class="card p-6 text-center mb-4">${ic(msg[0], 'text-[40px] text-on-surface-variant')}<h2 class="font-headline-sm text-headline-sm mt-2">${msg[1]}</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">${esc(msg[2])}</p><a href="/pengunjung/e/${e.id}" class="btn mt-4">Lihat acara</a></div>` + summary;
@@ -258,7 +291,14 @@
   // ---------------------------------------------------------------- router & binding
   function parse() {
     const p = Router.path().split('/').filter(Boolean);
-    if (p[0] === 'e' && p[2] === 'kursi') return { name: 'seats', args: [p[1]] };
+    if (p[0] === 'e' && p[2] === 'kategori') return { name: 'cats', args: [p[1]] };
+    if (p[0] === 'e' && p[2] === 'kursi') {
+      // Denah selalu untuk satu kategori bernomor kursi (?kat=). Tanpa kategori yang sah: kembali ke langkah kategori.
+      const ev = E.ev(p[1]), kat = Router.query().kat;
+      if (ev && ev.types.some((t) => t.id === kat && t.seated && t.onSale)) return { name: 'seats', args: [p[1], kat] };
+      Router.replace('/e/' + p[1] + '/kategori');
+      return { name: 'cats', args: [p[1]] };
+    }
     if (p[0] === 'e' && p[2] === 'data') return { name: 'data', args: [p[1]] };
     if (p[0] === 'e') return { name: 'event', args: [p[1]] };
     if (p[0] === 'o') return { name: 'order', args: [p[1]] };
@@ -272,7 +312,7 @@
     app.innerHTML = E.modeBanner() + V[cur.name](...cur.args);
     bind();
     tick();
-    const nav = { home: 'home', event: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox' }[cur.name];
+    const nav = { home: 'home', event: 'home', cats: 'home', seats: 'home', data: 'home', order: 'tiket', tiket: 'tiket', inbox: 'inbox' }[cur.name];
     document.querySelectorAll('[data-nav]').forEach((a) => { a.classList.toggle('text-primary', a.dataset.nav === nav); a.classList.toggle('text-on-surface-variant', a.dataset.nav !== nav); });
     if (keepScroll) { window.scrollTo(0, y); app.querySelectorAll('[data-rail]').forEach((r) => { if (rails[r.dataset.rail]) r.scrollLeft = rails[r.dataset.rail]; }); }
     syncTabs();
@@ -280,7 +320,6 @@
   }
   function bind() {
     const id = cur.args[0];
-    app.querySelectorAll('[data-filter]').forEach((b) => b.addEventListener('click', () => { filter = b.dataset.filter || null; render(true); }));
     const sm = app.querySelector('.seatmap-wrap'); if (sm) sm.addEventListener('scroll', () => (render.sx = sm.scrollLeft));
     app.querySelectorAll('[data-seat]').forEach((b) => b.addEventListener('click', async () => {
       const st = b.dataset.st, seat = b.dataset.seat;
@@ -352,10 +391,47 @@
   window.addEventListener('scroll', syncTabs, { passive: true });
   const setHdr = () => document.documentElement.style.setProperty('--hdr', document.querySelector('header').offsetHeight + 'px');
   setHdr(); window.addEventListener('resize', setHdr);
+  // Placeholder kolom cari yang bergulir: "Cari" + kata kunci (nama acara yang sedang dijual) yang naik sambil memudar.
+  // Kata kunci aktif di posisi 0, berikutnya menunggu di bawah (100%), yang baru lewat keluar ke atas (-100%).
+  // Disembunyikan saat kolom berisi teks; diam (kata pertama saja) bila pengguna memilih kurangi gerakan.
+  function rollSearch(input, ph, win) {
+    const STEP_MS = 2200, native = input.placeholder;
+    const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    let words = [], i = 0, timer = null;
+    const pos = (k) => { const n = words.length, d = (k - i + n) % n; return d === 0 ? [0, 1] : d === n - 1 ? [-100, 0] : [100, 0]; };
+    const place = () => [...win.children].forEach((el, k) => { const [y, o] = pos(k); el.style.transform = `translateY(${y}%)`; el.style.opacity = o; });
+    const sync = () => { const show = words.length > 0 && !input.value; ph.hidden = !show; input.placeholder = show ? '' : native; };
+    const tick = () => { if (document.hidden || input.value || words.length < 2) return; i = (i + 1) % words.length; place(); };
+    return {
+      start(list) {
+        words = list.slice(0, 6); if (words.length === 2) words = words.concat(words); // perlu >= 3 agar arah gulir selalu ke atas
+        i = 0;
+        win.innerHTML = words.map((w, k) => { const [y, o] = pos(k); return `<span style="transform:translateY(${y}%);opacity:${o}">${esc(w)}</span>`; }).join('');
+        sync(); clearInterval(timer);
+        if (!reduce && words.length > 1) timer = setInterval(tick, STEP_MS);
+      },
+      sync,
+      current: () => (words.length ? words[i] : ''),
+    };
+  }
   const qIn = document.getElementById('q');
-  qIn.addEventListener('input', () => { query = qIn.value; if (cur.name !== 'home') Router.go('/'); else render(true); });
+  const roll = rollSearch(qIn, document.getElementById('q-ph'), document.getElementById('q-roll'));
+  const runQuery = () => { query = qIn.value; if (cur.name !== 'home') Router.go('/'); else render(true); };
+  qIn.addEventListener('input', () => { roll.sync(); runQuery(); });
+  // Tombol cari: kolom kosong -> cari kata kunci yang sedang tampil. Tutup keyboard ponsel setelah mencari.
+  document.getElementById('f-q').addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (!qIn.value.trim() && roll.current()) { qIn.value = roll.current(); roll.sync(); runQuery(); }
+    qIn.blur();
+  });
+  const searchWords = () => {
+    const evs = E.s.order.map(E.ev).filter((e) => e && e.status !== 'DRAFT' && E.saleState(e).open).sort((a, b) => a.start - b.start);
+    const cats = [...new Set(evs.map((e) => e.cat.toLowerCase()))];
+    return evs.map((e) => e.name).slice(0, 4).concat(cats).slice(0, 6);
+  };
 
   E.init().then(() => {
+    roll.start(searchWords());
     document.getElementById('mode').innerHTML = E.mode === 'server' ? '<span class="text-emerald-300">●</span> LAN' : '<span class="text-amber-300">●</span> Lokal';
     document.getElementById('mode').title = E.mode === 'server' ? 'Terhubung ke server.js. Kursi tersinkron ke semua perangkat di jaringan lokal.' : 'Tanpa server: data hanya di browser ini (sinkron antar-tab)';
     cur = parse(); render();

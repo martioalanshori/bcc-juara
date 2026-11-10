@@ -23,7 +23,8 @@ browser.
 Tampilan mobile-first untuk membeli tiket.
 
 - **Daftar acara** di Summarecon Mall Bandung, lengkap dengan jadwal, venue dan status penjualan.
-- **Pilih kategori & kursi** di denah kursi. Kursi yang dipilih langsung dikunci (ditahan)
+- **Pilih kategori dulu, baru kursi**: halaman kategori (harga, sisa kuota, jumlah tiket festival),
+  lalu denah khusus kategori itu (kursi kategori lain terkunci). Kursi yang dipilih langsung dikunci (ditahan)
   beberapa menit, dengan batas jumlah tiket per pesanan. Ada hitung mundur dan pemberitahuan
   bila waktu penahanan habis.
 - **Kategori berdiri** (tanpa nomor kursi) dengan kuota.

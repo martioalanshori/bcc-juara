@@ -293,3 +293,20 @@ test('data contoh lebih dari 12 jam dianggap kedaluwarsa', async () => {
   clock.now += 13 * 3600000;
   assert.equal(Evt.demoStale(), true);
 });
+
+test('denah terkunci kategori: kursi kategori lain disabled, kursi milik sendiri tetap bisa dilepas', async () => {
+  const { Evt } = await loadEvt();
+  const e = Evt.ev('EVT-01');
+  const seated = e.types.filter((t) => t.seated && t.onSale);
+  assert.ok(seated.length >= 2, 'contoh data punya >= 2 kategori bernomor kursi');
+  const [a, b] = seated;
+  const seatOf = (tid) => Evt.allSeats(e).find((x) => Evt.seatType(e, x) === tid && Evt.seatStatus('EVT-01', x, null) === 'available');
+  const mineB = seatOf(b.id);
+  await Evt.holdSeat('EVT-01', mineB, 'CART-K');
+  const html = Evt.seatMap('EVT-01', { cart: 'CART-K', only: a.id, lock: true });
+  const btn = (sid) => html.match(new RegExp('<button[^>]*data-seat="' + sid + '"[^>]*>'))[0];
+  assert.ok(!/ disabled/.test(btn(seatOf(a.id))), 'kursi kategori terpilih bisa diketuk');
+  assert.match(btn(seatOf(b.id)), / disabled/, 'kursi kategori lain terkunci');
+  assert.ok(!/ disabled/.test(btn(mineB)), 'kursi kategori lain milik sendiri tetap bisa dilepas');
+  assert.ok(!/ disabled/.test(Evt.seatMap('EVT-01', { only: a.id })), 'tanpa lock (konsol pengelola): hanya disorot, tidak dikunci');
+});
