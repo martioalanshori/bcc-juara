@@ -161,7 +161,8 @@ open each Excel file in Excel and save it once so the formulas recalculate.
 which wraps the same `server/app.js` with the Redis store and env PINs. `vercel.json` sends every
 non-asset path (and every `.html`) to it as `?__path=<original path>`. Env: `PIN_PENGELOLA`,
 `PIN_COMMAND_CENTER`, `SESSION_SECRET`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`. Without KV, `/api/health`
-answers 503 and pages fall back to local mode. `.vercelignore` keeps `tools/`, `data/` and the
+answers 503 and pages fall back to local mode. `"regions": ["iad1"]` keeps the function next to the
+Upstash database (`us-east-1`); move both together or neither (README explains how). `.vercelignore` keeps `tools/`, `data/` and the
 xlsx/drawio files out of the deploy.
 
 `data/` holds runtime secrets and state (`access.json`, `session.key`, `event_state.json`, `PIN_AWAL.txt`).

@@ -112,4 +112,6 @@ Perkiraan: satu tab yang terus terlihat dan sepi ±5.800 request/hari. Untuk dem
 
 Aturan agar deploy tetap jalan (dijaga `tests/deploy.test.mjs`): `package.json` tanpa dependensi, tanpa script `build`/`postinstall`, dan tanpa `"type": "module"`.
 
+**Region:** database Upstash ada di `us-east-1`, jadi function dikunci ke `iad1` (`"regions"` di `vercel.json`, region AWS yang sama) agar panggilan function ke Redis hanya ±1-2 ms. Pengguna di Indonesia tetap menempuh ±200-250 ms per request ke AS. Untuk respons lebih cepat, pindahkan **keduanya** ke Singapura: buat database Upstash baru di `ap-southeast-1`, ganti `KV_REST_API_URL` & `KV_REST_API_TOKEN` di Vercel, ubah region ke `sin1` (juga di `tests/deploy.test.mjs`), redeploy, lalu Reset data di Konsol Pengelola. Jangan pindahkan function saja: setiap request jadi lebih lambat.
+
 **Cache browser:** JS, CSS, dan font di-cache 1 tahun, jadi kunjungan berikutnya hanya mengunduh HTML (±4 KB, sebelumnya ±450 KB untuk Command Center). Akibatnya, **setiap mengubah JS/CSS wajib menaikkan `?v=` di semua `app/pages/*.html`**, kalau tidak pengguna tetap memakai versi lama. `npm run dev` mematikan cache selama pengembangan.

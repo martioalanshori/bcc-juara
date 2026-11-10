@@ -101,3 +101,9 @@ test('vercel.json: aset /app di-cache immutable, tidak ada no-store untuk aset',
   assert.match(r.headers['Cache-Control'], /max-age=31536000, immutable/);
   assert.ok(!vercel.routes.some((x) => x.headers && /no-store/.test(x.headers['Cache-Control'] || '')));
 });
+
+// Function harus satu region dengan database Upstash (us-east-1 = Vercel iad1). Function di region lain
+// menambah latensi setiap panggilan Redis (1-2 per request). Pindah region = pindah keduanya (lihat README).
+test('vercel.json: region function dikunci sama dengan region Upstash', () => {
+  assert.deepEqual(vercel.regions, ['iad1']);
+});
