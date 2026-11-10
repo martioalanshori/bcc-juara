@@ -20,6 +20,9 @@
   function apply(t) { root.setAttribute('data-theme', t); syncButtons(); }
   function set(t) { try { localStorage.setItem(KEY, t); } catch (e) { /* mode privat: abaikan */ } apply(t); }
 
+  // Halaman dapat mengunci mode: <html data-theme-lock="light"> (portal pengunjung selalu terang, tanpa tombol ganti mode).
+  const lock = root.getAttribute('data-theme-lock');
+  if (lock) { apply(lock); window.Theme = { set() {}, current, sync: syncButtons }; return; }
   apply(saved() || (mq && mq.matches ? 'light' : 'dark'));
   if (mq && mq.addEventListener) mq.addEventListener('change', (e) => { if (!saved()) apply(e.matches ? 'light' : 'dark'); });
   document.addEventListener('click', (e) => {

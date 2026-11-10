@@ -106,7 +106,7 @@
   const area = (e) => shortVenue(e.venue).split(',')[0];
   const inArea = (e, key) => area(e) === key;
   const dayStart = (ms) => { const d = new Date(ms); d.setHours(0, 0, 0, 0); return d.getTime(); };
-  const sec = (id, title, icon, body, more) => `<section class="pv-sec-home" id="sec-${id}"><div class="pv-sec-head"><h2 class="font-headline-sm text-headline-sm flex items-center gap-1.5">${icon ? ic(icon, 'text-[20px] text-primary') : ''}${title}</h2>${more || ''}</div>${body}</section>`;
+  const sec = (id, title, _icon, body, more) => `<section class="pv-sec-home" id="sec-${id}"><div class="pv-sec-head"><h2 class="pv-sec-title">${title}</h2>${more || ''}</div>${body}</section>`;
   let weekTab = 'today';
   let areaF = null; // filter area mal di beranda
   let heroIdx = 0;
@@ -132,12 +132,13 @@
         <div class="pv-hero-cta"><span>${E.fmtShort(e.start)}, ${E.fmtTime(e.start)} WIB · ${esc(area(e))}</span><span class="btn !py-2">${ic('confirmation_number', 'text-[18px]')} Beli tiket</span></div></a>`).join('')}</div>
       ${hero.length > 1 ? `<div class="pv-hero-dots" role="tablist">${hero.map((e, i) => `<button type="button" data-hero-dot="${i}" class="${i === heroIdx ? 'on' : ''}" aria-label="Slide ${i + 1}: ${esc(e.name)}"></button>`).join('')}</div>` : ''}</section>` : '';
 
-    const info = `<section class="pv-info">${[
-      ['schedule', 'Buka hari ini', MALL.hours],
-      ['local_activity', 'Acara hari ini', today.length ? today.length + ' acara' : 'Belum ada'],
-      ['door_front', 'Gate acara', 'Dibuka 30-60 menit sebelum mulai'],
-      ['local_parking', 'Parkir', 'Basement & gedung parkir'],
-    ].map(([i, k, v]) => `<div class="pv-info-item">${ic(i, 'text-primary text-[22px]')}<div><div class="font-label-sm text-label-sm text-on-surface-variant">${k}</div><div class="font-label-lg text-label-lg">${v}</div></div></div>`).join('')}</section>`;
+    // Strip kepercayaan: hanya hal yang benar-benar dilakukan sistem (lihat engine.js & server/guard.js).
+    const info = `<section class="pv-info" aria-label="Kenapa beli tiket di sini">${[
+      ['schedule', 'Buka setiap hari ' + MALL.hours, today.length ? today.length + ' acara berlangsung hari ini' : 'Cek acara minggu ini di bawah'],
+      ['qr_code_2', 'E-ticket QR langsung terbit', 'Masuk ke Tiket saya, email & WhatsApp'],
+      ['event_seat', 'Kursi dijamin tidak dobel', 'Kursi ditahan khusus untukmu saat memilih'],
+      ['currency_exchange', 'Refund otomatis', 'Bila acara dibatalkan penyelenggara'],
+    ].map(([i, k, v]) => `<div class="pv-info-item"><span class="pv-info-ic">${ic(i, 'text-[22px]')}</span><div><div class="font-label-lg text-label-lg">${k}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${v}</div></div></div>`).join('')}</section>`;
 
     const week = weekList(all);
     const weekHtml = sec('week', 'Minggu ini di mal', 'event_upcoming', `<div class="pv-seg" role="tablist">${[['today', 'Hari ini'], ['weekend', 'Akhir pekan'], ['week', '7 hari ke depan']].map(([k, l]) => `<button type="button" role="tab" aria-selected="${weekTab === k}" class="${weekTab === k ? 'on' : ''}" data-week="${k}">${l}</button>`).join('')}</div>
@@ -577,8 +578,6 @@
 
   E.init().then(() => {
     roll.start(searchWords());
-    document.getElementById('mode').innerHTML = E.mode === 'server' ? '<span class="text-emerald-300">●</span> LAN' : '<span class="text-amber-300">●</span> Lokal';
-    document.getElementById('mode').title = E.mode === 'server' ? 'Terhubung ke server.js. Kursi tersinkron ke semua perangkat di jaringan lokal.' : 'Tanpa server: data hanya di browser ini (sinkron antar-tab)';
     cur = parse(); render();
     E.subscribe(rerender);
     setInterval(() => { if (tick()) rerender(); }, 1000);
