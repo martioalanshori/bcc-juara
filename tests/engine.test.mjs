@@ -247,7 +247,7 @@ test('cc-bridge: penautan gagal tidak membuat tiket insiden kedua', async () => 
   const Store = { createTicket: (f) => { const t = Object.assign({ id: 'TCK-' + (tickets.length + 1) }, f); tickets.unshift(t); return t; } };
   const { Evt, clock, ctx } = await loadEvt({
     globals: { Store, UI: { toast() {}, esc: (x) => x }, EvtAdmin: { incidentFields: (e, gate, text) => ({ title: gate, desc: text }) } },
-    scripts: ['app/js/evt/cc-bridge.js'],
+    scripts: ['app/js/event/cc-bridge.js'],
   });
   const orig = Evt.linkReport;
   let fails = 1;

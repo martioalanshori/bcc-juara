@@ -1,4 +1,4 @@
-/* Jembatan Event Ticketing -> Command Center (hanya dimuat di app/index.html).
+/* Jembatan Event Ticketing -> Command Center (hanya dimuat di halaman Command Center).
  * SOP-EVT-03: >= 3 pindaian gagal/duplikat per gate dalam 10 menit, atau laporan petugas gate,
  * otomatis menjadi tiket insiden P2. Klaim dilakukan atomik di state Evt (CAS), jadi bila beberapa
  * browser Command Center terbuka hanya satu yang membuat tiket. Klaim yang menggantung > 60 detik

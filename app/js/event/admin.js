@@ -1,5 +1,5 @@
 /* DB-EVT Event Ticketing — modul dua peran (Bandung Build Challenge 2026):
- *  - ROLE 'pengelola' (app/pengelola.html): panitia/EO. Tambah/hapus/batalkan acara, jenis tiket, harga, kuota,
+ *  - ROLE 'pengelola' (/pengelola): panitia/EO. Tambah/hapus/batalkan acara, jenis tiket, harga, kuota,
  *    denah & periode jual, peserta & pembayaran, refund, check-in QR, pengingat, daftar tunggu, lapor ke Command Center.
  *  - ROLE 'mall' (Command Center, /command-center/event): manajemen mall 360. Hanya memantau: portofolio semua acara,
  *    dampak ke parkir/crowd/BMS/tenant, keamanan gate → tiket insiden (SOP-EVT-03). Tidak dapat mengubah data acara. */
@@ -267,7 +267,7 @@
     const rf = root.querySelector('#o-refund'); if (rf) rf.addEventListener('click', async () => { const reason = prompt('Alasan refund:', 'Permintaan peserta'); if (reason == null) return; if ((await act(() => Evt.refund(id, reason), 'Refund ' + id + ' diproses, kursi kembali tersedia')) !== null) UI.closeModal(); });
     const cc = root.querySelector('#o-cancel'); if (cc) cc.addEventListener('click', async () => { if ((await act(() => Evt.cancel(id, 'panitia'), 'Pesanan dibatalkan')) !== null) UI.closeModal(); });
   }
-  // Field tiket insiden anomali gate (SOP-EVT-03, P2). Dipakai tombol manual dan jembatan otomatis (evt/cc-bridge.js).
+  // Field tiket insiden anomali gate (SOP-EVT-03, P2). Dipakai tombol manual dan jembatan otomatis (event/cc-bridge.js).
   function incidentFields(e, gate, text, source) {
     return { title: 'Indikasi tiket palsu/calo di ' + gate, desc: (text ? text + ' ' : '') + 'Acara ' + e.name + '. Pindaian QR gagal/duplikat berulang (lihat log check-in DB-EVT).', sop: 'SOP-EVT-03', priority: 'P2', category: 'Keamanan, Parkir & Crowd', zone: 'GF', location: gate + ' · ' + e.venue.split(',')[0], source: source || 'Check-in event (DB-EVT)', cam: 'CAM-01', team: 'Regu Bravo', fromDb: 'EVT' };
   }

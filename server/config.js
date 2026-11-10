@@ -7,15 +7,15 @@ const ROLES = {
   'command-center': { label: 'Command Center · Mall 360', home: '/command-center', env: 'PIN_COMMAND_CENTER' },
 };
 
-// URL bersih -> file halaman. spa: sub-path (mis. /pengunjung/e/EVT-01) tetap menyajikan halaman yang sama,
-// router di browser (app/js/router.js) yang memilih layar.
+// URL bersih -> file halaman (app/pages/). spa: sub-path (mis. /pengunjung/e/EVT-01) tetap menyajikan
+// halaman yang sama, router di browser (app/js/core/router.js) yang memilih layar.
 const PAGES = {
-  '/': { file: 'index.html' },
-  '/pengunjung': { file: 'app/pengunjung.html', spa: true },
-  '/pengelola': { file: 'app/pengelola.html', role: 'pengelola' },
-  '/checkin': { file: 'app/checkin.html', role: 'pengelola' },
-  '/command-center': { file: 'app/index.html', role: 'command-center', spa: true },
-  '/masuk': { file: 'app/masuk.html' },
+  '/': { file: 'app/pages/beranda.html' },
+  '/pengunjung': { file: 'app/pages/pengunjung.html', spa: true },
+  '/pengelola': { file: 'app/pages/pengelola.html', role: 'pengelola' },
+  '/checkin': { file: 'app/pages/checkin.html', role: 'pengelola' },
+  '/command-center': { file: 'app/pages/command-center.html', role: 'command-center', spa: true },
+  '/masuk': { file: 'app/pages/masuk.html' },
 };
 
 // Alamat lama (file .html) -> URL bersih, dialihkan permanen. Rute hash lama (#/...) diubah oleh router.js.
@@ -31,7 +31,8 @@ const LEGACY = {
 };
 
 // Folder yang boleh disajikan apa adanya (aset). File .html di dalamnya tidak pernah disajikan langsung.
-const STATIC_DIRS = ['/app/', '/docs/'];
+// docs/ hanya subfolder unduhan (Excel & runbook yang ditautkan aplikasi); rencana & sumber tidak.
+const STATIC_DIRS = ['/app/', '/docs/unduhan/'];
 
 const SESSION_TTL = 12 * 3600; // detik
 const MAX_FAIL = 5;

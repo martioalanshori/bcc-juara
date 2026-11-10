@@ -2,7 +2,7 @@
 """
 Use case relasi antar dashboard SMICC-TS (Summarecon Mall).
 Setiap langkah = perpindahan informasi/aksi dari satu dashboard ke dashboard lain.
-fx = efek simulasi di prototype (dibaca app/js/sim.js):
+fx = efek simulasi di prototype (dibaca app/js/command-center/sim.js):
   ticket            -> buat tiket dari definisi 'ticket' use case
   status:<STATUS>   -> ubah status tiket use case
   device:<ID>:<ST>  -> ubah status aset BMS/Parkir (FAULT, TRIP, LEAK, STANDBY, RUNNING, NORMAL, OPEN)

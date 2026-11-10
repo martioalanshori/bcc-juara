@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Generator dokumen & data SMICC-TS (Summarecon Mall).
-  python3 tools/build_docs.py
+  python3 tools/docs/build_docs.py
 Menghasilkan:
-  app/js/sop-data.js
-  docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx
-  docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx
-  docs/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md
+  app/js/command-center/sop-data.js
+  docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx
+  docs/unduhan/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx
+  docs/unduhan/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md
 """
 import html
 import json
@@ -26,10 +26,10 @@ from sop_data import (DASHBOARDS, ESCALATION, MALL_NAME, MALL_SUB, ROLES, SLA, S
                       SYSTEM_NAME)
 from usecase_data import EVENTS, RELATIONS, USECASES  # noqa: E402
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOCS = os.path.join(ROOT, "docs")
-APPJS = os.path.join(ROOT, "app", "js")
-DRAWIO = os.path.join(ROOT, "Mindmap_Super_Mall_Ticketing_system.drawio")
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # tools/docs/ -> root
+DOCS = os.path.join(ROOT, "docs", "unduhan")
+APPJS = os.path.join(ROOT, "app", "js", "command-center")
+DRAWIO = os.path.join(ROOT, "docs", "sumber", "Mindmap_Super_Mall_Ticketing_system.drawio")
 TODAY = date.today().isoformat()
 
 DB = OrderedDict((d[0], d) for d in DASHBOARDS)
@@ -92,7 +92,7 @@ def write_js():
         mindmap=[dict(root=m[0], pillar=m[1], sub=m[2], leaf=m[3], sops=sops_for_leaf(m[3], m[2])) for m in MINDMAP],
     )
     with open(os.path.join(APPJS, "sop-data.js"), "w", encoding="utf-8") as f:
-        f.write("/* AUTO-GENERATED oleh tools/build_docs.py - jangan edit manual */\n")
+        f.write("/* AUTO-GENERATED oleh tools/docs/build_docs.py - jangan edit manual */\n")
         f.write("window.SMICC_REF = ")
         json.dump(data, f, ensure_ascii=False, indent=1)
         f.write(";\n")
@@ -179,7 +179,7 @@ def cover(wb, title, purpose, sheets):
                  ("Sumber turunan", "Super_Mall_Command_Center_Blueprint.xlsx (KPI, Hirarki Data, Matriks SLA P1-P4); "
                                     "Mindmap_Super_Mall_Ticketing_system.drawio (6 pilar & data point Level-3); "
                                     "Desain Stitch 'Aegis Command' (6 dashboard)"),
-                 ("Generator", "tools/build_docs.py (single source of truth: tools/sop_data.py & tools/usecase_data.py). "
+                 ("Generator", "tools/docs/build_docs.py (single source of truth: tools/docs/sop_data.py & tools/docs/usecase_data.py). "
                                "Ubah data di file Python lalu jalankan ulang agar Excel, Runbook & prototype tetap sinkron."),
                  ("Legenda prioritas", "P1 Critical (merah) | P2 High (oranye) | P3 Medium (kuning) | P4 Low (hijau) | '-' = SOP proses bisnis terjadwal (non-insiden)")]:
         ws.cell(r, 1, k).font = Font(name=FONT, bold=True, size=10)
@@ -579,8 +579,8 @@ def build_runbook():
     w(f"# Runbook relasi antar dashboard {MALL_NAME} Integrated Command Center")
     w("")
     w(f"> **Sistem:** {SYSTEM_NAME}  ")
-    w(f"> **Versi:** {TODAY} · dihasilkan oleh `tools/build_docs.py` (sumber data `tools/sop_data.py` & `tools/usecase_data.py`)  ")
-    w("> **Pendamping:** `docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `app/index.html` (menu *Simulator Use Case*)")
+    w(f"> **Versi:** {TODAY} · dihasilkan oleh `tools/docs/build_docs.py` (sumber data `tools/docs/sop_data.py` & `tools/docs/usecase_data.py`)  ")
+    w("> **Pendamping:** `docs/unduhan/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `/command-center` (menu *Simulator Use Case*)")
     w("")
     w("## Daftar isi")
     w("1. [Tujuan & ruang lingkup](#1-tujuan--ruang-lingkup)")
@@ -755,7 +755,7 @@ def build_runbook():
         w(f"| {k} | {v} | {radio.get(k, '-')} |")
     w("")
     w("---")
-    w("*Ubah konten runbook melalui `tools/sop_data.py` / `tools/usecase_data.py`, lalu jalankan `python3 tools/build_docs.py`.*")
+    w("*Ubah konten runbook melalui `tools/docs/sop_data.py` / `tools/docs/usecase_data.py`, lalu jalankan `python3 tools/docs/build_docs.py`.*")
     path = os.path.join(DOCS, "RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md")
     open(path, "w", encoding="utf-8").write("\n".join(L) + "\n")
     return path

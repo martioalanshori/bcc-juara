@@ -12,7 +12,7 @@ const SANS = ['Barlow', 'system-ui', 'sans-serif'];
 const COND = ['"Barlow Condensed"', 'Barlow', 'system-ui', 'sans-serif'];
 
 module.exports = {
-  content: ['./index.html', './app/*.html', './app/js/**/*.js'],
+  content: ['./app/pages/*.html', './app/js/**/*.js'],
   theme: { extend: {
     colors: {
       ...Object.fromEntries(tokens.map((t) => [t, v(t)])),

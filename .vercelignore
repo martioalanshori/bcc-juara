@@ -1,6 +1,9 @@
 data/
 __pycache__/
 tools/
+tests/
+docs/rencana/
+docs/sumber/
 *.zip
 *.xlsx
 *.drawio

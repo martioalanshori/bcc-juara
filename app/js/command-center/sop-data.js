@@ -1,4 +1,4 @@
-/* AUTO-GENERATED oleh tools/build_docs.py - jangan edit manual */
+/* AUTO-GENERATED oleh tools/docs/build_docs.py - jangan edit manual */
 window.SMICC_REF = {
  "mall": "Summarecon Mall",
  "mallSub": "Integrated Command Center",

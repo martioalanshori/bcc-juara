@@ -1,4 +1,4 @@
-/* Shell aplikasi: router URL (Router, app/js/router.js), navigasi, header live, ticker, modal buat tiket & broadcast. */
+/* Shell aplikasi: router URL (Router, app/js/core/router.js), navigasi, header live, ticker, modal buat tiket & broadcast. */
 (function () {
   const REF = window.SMICC_REF;
   const { esc, icon } = UI;

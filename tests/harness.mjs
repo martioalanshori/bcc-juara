@@ -1,10 +1,10 @@
-// Harness test engine Event Ticketing: memuat app/js/evt/engine.js apa adanya di sandbox vm (mode lokal).
-// Tanpa dependensi npm. Jalankan: node --test tools/tests/
+// Harness test engine Event Ticketing: memuat app/js/event/engine.js apa adanya di sandbox vm (mode lokal).
+// Tanpa dependensi npm. Jalankan: node --test tests/
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
-const ENGINE = fileURLToPath(new URL('../../app/js/evt/engine.js', import.meta.url));
+const ENGINE = fileURLToPath(new URL('../app/js/event/engine.js', import.meta.url));
 const SRC = readFileSync(ENGINE, 'utf8');
 
 function storage() {
@@ -42,7 +42,7 @@ export async function loadEvt(opts = {}) {
   vm.createContext(ctx);
   vm.runInContext(SRC, ctx, { filename: ENGINE });
   for (const rel of opts.scripts || []) {
-    const f = fileURLToPath(new URL('../../' + rel, import.meta.url));
+    const f = fileURLToPath(new URL('../' + rel, import.meta.url));
     vm.runInContext(readFileSync(f, 'utf8'), ctx, { filename: f });
   }
   await ctx.Evt.init();

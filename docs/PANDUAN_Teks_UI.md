@@ -58,4 +58,4 @@ Nama yang sama dipakai di menu, judul halaman, panel relasi, data SOP, Excel, da
 
 Identifier kode, kunci state dan localStorage, kode status (`TRIP`, `FAULT`, `LEAK`, `P1`-`P4`,
 `VALID`, `USED`, `INVALID`), ID tiket/SOP/use case, payload QR `SMB1|...`, nama file, path URL,
-nama kelas CSS, isi `app/js/sop-data.js` (hasil generate).
+nama kelas CSS, isi `app/js/command-center/sop-data.js` (hasil generate).

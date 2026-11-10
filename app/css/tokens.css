@@ -1,6 +1,6 @@
 /* Token warna SMICC-TS, tema "Papan Petunjuk".
    Nilai berupa "r g b" agar Tailwind bisa menambah alpha (bg-primary/20).
-   Mode diatur oleh atribut data-theme di <html> (lihat app/js/theme.js).
+   Mode diatur oleh atribut data-theme di <html> (lihat app/js/core/theme.js).
    Palet status bawaan Tailwind (rose, amber, emerald, ...) dicerminkan di mode terang:
    shade 300 yang terang di latar gelap menjadi shade 700 di latar terang, dst. Dengan begitu
    kelas seperti text-rose-300 tetap terbaca di kedua mode tanpa mengubah view. */

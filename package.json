@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --watch server.js 8765 127.0.0.1",
     "start": "node server.js",
-    "test": "node --test \"tools/tests/*.test.mjs\"",
+    "test": "node --test \"tests/*.test.mjs\"",
     "set-pin": "node server.js --set-pin"
   },
   "engines": {

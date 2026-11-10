@@ -117,7 +117,7 @@ Command Center yang membuat tiket walau beberapa terbuka.
   salah.
 - **Pemeriksaan peran di server**: tanpa login hanya perubahan pembeli yang diterima; Command
   Center hanya boleh mengubah laporan gate; pengelola boleh semuanya. Aturan yang sama di
-  `server/guard.js` (satu kode untuk LAN dan Vercel), diuji dengan `tools/tests/guard_cases.json`.
+  `server/guard.js` (satu kode untuk LAN dan Vercel), diuji dengan `tests/guard_cases.json`.
 - **Mode lokal**: tanpa server, data tersimpan di browser dan tab di satu perangkat tetap
   sinkron (banner kuning "Mode lokal").
 - **Tema gelap/terang** di semua halaman, semua aset (font, CSS) lokal tanpa CDN.

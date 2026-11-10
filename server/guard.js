@@ -1,7 +1,7 @@
 /* Pemeriksaan tulis state Event Ticketing di server (dipakai server/app.js, baik LAN maupun Vercel).
  * Aturan bisnis tetap dijalankan engine di browser; server hanya memastikan perubahan yang butuh
  * peran tertentu datang dari sesi peran itu, dan bentuk data tidak dirusak. Kasus uji:
- * tools/tests/guard_cases.json.
+ * tests/guard_cases.json.
  *   - pengelola: boleh semua (acara, refund, check-in, reset).
  *   - command-center: seperti tanpa login, ditambah laporan gate (klaim & tautan tiket insiden).
  *   - tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan PENDING,

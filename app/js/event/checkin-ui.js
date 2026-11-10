@@ -1,4 +1,4 @@
-/* Komponen check-in QR (dipakai dashboard panitia & checkin.html di ponsel gate).
+/* Komponen check-in QR (dipakai konsol pengelola & /checkin di ponsel gate).
  * Input: kamera (butuh HTTPS/localhost), foto QR dari kamera ponsel (berjalan di HTTP LAN), ketik/tempel kode, tombol demo.
  * Hasil: VALID (masuk), USED (sudah digunakan), INVALID (palsu/dibatalkan/acara lain). */
 (function () {

@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/index.js": { "includeFiles": "{index.html,app/*.html}" }
+    "api/index.js": { "includeFiles": "app/pages/*.html" }
   },
   "routes": [
     { "src": "/(.*)\\.(js|css)", "headers": { "Cache-Control": "no-store" }, "continue": true },

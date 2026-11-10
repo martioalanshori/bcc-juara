@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { loadEvt } from './harness.mjs';
 
-const read = (f) => JSON.parse(readFileSync(new URL('../../' + f, import.meta.url), 'utf8'));
+const read = (f) => JSON.parse(readFileSync(new URL('../' + f, import.meta.url), 'utf8'));
 const pkg = read('package.json');
 const vercel = read('vercel.json');
 

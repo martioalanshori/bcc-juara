@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { loadEvt } from './harness.mjs';
 
 const require = createRequire(import.meta.url);
-const { guard } = require('../../server/guard.js');
+const { guard } = require('../server/guard.js');
 const C = JSON.parse(readFileSync(new URL('./guard_cases.json', import.meta.url), 'utf8'));
 const build = (over, isNull) => (isNull ? null : Object.assign(structuredClone(C.base), structuredClone(over || {})));
 

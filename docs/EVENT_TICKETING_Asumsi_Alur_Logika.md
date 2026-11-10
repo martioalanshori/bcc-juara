@@ -4,9 +4,9 @@ Bahan deck Bandung Build Challenge 2026: asumsi, alur, logika pemilihan kursi, d
 ## 0. Tiga path (pemisahan peran)
 | Path | Peran | Hak |
 |---|---|---|
-| `/pengunjung` (`app/pengunjung.html`) | Pengunjung | Membeli tiket, melihat e-ticket & kotak masuk |
-| `/pengelola` (`app/pengelola.html`) + `/checkin` | Pengelola acara (panitia/EO) & petugas gate | Kendali penuh atas acaranya: tambah, publikasikan, batalkan, hapus, kelola tiket/denah/peserta/refund, check-in, lapor anomali |
-| `/command-center` (`app/index.html` → Pemantauan Event) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
+| `/pengunjung` (`app/pages/pengunjung.html`) | Pengunjung | Membeli tiket, melihat e-ticket & kotak masuk |
+| `/pengelola` (`app/pages/pengelola.html`) + `/checkin` | Pengelola acara (panitia/EO) & petugas gate | Kendali penuh atas acaranya: tambah, publikasikan, batalkan, hapus, kelola tiket/denah/peserta/refund, check-in, lapor anomali |
+| `/command-center` (`app/pages/command-center.html` → Pemantauan Event) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
 
 Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` memakai PIN command-center, `/pengunjung` terbuka. PIN diverifikasi server (`server/auth.js`) (hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali salah). Detail di README.
 
@@ -50,7 +50,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
   - Angka kontrak venue (`e.fin`: sewa, bagi hasil, biaya, belanja) diisi pengelola di Kelola acara. Bila kosong dipakai asumsi demo `FIN_DEFAULT` (sewa Rp 35 jt, bagi hasil 10%, biaya Rp 12 jt, belanja Rp 150 rb); seed Summarecon Hall memakai sewa Rp 20 jt. Command Center melihat tab ini read-only.
 - **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log pindaian langsung.
 - **Anomali gate**: tombol **Laporkan ke Command Center** (konsol & ponsel gate). Statusnya tampil "menunggu CC" lalu "Ditangani TCK-…".
-  - Tiket insiden P2 dibuat **otomatis** oleh Command Center (`app/js/evt/cc-bridge.js`, hanya dimuat di `/command-center`): setiap anomali (`Evt.anomalies`, ambang >= 3 pindaian gagal/duplikat per gate dalam 10 menit) diklaim lewat `Evt.claimAnomaly(evId, gate, idCC)`, dan setiap laporan petugas gate yang belum punya tiket (30 menit terakhir) lewat `Evt.claimReport(id, idCC)`. Klaim adalah transaksi CAS, jadi bila beberapa browser CC terbuka hanya satu yang membuat tiket (SOP-EVT-03, P2, Regu Bravo, CAM-01) lalu menautkannya dengan `linkReport`. Klaim yang belum tertaut setelah 60 detik (browser ditutup) boleh diambil alih CC lain. Pemeriksaan berjalan setiap ada perubahan state dan setiap 5 detik. Sebuah gate dianggap sudah ditangani selama ada laporannya dalam 30 menit terakhir, jadi anomali yang berlangsung lama tetap satu insiden; anomali setelah itu menjadi insiden baru. Tombol manual "Buat tiket insiden" di Command Center menjalankan pemeriksaan yang sama saat itu juga (klaim atomik), bukan membuat tiket terpisah. Klaim yang tidak mengubah apa pun tidak melakukan commit (`tx` mengenali penanda NOOP), jadi anomali yang sudah ditangani tidak menaikkan versi data. Bila penautan tiket gagal (konflik/jaringan), nomor tiket disimpan di localStorage (`smicc-cc-pending-link`) dan penautan dicoba lagi, sehingga tidak muncul tiket kedua.
+  - Tiket insiden P2 dibuat **otomatis** oleh Command Center (`app/js/event/cc-bridge.js`, hanya dimuat di `/command-center`): setiap anomali (`Evt.anomalies`, ambang >= 3 pindaian gagal/duplikat per gate dalam 10 menit) diklaim lewat `Evt.claimAnomaly(evId, gate, idCC)`, dan setiap laporan petugas gate yang belum punya tiket (30 menit terakhir) lewat `Evt.claimReport(id, idCC)`. Klaim adalah transaksi CAS, jadi bila beberapa browser CC terbuka hanya satu yang membuat tiket (SOP-EVT-03, P2, Regu Bravo, CAM-01) lalu menautkannya dengan `linkReport`. Klaim yang belum tertaut setelah 60 detik (browser ditutup) boleh diambil alih CC lain. Pemeriksaan berjalan setiap ada perubahan state dan setiap 5 detik. Sebuah gate dianggap sudah ditangani selama ada laporannya dalam 30 menit terakhir, jadi anomali yang berlangsung lama tetap satu insiden; anomali setelah itu menjadi insiden baru. Tombol manual "Buat tiket insiden" di Command Center menjalankan pemeriksaan yang sama saat itu juga (klaim atomik), bukan membuat tiket terpisah. Klaim yang tidak mengubah apa pun tidak melakukan commit (`tx` mengenali penanda NOOP), jadi anomali yang sudah ditangani tidak menaikkan versi data. Bila penautan tiket gagal (konflik/jaringan), nomor tiket disimpan di localStorage (`smicc-cc-pending-link`) dan penautan dicoba lagi, sehingga tidak muncul tiket kedua.
   - Keterbatasan: tiket insiden disimpan di localStorage browser CC yang mengklaim, dan nomor TCK dihitung per browser. Browser CC lain menampilkan nomornya sebagai "(perangkat CC lain)" tanpa tautan.
 - **Data contoh kedaluwarsa**: jadwal EVT-01 dibuat relatif terhadap waktu seed (`seededAt`). Bila data contoh berumur lebih dari 12 jam (`Evt.demoStale()`), konsol pengelola menampilkan banner kuning dengan tombol Reset. Tidak ada reset otomatis agar data demo yang sedang dipakai tidak terhapus.
 - **Notifikasi & waitlist**: outbox, kirim pengingat massal, kabari daftar tunggu.
@@ -92,7 +92,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 - Uji tekan 25 pembeli serentak pada satu kursi lewat API server: **1 berhasil, 24 ditolak**, 6 konflik versi tertangani, dan pemegang akhir = pemenang.
 - Tombol *"Jalankan simulasi rebutan kursi"* di tab Denah Kursi memperagakan hal yang sama.
 - Tombol *"Uji tekan 25 pembeli"* di tab Denah Kursi (`Evt.stressTest(evId, kursi, 25)`) menjalankan uji tekan itu langsung dari konsol: 25 keranjang `UJI-01` sampai `UJI-25` memanggil `holdSeat` dalam satu tick sehingga semuanya berangkat dari versi state yang sama. Yang kalah menerima 409, membaca ulang, lalu ditolak aturan "kursi sedang dipesan". Hasil yang diharapkan: 1 berhasil, 24 ditolak. Hold pemenang langsung dilepas setelah uji. Uji ditolak bila kursi tidak tersedia atau penjualan acara sedang tidak dibuka.
-- Test otomatis engine: `node --test "tools/tests/*.test.mjs"` (Node 20 ke atas, tanpa npm).
+- Test otomatis engine: `node --test "tests/*.test.mjs"` (Node 20 ke atas, tanpa npm).
 
 ## 5. Validasi QR saat check-in
 - **Isi QR:** `SMB1|<ID tiket>|<ID acara>|<kursi>|<tanda tangan>`. Tanda tangan dihitung dari ID tiket, acara, dan kursi dengan kunci rahasia (prototype: hash; produksi: HMAC-SHA256 di server).
@@ -130,7 +130,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 ## 7. Batasan prototype
 - Tidak terhubung ke payment gateway, sistem internal Summarecon, CRM, POS, atau layanan pesan sungguhan.
 - Kamera live hanya di HTTPS/localhost. Di HTTP LAN gunakan *Foto QR*.
-- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server/guard.js`, kasus uji `tools/tests/guard_cases.json`, penolakan 403):
+- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server/guard.js`, kasus uji `tests/guard_cases.json`, penolakan 403):
   - Tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan yang masih menunggu bayar, daftar tunggu, outbox.
   - Command Center: seperti tanpa login, ditambah laporan gate (klaim dan tautan tiket insiden).
   - Pengelola: semua, termasuk ubah acara dan kontrak venue, refund, check-in (halaman Check-in), batal acara, reset.

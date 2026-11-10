@@ -10,10 +10,10 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const ROOT = fileURLToPath(new URL('../..', import.meta.url));
-const { createApp } = require('../../server/app.js');
-const { fileStore } = require('../../server/store.js');
-const { createAuth } = require('../../server/auth.js');
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const { createApp } = require('../server/app.js');
+const { fileStore } = require('../server/store.js');
+const { createAuth } = require('../server/auth.js');
 
 let srv, port, dir;
 before(async () => {
@@ -67,11 +67,12 @@ test('halaman berperan tanpa sesi diarahkan ke /masuk dengan tujuan lengkap', as
 });
 
 test('aset statis tersaji; file di luar folder aset & .html mentah tidak', async () => {
-  const js = await req('GET', '/app/js/router.js?v=23');
+  const js = await req('GET', '/app/js/core/router.js?v=24');
   assert.equal(js.status, 200);
   assert.match(js.headers['content-type'], /javascript/);
   assert.equal((await req('GET', '/app/vendor/fonts/fonts.css?v=4')).status, 200);
-  for (const p of ['/server.js', '/data/access.json', '/app/../data/access.json', '/app/%2e%2e/data/access.json', '/app/..%2fserver.js', '/docs/../server/auth.js', '/README.md', '/app/js/../../server.js']) {
+  assert.equal((await req('GET', '/docs/unduhan/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md')).status, 200, 'unduhan yang ditautkan aplikasi');
+  for (const p of ['/server.js', '/data/access.json', '/app/../data/access.json', '/app/%2e%2e/data/access.json', '/app/..%2fserver.js', '/docs/../server/auth.js', '/README.md', '/app/js/../../server.js', '/docs/rencana/PLAN_Perbaikan_Teks_dan_UIUX.md', '/docs/sumber/Super_Mall_Command_Center_Blueprint.xlsx', '/app/pages/pengelola.html', '/tests/harness.mjs']) {
     assert.equal((await req('GET', p)).status, 404, p);
   }
 });

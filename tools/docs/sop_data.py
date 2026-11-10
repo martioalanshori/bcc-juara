@@ -4,7 +4,7 @@ Single source of truth: SOP drill-down Summarecon Mall Integrated Command Center
 Diturunkan dari:
   - Super_Mall_Command_Center_Blueprint.xlsx  (sheet 2 automated action, sheet 4 matriks SLA P1-P4)
   - Mindmap_Super_Mall_Ticketing_system.drawio (6 pilar, Level-3 data point)
-Dipakai oleh build_docs.py untuk menghasilkan Excel SOP, Excel Use Case, Runbook, dan app/js/sop-data.js
+Dipakai oleh build_docs.py untuk menghasilkan Excel SOP, Excel Use Case, Runbook, dan app/js/command-center/sop-data.js
 """
 
 MALL_NAME = "Summarecon Mall"

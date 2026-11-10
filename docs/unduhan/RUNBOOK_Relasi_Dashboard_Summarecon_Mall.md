@@ -1,8 +1,8 @@
 # Runbook relasi antar dashboard Summarecon Mall Integrated Command Center
 
 > **Sistem:** Summarecon Mall Integrated Command Center Ticketing System (SMICC-TS)  
-> **Versi:** 2026-11-08 · dihasilkan oleh `tools/build_docs.py` (sumber data `tools/sop_data.py` & `tools/usecase_data.py`)  
-> **Pendamping:** `docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `app/index.html` (menu *Simulator Use Case*)
+> **Versi:** 2026-11-08 · dihasilkan oleh `tools/docs/build_docs.py` (sumber data `tools/docs/sop_data.py` & `tools/docs/usecase_data.py`)  
+> **Pendamping:** `docs/unduhan/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `/command-center` (menu *Simulator Use Case*)
 
 ## Daftar isi
 1. [Tujuan & ruang lingkup](#1-tujuan--ruang-lingkup)
@@ -1033,4 +1033,4 @@ sequenceDiagram
 | EXT | Pihak Eksternal (Damkar/Polisi/PLN/Ambulans) | - |
 
 ---
-*Ubah konten runbook melalui `tools/sop_data.py` / `tools/usecase_data.py`, lalu jalankan `python3 tools/build_docs.py`.*
+*Ubah konten runbook melalui `tools/docs/sop_data.py` / `tools/docs/usecase_data.py`, lalu jalankan `python3 tools/docs/build_docs.py`.*
