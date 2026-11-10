@@ -1,7 +1,7 @@
 # Summarecon Mall Integrated Command Center Ticketing System (prototype)
 
 ## Tiga path
-| Path (alias `server.py`) | Halaman | Untuk | Isi |
+| Path | Halaman | Untuk | Isi |
 |---|---|---|---|
 | `/pengunjung` | `app/pengunjung.html` | **1. Pengunjung** yang membeli tiket (mobile-first) | Acara → denah kursi → data peserta → bayar (sandbox) → e-ticket QR, Tiket Saya, Kotak Masuk, daftar tunggu |
 | `/pengelola` | `app/pengelola.html` | **2. Pengelola acara** (panitia/EO) | Daftar acara: **tambah, publikasikan, batalkan (refund otomatis), hapus**; Kelola acara (jadwal, venue, periode jual, jenis tiket, harga, kuota); Denah kursi (blokir, uji rebutan kursi); Peserta & transaksi (ubah data, refund, CSV); Check-in QR; Notifikasi & waitlist; lapor anomali ke Command Center |
@@ -9,12 +9,12 @@
 | `/checkin` | `app/checkin.html` | Petugas gate (tim pengelola) | Pemindai QR di ponsel + tombol lapor ke Command Center |
 | `/` | `index.html` | Semua | Halaman pilih path |
 
-`app/event.html` (alamat lama) otomatis diarahkan ke `pengunjung.html`.
+Semua halaman memakai URL bersih tanpa `#` (mis. `/pengunjung/e/EVT-01`, `/command-center/sop?id=SOP-EVT-01`). Alamat lama (`app/pengunjung.html#/e/EVT-01`, `app/event.html`, dst.) otomatis dialihkan ke bentuk baru.
 
 ## Isi lain
 | Path | Keterangan |
 |---|---|
-| `server.py` | Server LAN (Python standar): file statis + API state event bersama dengan transaksi berversi (anti double-booking) |
+| `server.js` + `server/` | Aplikasi tunggal (Node 20+, tanpa npm): URL bersih, aset, PIN, API state event bersama dengan transaksi berversi (anti double-booking). Dipakai LAN dan Vercel |
 | `docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx` | 48 SOP, 255 langkah (termasuk SOP-EVT-01..04), SLA, eskalasi, RACI, traceability mindmap |
 | `docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx` | 18 use case (termasuk UC-17/18 event), 43 relasi dashboard, matriks, event dictionary |
 | `docs/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md` | Runbook relasi antar dashboard (diagram mermaid) |
@@ -26,7 +26,7 @@
 Semua aset lokal di `app/vendor/` (font, ikon, CSS Tailwind hasil build, library QR `qrcode.js` MIT & `jsQR.js` Apache-2.0).
 
 ```bash
-python3 server.py
+node server.js
 ```
 Server berjalan di `0.0.0.0:8765` dan mencetak alamat LAN-nya, misalnya:
 - Pilih peran: `http://<IP>:8765/`
@@ -35,9 +35,9 @@ Server berjalan di `0.0.0.0:8765` dan mencetak alamat LAN-nya, misalnya:
 - Command Center mall 360: `http://<IP>:8765/command-center` → menu **Pemantauan Event**
 - Check-in gate (ponsel petugas): `http://<IP>:8765/checkin`
 
-Semua perangkat di LAN berbagi data event yang sama (disimpan di `data/event_state.json`). Pastikan firewall mengizinkan port 8765. Hanya untuk komputer ini: `python3 server.py 8765 127.0.0.1`.
+Semua perangkat di LAN berbagi data event yang sama (disimpan di `data/event_state.json`). Pastikan firewall mengizinkan port 8765. Hanya untuk komputer ini: `node server.js 8765 127.0.0.1`.
 
-Tanpa `server.py` (mis. `python3 -m http.server` atau membuka file HTML langsung) aplikasi tetap jalan dalam **mode lokal**: data event hanya di browser itu (tetap sinkron antar-tab), dan banner kuning "Mode lokal" tampil di atas halaman. Pembeli dan pemindai di perangkat berbeda wajib lewat `server.py`.
+Tanpa `server.js` (mis. server statis lain, atau Vercel tanpa Redis) aplikasi tetap jalan dalam **mode lokal**: data event hanya di browser itu (tetap sinkron antar-tab), dan banner kuning "Mode lokal" tampil di atas halaman. Pembeli dan pemindai di perangkat berbeda wajib lewat `server.js`.
 
 Pemindai check-in menerima QR e-ticket, kode tiket `T-…`, atau kode booking `BK-…` (ketik atau pemindai HID/USB).
 
@@ -52,17 +52,17 @@ Reset data: tombol **Reset demo** di sidebar Command Center (tiket insiden) dan 
 | `/pengelola`, `/checkin` | PIN **pengelola** | Panitia/EO & petugas gate. Reset data event juga butuh sesi ini |
 | `/command-center` | PIN **command-center** | Manajemen mall & operator Command Center |
 
-- Membuka path 2/3 tanpa sesi → diarahkan ke `app/masuk.html` (PIN 4-8 angka). Setelah benar kembali ke halaman tujuan.
-- PIN diverifikasi di `server.py` (hash PBKDF2 di `data/access.json`). Sesi berupa cookie HttpOnly per peran, berlaku 12 jam. Tombol **Keluar** ada di header.
+- Membuka path 2/3 tanpa sesi → diarahkan ke `/masuk` (PIN 4-8 angka). Setelah benar kembali ke halaman tujuan.
+- PIN diverifikasi di server (hash PBKDF2 di `data/access.json`, atau env `PIN_PENGELOLA`/`PIN_COMMAND_CENTER`). Sesi berupa cookie HttpOnly per peran, berlaku 12 jam. Tombol **Keluar** ada di header.
 - Salah PIN 5 kali → peran itu dikunci 60 detik untuk perangkat tersebut.
 - **PIN awal**: dibuat acak saat server pertama kali jalan, dicetak di terminal dan ditulis ke `data/PIN_AWAL.txt`. Bagikan hanya ke yang berhak, lalu ganti:
   ```bash
-  python3 server.py --set-pin pengelola 123456
-  python3 server.py --set-pin command-center 654321
+  node server.js --set-pin pengelola 123456
+  node server.js --set-pin command-center 654321
   ```
-  Setelah semua PIN diganti, `data/PIN_AWAL.txt` terhapus otomatis. Restart server agar sesi lama berakhir.
+  Setelah semua PIN diganti, `data/PIN_AWAL.txt` terhapus otomatis. Ganti PIN otomatis mengakhiri semua sesi lama; restart server agar PIN baru berlaku.
 - Jangan membagikan folder `data/` (berisi hash PIN dan data event).
-- PIN mengunci halaman, dan server memeriksa setiap perubahan data menurut peran: tanpa login hanya perubahan pembeli yang diterima (hold, pesanan, bayar, daftar tunggu); refund, check-in, ubah acara dan reset butuh PIN pengelola. Batasan prototype: aturan bisnis dan kunci tanda tangan QR masih di browser. Produksi perlu API per aksi dengan otorisasi per peran dan tanda tangan QR di server. Tanpa `server.py` (mode lokal satu perangkat) PIN tidak berlaku.
+- PIN mengunci halaman, dan server memeriksa setiap perubahan data menurut peran: tanpa login hanya perubahan pembeli yang diterima (hold, pesanan, bayar, daftar tunggu); refund, check-in, ubah acara dan reset butuh PIN pengelola. Batasan prototype: aturan bisnis dan kunci tanda tangan QR masih di browser. Produksi perlu API per aksi dengan otorisasi per peran dan tanda tangan QR di server. Tanpa `server.js` (mode lokal satu perangkat) PIN tidak berlaku.
 
 ## Memperbarui aset lokal (opsional, perlu internet sekali)
 Bila menambah kelas Tailwind baru di `index.html`, `app/*.html` atau `app/js`:
@@ -79,6 +79,6 @@ Unduh ulang font: `python3 tools/vendor_fonts.py`
 ## Deploy Vercel
 
 Produksi: https://smiccts.vercel.app, dideploy otomatis setiap push ke `main` (repo GitHub `martioalanshori/bcc-juara`).
-Backend serverless ada di `api/index.js` (padanan `server.py`), state event disimpan di Upstash Redis.
+`api/index.js` hanya pembungkus `server/app.js` yang sama dengan LAN; bedanya state event disimpan di Upstash Redis. `vercel.json` meneruskan semua path selain aset ke fungsi itu.
 Environment variable di Vercel: `PIN_PENGELOLA`, `PIN_COMMAND_CENTER`, `SESSION_SECRET`, `KV_REST_API_URL`, `KV_REST_API_TOKEN`.
-Ganti PIN: ubah env di dashboard Vercel lalu Redeploy. Versi LAN (`python server.py`) tetap berjalan seperti biasa.
+Ganti PIN: ubah env di dashboard Vercel lalu Redeploy. Versi LAN (`node server.js`) tetap berjalan seperti biasa.

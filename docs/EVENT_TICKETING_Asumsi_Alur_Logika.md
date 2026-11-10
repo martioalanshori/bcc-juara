@@ -8,7 +8,7 @@ Bahan deck Bandung Build Challenge 2026: asumsi, alur, logika pemilihan kursi, d
 | `/pengelola` (`app/pengelola.html`) + `/checkin` | Pengelola acara (panitia/EO) & petugas gate | Kendali penuh atas acaranya: tambah, publikasikan, batalkan, hapus, kelola tiket/denah/peserta/refund, check-in, lapor anomali |
 | `/command-center` (`app/index.html` → Pemantauan Event) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
 
-Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` memakai PIN command-center, `/pengunjung` terbuka. PIN diverifikasi `server.py` (hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali salah). Detail di README.
+Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` memakai PIN command-center, `/pengunjung` terbuka. PIN diverifikasi server (`server/auth.js`) (hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali salah). Detail di README.
 
 ## 1. Asumsi
 | Topik | Asumsi pada prototype |
@@ -20,7 +20,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 | Pembayaran | Simulasi sandbox (QRIS, VA, e-wallet, kartu). Tidak ada data kartu/rekening yang diminta; tombol "berhasil/gagal" mensimulasikan callback gateway. |
 | Notifikasi | Email & WhatsApp disimulasikan sebagai outbox (kotak masuk pengunjung & tab Notifikasi panitia). |
 | Data | Data contoh (`@example.com`, nomor `0812-0000-xxxx`), bukan data pribadi nyata. |
-| Infrastruktur | Berjalan di jaringan lokal tanpa internet: `server.py` (Python standar) sebagai sumber kebenaran bersama. Produksi: database transaksional + payment gateway + layanan pesan. |
+| Infrastruktur | Berjalan di jaringan lokal tanpa internet: `server.js` (Node standar, tanpa npm) sebagai sumber kebenaran bersama. Produksi: database transaksional + payment gateway + layanan pesan. |
 
 ## 2. Alur pengunjung (mobile-first, `/pengunjung`)
 1. **Lihat acara**: jadwal, lokasi, kategori, harga, sisa tiket, status penjualan.
@@ -71,12 +71,12 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Transaksi**: lihat dan ekspor; refund dan perubahan data hanya oleh pengelola.
 
 ## 3c. Sinkronisasi antarperangkat
-- **Mode server** (`python3 server.py`): setiap halaman menarik perubahan tiap ~1 detik, serta saat tab kembali aktif atau mendapat fokus. Server dideteksi hingga 3 kali percobaan agar Wi-Fi lambat tidak membuat halaman jatuh ke mode lokal.
+- **Mode server** (`node server.js`): setiap halaman menarik perubahan tiap ~1 detik, serta saat tab kembali aktif atau mendapat fokus. Server dideteksi hingga 3 kali percobaan agar Wi-Fi lambat tidak membuat halaman jatuh ke mode lokal.
 - **Mode lokal** (file dibuka langsung atau server statis biasa):
   - data hanya di satu browser;
   - antar-tab tetap sinkron lewat event `storage` ditambah polling versi;
   - banner kuning memberi tahu bahwa perangkat lain tidak akan melihat data ini;
-  - bila server.py terdeteksi belakangan, banner menawarkan muat ulang.
+  - bila server.js terdeteksi belakangan, banner menawarkan muat ulang.
 
 ## 4. Logika pemilihan kursi & pencegahan pemesanan ganda
 Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (SOLD)`. Kursi kembali `TERSEDIA` bila hold/pembayaran kedaluwarsa, pesanan dibatalkan, atau refund.
@@ -130,7 +130,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 ## 7. Batasan prototype
 - Tidak terhubung ke payment gateway, sistem internal Summarecon, CRM, POS, atau layanan pesan sungguhan.
 - Kamera live hanya di HTTPS/localhost. Di HTTP LAN gunakan *Foto QR*.
-- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server.py` dan `api/_guard.js`, kasus uji bersama `tools/tests/guard_cases.json`, penolakan 403):
+- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server/guard.js`, kasus uji `tools/tests/guard_cases.json`, penolakan 403):
   - Tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan yang masih menunggu bayar, daftar tunggu, outbox.
   - Command Center: seperti tanpa login, ditambah laporan gate (klaim dan tautan tiket insiden).
   - Pengelola: semua, termasuk ubah acara dan kontrak venue, refund, check-in (halaman Check-in), batal acara, reset.

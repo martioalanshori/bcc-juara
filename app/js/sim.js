@@ -8,7 +8,7 @@
     const d = UI.DBMAP[code];
     const t = uc.ticket;
     const q = code === 'TIC' && sim.ticketId ? 'id=' + sim.ticketId : code === 'CCTV' && t.cam ? 'cam=' + t.cam : code === 'TEN' && t.tenant ? 'tenant=' + (window.SEED.TENANTS.find((x) => x.name === t.tenant) || {}).id : '';
-    return '#/' + d.route + (q && !q.endsWith('undefined') ? '?' + q : '');
+    return '/' + d.route + (q && !q.endsWith('undefined') ? '?' + q : '');
   }
 
   function apply(uc, step, sim) {
@@ -55,7 +55,7 @@
     if (!step) { sim.running = false; sim.doneAt = Date.now(); Store.setSim(sim); UI.toast(uc.id + ' selesai: ' + uc.steps.length + ' langkah lintas dashboard', 'P4', 'Cek KPI di Analitik & Laporan dan tiket ' + (sim.ticketId || '')); return; }
     apply(uc, step, sim);
     UI.toast(`<b>${uc.id} #${sim.idx + 1}</b> ${step.frm}${step.frm !== step.to ? ' → ' + step.to : ''}: ${esc(step.action)}`, uc.priority.startsWith('P') ? uc.priority : 'P3', step.event + ' · ' + step.actor + ' · ' + step.t);
-    if (Store.s.settings.follow) { const r = routeFor(step.to, sim, uc); if (location.hash !== r) location.hash = r; }
+    if (Store.s.settings.follow) { const r = routeFor(step.to, sim, uc); if (Router.current() !== r) Router.go(r); }
     sim.idx += 1;
     Store.setSim(sim);
     render();
@@ -75,7 +75,7 @@
       ${sim.min ? '<div class="h-3"></div>' : `<div class="p-3 flex flex-col gap-1 max-h-[300px] overflow-y-auto">${uc.steps.map((s, i) => `<a href="${routeFor(s.to, sim, uc)}" class="flex items-start gap-2 rounded-lg px-2 py-1.5 ${i === sim.idx - 1 ? 'bg-sky-500/10' : ''} hover:bg-white/5">
         <span class="mt-0.5">${i < sim.idx ? icon('check_circle', 'text-[16px] text-secondary') : icon('radio_button_unchecked', 'text-[16px] text-outline')}</span>
         <div class="min-w-0"><div class="font-label-sm text-label-sm ${i < sim.idx ? 'text-primary' : 'text-outline'}">${s.frm}${s.frm !== s.to ? ' → ' + s.to : ''} · ${s.event}</div><div class="font-body-sm text-body-sm ${i < sim.idx ? 'text-on-surface' : 'text-on-surface-variant'} truncate">${esc(s.action)}</div></div></a>`).join('')}</div>
-        <div class="flex gap-2 px-3 pb-3">${sim.ticketId ? `<a class="btn-ghost flex-1 justify-center" href="#/ticketing?id=${sim.ticketId}">${icon('confirmation_number', 'text-[16px]')} ${sim.ticketId}</a>` : ''}<a class="btn-ghost flex-1 justify-center" href="#/usecase?uc=${uc.id}">${icon('account_tree', 'text-[16px]')} Detail use case</a></div>`}</div>`;
+        <div class="flex gap-2 px-3 pb-3">${sim.ticketId ? `<a class="btn-ghost flex-1 justify-center" href="/command-center/ticketing?id=${sim.ticketId}">${icon('confirmation_number', 'text-[16px]')} ${sim.ticketId}</a>` : ''}<a class="btn-ghost flex-1 justify-center" href="/command-center/usecase?uc=${uc.id}">${icon('account_tree', 'text-[16px]')} Detail use case</a></div>`}</div>`;
     const b = (id, fn) => { const el = document.getElementById(id); el && el.addEventListener('click', fn); };
     b('sim-stop', () => Sim.stop());
     b('sim-close', () => { Store.setSim(null); render(); });

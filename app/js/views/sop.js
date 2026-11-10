@@ -23,8 +23,8 @@
         <div class="lbl mt-5 mb-2">Rincian langkah eksekusi (${s.steps.length})</div>
         <div class="flex flex-col gap-2">${s.steps.map((st, i) => `<div class="inner p-3 grid grid-cols-12 gap-3 items-start"><div class="col-span-1 font-headline-md text-headline-md text-primary">${i + 1}</div><div class="col-span-2"><div class="font-label-sm text-label-sm text-outline">${esc(st.phase)}</div><div class="font-label-md text-label-md">${st.role}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(REF.roles[st.role])}</div></div><div class="col-span-6 font-body-sm text-body-sm">${esc(st.action)}<div class="font-label-sm text-label-sm text-secondary mt-1">→ ${esc(st.output)}</div></div><div class="col-span-1 font-label-md text-label-md text-amber-300">${esc(st.target)}</div><div class="col-span-2 text-right">${UI.dbLink(st.dashboard, '', st.dashboard)}</div></div>`).join('')}</div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
-          <div><div class="lbl mb-2">Use case yang memakai SOP ini</div>${ucs.map((u) => `<a href="#/usecase?uc=${u.id}" class="rel-row mb-1.5"><span class="font-label-lg text-label-lg text-primary">${u.id}</span><span class="font-body-sm text-body-sm">${esc(u.name)}</span></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada.</div>'}</div>
-          <div><div class="lbl mb-2">Tiket aktif memakai SOP ini</div>${active.map((t) => `<a href="#/ticketing?id=${t.id}" class="rel-row mb-1.5">${UI.prio(t.priority)}<span class="font-body-sm text-body-sm">${t.id} · ${esc(t.title)}</span></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada.</div>'}</div></div>
+          <div><div class="lbl mb-2">Use case yang memakai SOP ini</div>${ucs.map((u) => `<a href="/command-center/usecase?uc=${u.id}" class="rel-row mb-1.5"><span class="font-label-lg text-label-lg text-primary">${u.id}</span><span class="font-body-sm text-body-sm">${esc(u.name)}</span></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada.</div>'}</div>
+          <div><div class="lbl mb-2">Tiket aktif memakai SOP ini</div>${active.map((t) => `<a href="/command-center/ticketing?id=${t.id}" class="rel-row mb-1.5">${UI.prio(t.priority)}<span class="font-body-sm text-body-sm">${t.id} · ${esc(t.title)}</span></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada.</div>'}</div></div>
       </section></div>`;
   }
 
@@ -51,7 +51,7 @@
       if (p.id && Store.SOP[p.id]) { F.sel = p.id; F.tab = 'katalog'; }
       const nSteps = REF.sops.reduce((a, s) => a + s.steps.length, 0);
       return `<section class="card p-5 mb-5"><div class="flex flex-wrap items-center gap-4"><div><h2 class="font-headline-lg text-headline-lg">Pusat SOP & Runbook</h2><p class="font-body-sm text-body-sm text-on-surface-variant">${REF.sops.length} SOP, ${nSteps} langkah, ${REF.usecases.length} use case, ${REF.relations.length} relasi dashboard, versi ${REF.generated}</p></div>
-        <div class="ml-auto flex flex-wrap gap-2"><a class="btn-ghost" href="../docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx" download>${icon('table_view', 'text-[16px]')} Excel rincian SOP</a><a class="btn-ghost" href="../docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx" download>${icon('table_view', 'text-[16px]')} Excel Use Case</a><a class="btn-ghost" href="../docs/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md" target="_blank">${icon('description', 'text-[16px]')} Runbook (.md)</a></div></div>
+        <div class="ml-auto flex flex-wrap gap-2"><a class="btn-ghost" href="/docs/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx" download>${icon('table_view', 'text-[16px]')} Excel rincian SOP</a><a class="btn-ghost" href="/docs/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx" download>${icon('table_view', 'text-[16px]')} Excel Use Case</a><a class="btn-ghost" href="/docs/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md" target="_blank">${icon('description', 'text-[16px]')} Runbook (.md)</a></div></div>
         <div class="flex gap-2 mt-4">${[['katalog', 'Katalog SOP'], ['sla', 'Matriks SLA & eskalasi'], ['trace', 'Keterlacakan mindmap']].map(([k, l]) => `<button class="chip-btn ${F.tab === k ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div></section>
         <div id="sop-body">${F.tab === 'katalog' ? katalog() : F.tab === 'sla' ? sla() : trace()}</div>`;
     },
@@ -59,7 +59,7 @@
       const re = () => { root.innerHTML = this.render({}); this.mount(root); };
       root.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => { F.tab = b.dataset.tab; re(); }));
       root.querySelectorAll('[data-pillar]').forEach((b) => b.addEventListener('click', () => { F.pillar = b.dataset.pillar; re(); }));
-      root.querySelectorAll('[data-sop]').forEach((b) => b.addEventListener('click', () => { F.sel = b.dataset.sop; F.tab = 'katalog'; history.replaceState(null, '', '#/sop?id=' + F.sel); re(); window.scrollTo(0, 0); }));
+      root.querySelectorAll('[data-sop]').forEach((b) => b.addEventListener('click', () => { F.sel = b.dataset.sop; F.tab = 'katalog'; Router.replace('/sop?id=' + F.sel); re(); window.scrollTo(0, 0); }));
       root.querySelectorAll('[data-mk]').forEach((b) => b.addEventListener('click', () => { const s = Store.SOP[b.dataset.mk]; Shell.newTicket({ sop: s.id, priority: s.priority.slice(0, 2), title: s.title, source: 'Pusat SOP' }); }));
       const q = root.querySelector('#q');
       if (q) q.addEventListener('input', () => { F.q = q.value; const pos = q.selectionStart; re(); const n = root.querySelector('#q'); n.focus(); n.setSelectionRange(pos, pos); });

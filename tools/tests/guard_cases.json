@@ -1,5 +1,5 @@
 {
- "_doc": "Kasus uji pemeriksaan tulis state Event Ticketing di server. Dipakai bersama oleh guard.test.mjs (api/_guard.js) dan test_guard.py (server.py). old/next = penimpaan level atas terhadap base; oldNull/nextNull = state kosong; ok = boleh disimpan.",
+ "_doc": "Kasus uji pemeriksaan tulis state Event Ticketing di server. Dipakai guard.test.mjs (server/guard.js). old/next = penimpaan level atas terhadap base; oldNull/nextNull = state kosong; ok = boleh disimpan.",
  "base": {
   "v": 1,
   "events": {

@@ -3,12 +3,12 @@
  * Konsistensi & anti double-booking:
  *  1. Kursi dikunci (HELD) begitu dipilih, berlaku `holdMin` menit, maks `maxPerOrder` tiket per pesanan.
  *  2. Setiap perubahan = transaksi optimistik: baca state versi N -> ubah -> commit(base=N).
- *     Server (server.py) menerima commit hanya bila versinya masih N (compare-and-swap di bawah lock).
+ *     Server (server.js) menerima commit hanya bila versinya masih N (compare-and-swap di bawah lock).
  *     Bila kalah balapan (409), klien membaca state terbaru lalu menjalankan ulang aturan:
  *     kursi yang sudah dipegang orang lain ditolak -> mustahil dua pesanan berhasil untuk kursi yang sama.
  *  3. Pembayaran memverifikasi ulang bahwa hold masih milik pesanan & belum kedaluwarsa; callback idempoten.
  *  4. Check-in juga transaksi: dua gate memindai tiket yang sama bersamaan -> satu VALID, lainnya SUDAH DIGUNAKAN.
- * Mode: "server" (server.py, dibagi semua perangkat di LAN) atau "lokal" (localStorage, 1 perangkat, sinkron antar-tab).
+ * Mode: "server" (server.js, dibagi semua perangkat di LAN) atau "lokal" (localStorage, 1 perangkat, sinkron antar-tab).
  */
 (function () {
   const LS_KEY = 'smicc-evt-v1';
@@ -363,7 +363,7 @@
         const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), ms);
         const r = await fetch('/api/health', { cache: 'no-store', signal: ctl.signal }); clearTimeout(to);
         if (r.ok && (await r.json()).ok) return true;
-        if (r.status === 404 || r.status === 501) return false; // server statis biasa (bukan server.py)
+        if (r.status === 404 || r.status === 501) return false; // server statis biasa (bukan server.js)
       } catch (e) { /* timeout/jaringan: coba lagi */ }
     }
     return false;
@@ -387,7 +387,7 @@
       setInterval(pull, mode === 'server' ? 1000 : 700);
       if (mode === 'lokal') {
         window.addEventListener('storage', (e) => { if (!e.key || e.key.startsWith(LS_KEY)) pull(); });
-        // Halaman dibuka lewat http tetapi tanpa server.py: cek berkala apakah server.py sudah berjalan
+        // Halaman dibuka lewat http tetapi tanpa server.js: cek berkala apakah server.js sudah berjalan
         if (location.protocol.startsWith('http')) setInterval(async () => { if (!serverHint && (await probe(1, 2000))) { serverHint = true; emit(); } }, 10000);
       }
       document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); });
@@ -405,7 +405,7 @@
     const file = location.protocol === 'file:';
     return `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-mode-banner>
       <span class="material-symbols-outlined text-amber-300 text-[20px]">wifi_off</span>
-      <span class="flex-1 min-w-[220px]"><b class="text-amber-300">${serverHint ? 'Server LAN sudah tersedia.' : 'Mode lokal: data hanya di browser ini.'}</b> ${serverHint ? 'Muat ulang agar tersinkron dengan semua perangkat.' : file ? 'Halaman dibuka langsung dari file. Jalankan <code>python3 server.py</code> lalu buka <code>http://localhost:8765/</code> agar pengunjung, pengelola & Command Center tersinkron di semua perangkat.' : 'server.py tidak terdeteksi. Jalankan <code>python3 server.py</code> agar data tersinkron ke semua perangkat.'}</span>
+      <span class="flex-1 min-w-[220px]"><b class="text-amber-300">${serverHint ? 'Server LAN sudah tersedia.' : 'Mode lokal: data hanya di browser ini.'}</b> ${serverHint ? 'Muat ulang agar tersinkron dengan semua perangkat.' : file ? 'Halaman dibuka langsung dari file. Jalankan <code>node server.js</code> lalu buka <code>http://localhost:8765/</code> agar pengunjung, pengelola & Command Center tersinkron di semua perangkat.' : 'server.js tidak terdeteksi. Jalankan <code>node server.js</code> agar data tersinkron ke semua perangkat.'}</span>
       ${serverHint ? '<button class="btn-ghost !py-1" onclick="location.reload()">Muat ulang</button>' : ''}</div>`;
   }
 
@@ -677,7 +677,7 @@
   }
   function verify(d, text, evId) {
     const c = parseCode(text);
-    const notFound = (what) => what + ' tidak terdaftar di data ' + (mode === 'server' ? 'server' : 'browser ini') + '.' + (mode === 'server' ? '' : ' Mode lokal: jalankan python3 server.py agar portal pengunjung & pemindai memakai data yang sama.');
+    const notFound = (what) => what + ' tidak terdaftar di data ' + (mode === 'server' ? 'server' : 'browser ini') + '.' + (mode === 'server' ? '' : ' Mode lokal: jalankan node server.js agar portal pengunjung & pemindai memakai data yang sama.');
     if (!c.kind) {
       const shown = c.text.length > 40 ? c.text.slice(0, 40) + '…' : c.text;
       return { result: 'INVALID', reason: 'Kode tidak dikenali' + (shown ? ' ("' + shown + '")' : '') + '. Gunakan QR e-ticket, kode tiket (T-…) atau kode booking (BK-…).' };

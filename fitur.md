@@ -1,7 +1,7 @@
 # Daftar fitur SMICC-TS
 
 Summarecon Mall Integrated Command Center Ticketing System (prototype). Aplikasi berjalan tanpa
-internet di jaringan lokal (`python server.py`) dan juga tersedia di Vercel:
+internet di jaringan lokal (`node server.js`) dan juga tersedia di Vercel:
 https://smiccts.vercel.app
 
 Aplikasi terdiri dari empat halaman untuk empat pengguna. Data event (acara, kursi, pesanan,
@@ -117,7 +117,7 @@ Command Center yang membuat tiket walau beberapa terbuka.
   salah.
 - **Pemeriksaan peran di server**: tanpa login hanya perubahan pembeli yang diterima; Command
   Center hanya boleh mengubah laporan gate; pengelola boleh semuanya. Aturan yang sama di
-  `server.py` dan Vercel (`api/_guard.js`), diuji dengan kasus bersama.
+  `server/guard.js` (satu kode untuk LAN dan Vercel), diuji dengan `tools/tests/guard_cases.json`.
 - **Mode lokal**: tanpa server, data tersimpan di browser dan tab di satu perangkat tetap
   sinkron (banner kuning "Mode lokal").
 - **Tema gelap/terang** di semua halaman, semua aset (font, CSS) lokal tanpa CDN.

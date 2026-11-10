@@ -7,20 +7,20 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Konsol Pengelola Acara · Summarecon Mall Bandung</title>
   <!-- Path 2 · Pengelola / Event Organizer: tambah, hapus, batalkan & kelola acara. Aset lokal (tanpa internet). -->
-  <script src="js/theme.js?v=22"></script>
-  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="vendor/tailwind.css?v=22" />
-  <link rel="stylesheet" href="css/app.css?v=22" />
+  <script src="/app/js/theme.js?v=23"></script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=23" />
+  <link rel="stylesheet" href="/app/css/app.css?v=23" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <header class="sticky top-0 z-40 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant">
     <div class="max-w-[1680px] mx-auto h-full px-4 md:px-6 flex items-center justify-between gap-4">
-      <a href="pengelola.html" class="flex items-center gap-3 min-w-0">
+      <a href="/pengelola" class="flex items-center gap-3 min-w-0">
         <span class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">admin_panel_settings</span></span>
         <span class="flex flex-col leading-tight min-w-0"><span class="font-headline-sm text-headline-sm truncate">Konsol Pengelola Acara</span><span class="font-label-sm text-label-sm text-secondary truncate">Penyelenggara acara · Summarecon Mall Bandung</span></span>
       </a>
       <div class="flex items-center gap-4 shrink-0">
-        <a href="../index.html" class="hidden md:flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">apps</span>Pilih peran</a>
+        <a href="/" class="hidden md:flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">apps</span>Pilih peran</a>
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
         <button type="button" data-logout="pengelola" hidden class="flex items-center gap-1 px-2 py-1.5 rounded-lg font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-white/5" title="Keluar dari sesi PIN"><span class="material-symbols-outlined text-[18px]">logout</span><span class="hidden sm:inline">Keluar</span></button>
         <div class="hidden lg:flex items-center gap-3">
@@ -36,14 +36,14 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
 
-  <script src="vendor/qrcode.js"></script>
-  <script src="vendor/jsQR.js"></script>
-  <script src="js/sop-data.js?v=22"></script>
-  <script src="js/ui.js?v=22"></script>
-  <script src="js/auth.js?v=22"></script>
-  <script src="js/evt/engine.js?v=22"></script>
-  <script src="js/evt/checkin-ui.js?v=22"></script>
-  <script src="js/views/event.js?v=22"></script>
+  <script src="/app/vendor/qrcode.js"></script>
+  <script src="/app/vendor/jsQR.js"></script>
+  <script src="/app/js/sop-data.js?v=23"></script>
+  <script src="/app/js/ui.js?v=23"></script>
+  <script src="/app/js/auth.js?v=23"></script>
+  <script src="/app/js/evt/engine.js?v=23"></script>
+  <script src="/app/js/evt/checkin-ui.js?v=23"></script>
+  <script src="/app/js/views/event.js?v=23"></script>
   <script>EvtAdmin.mount(document.getElementById('view'), 'pengelola');</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-/* Shell aplikasi: router hash, navigasi, header live, ticker, modal buat tiket & broadcast. */
+/* Shell aplikasi: router URL (Router, app/js/router.js), navigasi, header live, ticker, modal buat tiket & broadcast. */
 (function () {
   const REF = window.SMICC_REF;
   const { esc, icon } = UI;
@@ -24,10 +24,8 @@
   let current = { route: '', params: {} };
 
   function parse() {
-    const h = location.hash.replace(/^#\/?/, '') || 'ticketing';
-    const [route, qs] = h.split('?');
-    const params = {};
-    (qs || '').split('&').filter(Boolean).forEach((kv) => { const [k, v] = kv.split('='); params[k] = decodeURIComponent(v || ''); });
+    const route = Router.path().split('/')[1] || 'ticketing';
+    const params = Router.query();
     return { route: window.Views[route] ? route : 'ticketing', params };
   }
 
@@ -35,7 +33,7 @@
     const act = Store.activeTickets();
     const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length };
     document.getElementById('nav').innerHTML = NAV.map((g) => `<div class="lbl px-3 mt-2 mb-0.5">${g.group}</div>` + g.items.map(([r, n, ic, code]) =>
-      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="#/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt">${cnt[code]}</span>` : ''}</a>`).join('')).join('');
+      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt">${cnt[code]}</span>` : ''}</a>`).join('')).join('');
   }
 
   function renderHeader() {
@@ -51,9 +49,9 @@
     const crit = act.filter((t) => t.priority === 'P1' || t.priority === 'P2').sort((a, b) => a.priority.localeCompare(b.priority) || b.createdAt - a.createdAt);
     const top = crit[0];
     const tickerHtml = top ? `<div class="flex items-stretch rounded-xl overflow-hidden border ${top.priority === 'P1' ? 'border-rose-500/50 bg-rose-950/40' : 'border-orange-500/30 bg-orange-950/20'}">
-      <a href="#/ticketing?id=${top.id}" class="flex items-center gap-2 px-4 py-2 ${top.priority === 'P1' ? 'bg-rose-600/30' : 'bg-orange-500/15'} shrink-0"><span class="w-2 h-2 rounded-md ${top.priority === 'P1' ? 'bg-rose-500 pulse-ring' : 'bg-orange-400'}"></span><span class="font-label-sm text-label-sm ${top.priority === 'P1' ? 'text-rose-200' : 'text-orange-200'}">Protokol insiden prioritas ${top.priority.slice(1)}</span></a>
+      <a href="/command-center/ticketing?id=${top.id}" class="flex items-center gap-2 px-4 py-2 ${top.priority === 'P1' ? 'bg-rose-600/30' : 'bg-orange-500/15'} shrink-0"><span class="w-2 h-2 rounded-md ${top.priority === 'P1' ? 'bg-rose-500 pulse-ring' : 'bg-orange-400'}"></span><span class="font-label-sm text-label-sm ${top.priority === 'P1' ? 'text-rose-200' : 'text-orange-200'}">Protokol insiden prioritas ${top.priority.slice(1)}</span></a>
       <div class="ticker-wrap flex-1 py-2"><div class="ticker-move font-body-sm text-body-sm text-on-surface">${crit.slice(0, 6).map((t) => `<b class="${t.priority === 'P1' ? 'text-rose-300' : 'text-orange-300'}">${t.priority} ${t.id}:</b> ${esc(t.title)}, ${esc(t.location)} (${Store.STATUS_LABEL[t.status]}, SOP ${t.sop})`).join('<span class="mx-6 text-outline">◆</span>')}</div></div>
-      <a href="#/sop?id=${top.sop}" class="flex items-center px-3 font-label-sm text-label-sm text-on-surface-variant hover:text-primary shrink-0">SOP ${top.sop}</a></div>` : '';
+      <a href="/command-center/sop?id=${top.sop}" class="flex items-center px-3 font-label-sm text-label-sm text-on-surface-variant hover:text-primary shrink-0">SOP ${top.sop}</a></div>` : '';
     // Tulis ulang hanya bila isinya berubah, supaya animasi geser tidak mulai lagi dari awal.
     const tk = document.getElementById('ticker');
     if (tk.dataset.html !== tickerHtml) { tk.innerHTML = tickerHtml; tk.dataset.html = tickerHtml; }
@@ -133,7 +131,7 @@
       UI.closeModal();
       UI.toast(`Tiket <b>${t.id}</b> dibuat`, t.priority, `${t.priority}, SLA respons ${Store.SLA[t.priority].respond} menit, ${t.sop}`);
       if (pre.cam) Store.camAlert(pre.cam, t.title, t.priority, t.id);
-      location.hash = '#/ticketing?id=' + t.id;
+      Router.go('/ticketing?id=' + t.id);
     });
   }
 
@@ -161,7 +159,7 @@
 
   document.getElementById('btn-broadcast').addEventListener('click', () => broadcast());
   document.getElementById('btn-reset').addEventListener('click', () => { if (confirm('Reset seluruh data demo ke kondisi awal?')) { Store.reset(); UI.toast('Data demo direset', 'P4'); } });
-  window.addEventListener('hashchange', () => { route(); window.scrollTo(0, 0); });
+  Router.on(() => { route(); window.scrollTo(0, 0); });
   Store.subscribe(() => rerender());
   setInterval(() => {
     tick();

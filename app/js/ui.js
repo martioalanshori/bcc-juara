@@ -49,10 +49,10 @@
         ${o.foot ? `<div class="font-label-sm text-label-sm text-on-surface-variant">${o.foot}</div>` : ''}</div>`;
     },
     bar(pct, cls) { return `<div class="h-1.5 rounded-full bg-surface-container-highest overflow-hidden"><div class="h-full rounded-md ${cls || 'bg-primary-container'}" style="width:${Math.max(1, Math.min(100, pct))}%"></div></div>`; },
-    link(route, label, cls) { return `<a href="#/${route}" class="${cls || 'text-primary hover:underline'}">${label}</a>`; },
+    link(route, label, cls) { return `<a href="/command-center/${route}" class="${cls || 'text-primary hover:underline'}">${label}</a>`; },
     dbLink(code, params, label) {
       const d = DBMAP[code];
-      return `<a href="#/${d.route}${params ? '?' + params : ''}" class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1 font-label-md text-label-md text-on-surface">${icon(ICON[code], 'text-[16px] text-primary')}${label || d.name}</a>`;
+      return `<a href="/command-center/${d.route}${params ? '?' + params : ''}" class="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 px-2 py-1 font-label-md text-label-md text-on-surface">${icon(ICON[code], 'text-[16px] text-primary')}${label || d.name}</a>`;
     },
 
     // ------------------------------------------------ charts (SVG)
@@ -161,12 +161,12 @@
       const ev = Store.eventsFor(code, 8);
       const ucs = REF.usecases.filter((u) => u.primary === code || u.related.split(/,\s*/).includes(code));
       return `<section class="card p-5" id="relasi-panel">
-        ${UI.h('Relasi dashboard & event lintas modul', 'Aliran data masuk dan keluar ' + esc(DBMAP[code].name) + ' (sumber: UseCase_Relasi_Dashboard.xlsx)', `<a href="#/usecase" class="btn-ghost">${icon('account_tree', 'text-[16px]')} Simulator Use Case</a>`, 'hub')}
+        ${UI.h('Relasi dashboard & event lintas modul', 'Aliran data masuk dan keluar ' + esc(DBMAP[code].name) + ' (sumber: UseCase_Relasi_Dashboard.xlsx)', `<a href="/command-center/usecase" class="btn-ghost">${icon('account_tree', 'text-[16px]')} Simulator Use Case</a>`, 'hub')}
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div><div class="lbl mb-2">Masuk dari</div><div class="flex flex-col gap-2">${inn.map((r) => `<a href="#/${DBMAP[r.frm].route}" class="rel-row">${icon(ICON[r.frm], 'text-[16px] text-primary')}<div><div class="font-label-lg text-label-lg text-on-surface">${r.frm} → ${code}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
-          <div><div class="lbl mb-2">Keluar ke</div><div class="flex flex-col gap-2">${out.map((r) => `<a href="#/${DBMAP[r.to].route}" class="rel-row">${icon(ICON[r.to], 'text-[16px] text-secondary')}<div><div class="font-label-lg text-label-lg text-on-surface">${code} → ${r.to}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
+          <div><div class="lbl mb-2">Masuk dari</div><div class="flex flex-col gap-2">${inn.map((r) => `<a href="/command-center/${DBMAP[r.frm].route}" class="rel-row">${icon(ICON[r.frm], 'text-[16px] text-primary')}<div><div class="font-label-lg text-label-lg text-on-surface">${r.frm} → ${code}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
+          <div><div class="lbl mb-2">Keluar ke</div><div class="flex flex-col gap-2">${out.map((r) => `<a href="/command-center/${DBMAP[r.to].route}" class="rel-row">${icon(ICON[r.to], 'text-[16px] text-secondary')}<div><div class="font-label-lg text-label-lg text-on-surface">${code} → ${r.to}</div><div class="font-body-sm text-body-sm text-on-surface-variant">${esc(r.data)}</div></div></a>`).join('')}</div></div>
           <div><div class="lbl mb-2">Event terbaru</div><div class="flex flex-col gap-2">${ev.length ? ev.map((e) => `<div class="rel-row !cursor-default"><span class="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style="background:${(PRIO[e.sev] || {}).hex || '#38bdf8'}"></span><div class="min-w-0"><div class="font-label-md text-label-md text-on-surface-variant">${time(e.ts)} · ${e.from}→${e.to} · ${e.code}${e.ucId ? ' · ' + e.ucId : ''}</div><div class="font-body-sm text-body-sm text-on-surface truncate">${esc(e.title)}</div></div></div>`).join('') : `<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada event. Jalankan skenario di Simulator Use Case untuk melihat aliran antar dashboard.</div>`}</div>
-            <div class="lbl mt-4 mb-2">Use case terkait</div><div class="flex flex-wrap gap-1.5">${ucs.map((u) => `<a href="#/usecase?uc=${u.id}" class="chip-btn" title="${esc(u.name)}">${u.id}</a>`).join('')}</div></div>
+            <div class="lbl mt-4 mb-2">Use case terkait</div><div class="flex flex-wrap gap-1.5">${ucs.map((u) => `<a href="/command-center/usecase?uc=${u.id}" class="chip-btn" title="${esc(u.name)}">${u.id}</a>`).join('')}</div></div>
         </div></section>`;
     },
   };

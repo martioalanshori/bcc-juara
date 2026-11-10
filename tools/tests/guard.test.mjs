@@ -1,4 +1,4 @@
-// Pemeriksaan tulis state di server (api/_guard.js). Kasus bersama dengan test_guard.py (server.py).
+// Pemeriksaan tulis state di server (server/guard.js), kasus di guard_cases.json.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { loadEvt } from './harness.mjs';
 
 const require = createRequire(import.meta.url);
-const { guard } = require('../../api/_guard.js');
+const { guard } = require('../../server/guard.js');
 const C = JSON.parse(readFileSync(new URL('./guard_cases.json', import.meta.url), 'utf8'));
 const build = (over, isNull) => (isNull ? null : Object.assign(structuredClone(C.base), structuredClone(over || {})));
 
@@ -69,7 +69,7 @@ test('guard + engine: Command Center mengklaim anomali dan menautkan tiket', asy
   assert.equal(guard(c, d, ['command-center']), null);
 });
 
-// Engine dalam mode server dengan fetch palsu yang memakai guard asli (seperti server.py/api tanpa login).
+// Engine dalam mode server dengan fetch palsu yang memakai guard asli (seperti server/app.js tanpa login).
 function fakeServer(roles) {
   const db = { version: 0, state: null }; let posts = 0;
   const res = (code, obj) => ({ ok: code === 200, status: code, json: async () => obj });

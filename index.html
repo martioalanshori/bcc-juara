@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Summarecon Mall Bandung · Event &amp; Command Center</title>
   <!-- Halaman pilih path. Aset lokal (tanpa internet). -->
-  <script src="app/js/theme.js?v=22"></script>
-  <link rel="stylesheet" href="app/vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="app/vendor/tailwind.css?v=22" />
-  <link rel="stylesheet" href="app/css/app.css?v=22" />
+  <script src="/app/js/theme.js?v=23"></script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=23" />
+  <link rel="stylesheet" href="/app/css/app.css?v=23" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col">
   <main class="flex-1 w-full max-w-6xl mx-auto px-5 py-10 md:py-16">
@@ -25,21 +25,21 @@
     <p class="font-body-md text-body-md text-on-surface-variant max-w-3xl mb-8">Pilih pintu masuk sesuai peran. Ketiganya membaca data acara yang sama di jaringan lokal, jadi tiket yang dibeli pengunjung langsung muncul di konsol pengelola dan Command Center.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <a href="app/pengunjung.html" data-path="/pengunjung" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
+      <a href="/pengunjung" data-path="/pengunjung" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-sky-500/15 text-sky-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">local_activity</span></span><span class="font-label-sm text-label-sm text-on-surface-variant">1 · /pengunjung</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Pengunjung</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Beli tiket acara dari ponsel.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Lihat acara, jadwal, harga &amp; sisa tiket</li><li>• Pilih kategori &amp; kursi di denah</li><li>• Bayar (simulasi sandbox)</li><li>• E-ticket QR, pengingat &amp; waiting list</li></ul>
         <span class="btn justify-center mt-auto">Buka portal tiket</span></a>
 
-      <a href="app/pengelola.html" data-path="/pengelola" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
+      <a href="/pengelola" data-path="/pengelola" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-violet-500/15 text-violet-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">admin_panel_settings</span></span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span>2 · /pengelola</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Event Organizer</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Panitia acara mengelola event-nya.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
           <li>• Buat, publish, batalkan &amp; hapus acara</li><li>• Jenis tiket, harga, kuota, denah &amp; periode jual</li><li>• Peserta, pembayaran, refund &amp; ekspor CSV</li><li>• Check-in QR &amp; lapor ke Command Center</li></ul>
         <span class="btn justify-center mt-auto">Masuk dengan PIN pengelola</span></a>
 
-      <a href="app/index.html#/event" data-path="/command-center" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
+      <a href="/command-center/event" data-path="/command-center" class="card p-6 flex flex-col gap-4 hover:ring-1 hover:ring-primary-container/60 transition">
         <div class="flex items-center justify-between"><span class="w-12 h-12 rounded-xl bg-emerald-500/15 text-emerald-300 flex items-center justify-center"><span class="material-symbols-outlined text-[26px]">hub</span></span><span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">lock</span>3 · /command-center</span></div>
         <div><h2 class="font-headline-sm text-headline-sm">Command Center · Mall 360</h2><p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Sudut pandang manajemen mal.</p></div>
         <ul class="flex flex-col gap-1.5 font-body-sm text-body-sm text-on-surface-variant">
@@ -47,7 +47,7 @@
         <span class="btn justify-center mt-auto">Masuk dengan PIN Command Center</span></a>
     </div>
 
-    <p class="font-label-sm text-label-sm text-on-surface-variant mt-8">Petugas gate memakai <a class="text-primary hover:underline" href="app/checkin.html">scanner check-in</a> di ponsel (/checkin, PIN pengelola). Pengunjung tidak perlu PIN. Prototype untuk Bandung Build Challenge 2026: data contoh, pembayaran simulasi.</p>
+    <p class="font-label-sm text-label-sm text-on-surface-variant mt-8">Petugas gate memakai <a class="text-primary hover:underline" href="/checkin">scanner check-in</a> di ponsel (/checkin, PIN pengelola). Pengunjung tidak perlu PIN. Prototype untuk Bandung Build Challenge 2026: data contoh, pembayaran simulasi.</p>
   </main>
 </body>
 </html>

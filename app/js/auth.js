@@ -1,5 +1,5 @@
-/* Sesi PIN per peran (server.py). Menampilkan tombol "Keluar" pada elemen [data-logout="<peran>"].
- * Tanpa server.py (mode lokal) tombol disembunyikan karena akses PIN tidak berlaku. */
+/* Sesi PIN per peran (server.js). Menampilkan tombol "Keluar" pada elemen [data-logout="<peran>"].
+ * Tanpa server.js (mode lokal) tombol disembunyikan karena akses PIN tidak berlaku. */
 (function () {
   async function me() {
     try { const r = await fetch('/api/auth/me', { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); } catch (e) { return null; }

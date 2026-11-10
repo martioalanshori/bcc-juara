@@ -1,14 +1,14 @@
-/* Pemeriksaan tulis state Event Ticketing di server (padanan Python: guard() di server.py).
+/* Pemeriksaan tulis state Event Ticketing di server (dipakai server/app.js, baik LAN maupun Vercel).
  * Aturan bisnis tetap dijalankan engine di browser; server hanya memastikan perubahan yang butuh
- * peran tertentu datang dari sesi peran itu, dan bentuk data tidak dirusak. Kasus uji bersama:
- * tools/tests/guard_cases.json (ubah keduanya bersamaan).
+ * peran tertentu datang dari sesi peran itu, dan bentuk data tidak dirusak. Kasus uji:
+ * tools/tests/guard_cases.json.
  *   - pengelola: boleh semua (acara, refund, check-in, reset).
  *   - command-center: seperti tanpa login, ditambah laporan gate (klaim & tautan tiket insiden).
  *   - tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan PENDING,
  *     daftar tunggu, outbox. Tidak boleh mengubah acara, versi skema, e-ticket yang sudah ada,
  *     pindaian, pesanan non-PENDING, atau kursi terjual. Kursi SOLD dan e-ticket baru hanya boleh
  *     untuk pesanan yang baru lunas di penulisan ini. Hold berlaku paling lama HOLD_MAX ke depan.
- * Mengembalikan null bila boleh, atau pesan penolakan. File berawalan _ tidak menjadi route Vercel. */
+ * Mengembalikan null bila boleh, atau pesan penolakan. */
 const HOLD_MAX = 60 * 60000;
 const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x);

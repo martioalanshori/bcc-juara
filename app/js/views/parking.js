@@ -24,7 +24,7 @@
           <span class="stat">LPR/ANPR <b>18 kamera</b></span>
           <span class="stat">EVSE <b>OCPP 1.6J</b></span>
         </div>
-        <div class="pagebar-actions"><a class="btn-ghost" href="#/cctv?cam=CAM-61">${icon('videocam', 'text-[16px]')} Kamera gate</a><button class="btn" id="newpark">${icon('add_circle')} Buat tiket parkir</button></div>
+        <div class="pagebar-actions"><a class="btn-ghost" href="/command-center/cctv?cam=CAM-61">${icon('videocam', 'text-[16px]')} Kamera gate</a><button class="btn" id="newpark">${icon('add_circle')} Buat tiket parkir</button></div>
       </section>
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
         ${UI.kpi({ label: 'Okupansi parkir mobil', icon: 'local_parking', value: ((used / cap) * 100).toFixed(1) + '%', unit: num(used) + ' / ' + num(cap) + ' slot', bar: (used / cap) * 100, barcls: used / cap > 0.9 ? 'bg-rose-400' : 'bg-primary-container' })}
@@ -43,7 +43,7 @@
         </div>
         <div class="2xl:col-span-4 flex flex-col gap-5">
           <section class="card p-5">${UI.h('Drop-off lobi, valet & taksi online', 'Kamera lalu lintas AI CAM-05 (SOP-PRK-03)', '', 'local_taxi')}
-            <a href="#/cctv?cam=CAM-05" class="block cam-tile aspect-video mb-3"><div class="scan"></div>${UI.cam(window.SEED.CAMERAS.find((c) => c.id === 'CAM-05'))}<div class="cam-ov top">● CAM-05 Drop-off lobi</div></a>
+            <a href="/command-center/cctv?cam=CAM-05" class="block cam-tile aspect-video mb-3"><div class="scan"></div>${UI.cam(window.SEED.CAMERAS.find((c) => c.id === 'CAM-05'))}<div class="cam-ov top">● CAM-05 Drop-off lobi</div></a>
             ${[['Waktu tunggu lobi utama', '3m 40s', 'text-secondary'], ['Kepadatan jalur drop-off', '68%', 'text-amber-300'], ['Antrean valet', '6 mobil', 'text-on-surface'], ['Waktu tunggu taksi online', '4m 10s', 'text-on-surface'], ['Shuttle feeder berikutnya', '08 menit', 'text-on-surface']].map((r) => `<div class="flex justify-between py-1.5 border-b border-white/5 font-label-md text-label-md"><span class="text-on-surface-variant">${r[0]}</span><span class="${r[2]}">${r[1]}</span></div>`).join('')}</section>
           <section class="card p-5">${UI.h('Stasiun pengisian EV (OCPP)', evs.filter(([, e]) => e.status === 'CHARGING').length + '/' + evs.length + ' sedang mengisi daya', '', 'ev_station')}
             <div class="grid grid-cols-2 gap-2">${evs.map(([id, e]) => `<button data-ev="${id}" class="text-left inner p-3 hover:bg-white/5 ${e.status === 'FAULT' ? 'crit-left' : ''}"><div class="font-label-md text-label-md">${esc(e.name)}</div><div class="mt-1">${UI.devStatus(e.status)}</div><div class="font-label-sm text-label-sm text-outline mt-1">${e.kwh ? e.kwh + ' kWh sesi ini' : '-'}</div></button>`).join('')}</div>
@@ -51,7 +51,7 @@
           <section class="card p-5">${UI.h('Log ANPR', '', '', 'pin')}
             ${anpr.map((a) => `<div class="flex gap-2 py-1.5 border-b border-white/5 font-label-md text-label-md"><span class="text-outline">${a[0]}</span><span class="px-1.5 rounded bg-white/10 text-on-surface">${a[1]}</span><span class="text-on-surface-variant flex-1">${a[2]}</span><span class="${a[4]}">${a[3]}</span></div>`).join('')}</section>
           <section class="card p-5">${UI.h('Tiket area parkir & mobilitas', '', '', 'confirmation_number')}
-            ${tk.map((t) => `<a href="#/ticketing?id=${t.id}" class="rel-row mb-2">${UI.prio(t.priority)}<div><div class="font-body-sm text-body-sm">${esc(t.title)}</div><div class="font-label-sm text-label-sm text-outline">${t.id} · <span data-due="${Store.slaInfo(t).due}"></span></div></div></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada tiket aktif.</div>'}</section>
+            ${tk.map((t) => `<a href="/command-center/ticketing?id=${t.id}" class="rel-row mb-2">${UI.prio(t.priority)}<div><div class="font-body-sm text-body-sm">${esc(t.title)}</div><div class="font-label-sm text-label-sm text-outline">${t.id} · <span data-due="${Store.slaInfo(t).due}"></span></div></div></a>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada tiket aktif.</div>'}</section>
         </div>
       </div>
       ${UI.relasi('PARK')}`;
@@ -60,7 +60,7 @@
       root.querySelector('#newpark').addEventListener('click', () => Shell.newTicket({ sop: 'SOP-PRK-01', priority: 'P3', category: 'Keamanan, Parkir & Crowd', zone: 'BASEMENT', team: 'Tim Parkir', source: 'Parkir & Mobilitas', cam: 'CAM-61', fromDb: 'PARK' }));
       root.querySelectorAll('[data-gate]').forEach((b) => b.addEventListener('click', () => {
         const id = b.dataset.gate, g = Store.s.devices[id];
-        UI.modal(esc(g.name) + ' <span class="font-label-md text-label-md text-outline">' + id + '</span>', `<div class="flex flex-wrap gap-2">${['NORMAL', 'OPEN', 'FAULT', 'STANDBY'].map((s) => `<button class="chip-btn ${g.status === s ? 'on' : ''}" data-st="${s}">${s}</button>`).join('')}</div><div class="flex justify-end gap-2 mt-4"><a class="btn-ghost" href="#/cctv?cam=CAM-61">CAM-61</a><button class="btn" id="mk">Buat tiket antrean</button></div>`);
+        UI.modal(esc(g.name) + ' <span class="font-label-md text-label-md text-outline">' + id + '</span>', `<div class="flex flex-wrap gap-2">${['NORMAL', 'OPEN', 'FAULT', 'STANDBY'].map((s) => `<button class="chip-btn ${g.status === s ? 'on' : ''}" data-st="${s}">${s}</button>`).join('')}</div><div class="flex justify-end gap-2 mt-4"><a class="btn-ghost" href="/command-center/cctv?cam=CAM-61">CAM-61</a><button class="btn" id="mk">Buat tiket antrean</button></div>`);
         document.querySelectorAll('[data-st]').forEach((x) => x.addEventListener('click', () => { Store.setDevice(id, x.dataset.st); Store.addEvent({ from: 'PARK', to: x.dataset.st === 'FAULT' ? 'TIC' : 'PARK', code: 'EVT-PARK-QUEUE', title: id + ' → ' + x.dataset.st, detail: g.name, sev: x.dataset.st === 'FAULT' ? 'P3' : 'P4' }); UI.closeModal(); }));
         document.getElementById('mk').addEventListener('click', () => Shell.newTicket({ title: 'Antrean ' + g.name + ' ' + g.queue + ' mobil', sop: 'SOP-PRK-01', priority: 'P3', category: 'Keamanan, Parkir & Crowd', zone: 'BASEMENT', location: g.name, source: 'Peringatan antrean ANPR ' + id, team: 'Tim Parkir', cam: 'CAM-61', fromDb: 'PARK' }));
       }));

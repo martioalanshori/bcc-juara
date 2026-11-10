@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <link rel="icon" href="data:," />
   <title>Dipindahkan · Portal pengunjung</title>
-  <!-- Alamat lama: diarahkan ke pengunjung.html (hash rute dipertahankan) -->
-  <script>location.replace('pengunjung.html' + location.hash);</script>
-  <meta http-equiv="refresh" content="0; url=pengunjung.html" />
+  <!-- Alamat lama: server mengalihkan /app/event.html ke /pengunjung. File ini cadangan bila dibuka langsung. -->
+  <script>location.replace('/pengunjung' + location.hash);</script>
+  <meta http-equiv="refresh" content="0; url=/pengunjung" />
 </head>
-<body><a href="pengunjung.html">Portal pengunjung</a></body>
+<body><a href="/pengunjung">Portal pengunjung</a></body>
 </html>

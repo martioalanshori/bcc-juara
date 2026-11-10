@@ -1,7 +1,7 @@
 /* DB-EVT Event Ticketing — modul dua peran (Bandung Build Challenge 2026):
  *  - ROLE 'pengelola' (app/pengelola.html): panitia/EO. Tambah/hapus/batalkan acara, jenis tiket, harga, kuota,
  *    denah & periode jual, peserta & pembayaran, refund, check-in QR, pengingat, daftar tunggu, lapor ke Command Center.
- *  - ROLE 'mall' (Command Center, app/index.html #/event): manajemen mall 360. Hanya memantau: portofolio semua acara,
+ *  - ROLE 'mall' (Command Center, /command-center/event): manajemen mall 360. Hanya memantau: portofolio semua acara,
  *    dampak ke parkir/crowd/BMS/tenant, keamanan gate → tiket insiden (SOP-EVT-03). Tidak dapat mengubah data acara. */
 (function () {
   window.Views = window.Views || {};
@@ -28,7 +28,7 @@
   // Tiket insiden ada di Store (localStorage) browser CC yang membuatnya. Nomor TCK dihitung per browser,
   // jadi tautkan hanya bila tiket itu memang tiket SOP-EVT-03 di browser ini.
   const tkLink = (id) => (window.Store && Store.ticket(id) && Store.ticket(id).sop === 'SOP-EVT-03'
-    ? `<a href="#/ticketing?id=${encodeURIComponent(id)}" class="chip-btn">${esc(id)}</a>`
+    ? `<a href="/command-center/ticketing?id=${encodeURIComponent(id)}" class="chip-btn">${esc(id)}</a>`
     : `<span class="font-label-sm text-label-sm text-emerald-300" title="Tiket dibuat di perangkat Command Center lain">${esc(id)} (perangkat CC lain)</span>`);
   function anomList(e) {
     const anom = EvtCheckin.anomalies(e.id);
@@ -218,7 +218,7 @@
   function checkin(e) {
     ui.gate = e.gates.includes(ui.gate) ? ui.gate : e.gates[0];
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
-      <section class="card p-5 2xl:col-span-5">${UI.h('Pemindai gate', 'Validasi QR e-ticket: valid, sudah digunakan, atau tidak valid', `<a class="btn-ghost" href="checkin.html" target="_blank">${icon('smartphone', 'text-[16px]')} Versi ponsel</a>`, 'qr_code_scanner')}
+      <section class="card p-5 2xl:col-span-5">${UI.h('Pemindai gate', 'Validasi QR e-ticket: valid, sudah digunakan, atau tidak valid', `<a class="btn-ghost" href="/checkin" target="_blank">${icon('smartphone', 'text-[16px]')} Versi ponsel</a>`, 'qr_code_scanner')}
         <label class="f mb-3">Gate<select class="inp" id="gate">${e.gates.map((g) => `<option ${g === ui.gate ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select></label>
         ${EvtCheckin.panel()}</section>
       <div class="2xl:col-span-7 flex flex-col gap-5">
@@ -293,7 +293,7 @@
         <td><div class="flex gap-1.5 justify-end whitespace-nowrap">
           <button class="chip-btn" data-manage="${e.id}">${icon('edit_calendar', 'text-[14px]')} Kelola</button>
           ${e.status === 'DRAFT' ? `<button class="chip-btn" data-publish="${e.id}">${icon('publish', 'text-[14px]')} Publikasikan</button>` : ''}
-          ${e.status !== 'DRAFT' ? `<a class="chip-btn" href="pengunjung.html#/e/${e.id}" target="_blank">${icon('open_in_new', 'text-[14px]')} Portal</a>` : ''}
+          ${e.status !== 'DRAFT' ? `<a class="chip-btn" href="/pengunjung/e/${e.id}" target="_blank">${icon('open_in_new', 'text-[14px]')} Portal</a>` : ''}
           ${e.status !== 'CANCELLED' ? `<button class="chip-btn !text-amber-300" data-cancel-ev="${e.id}" data-live="${live}">${icon('event_busy', 'text-[14px]')} Batalkan</button>` : ''}
           <button class="chip-btn !text-rose-300" data-del-ev="${e.id}">${icon('delete', 'text-[14px]')} Hapus</button></div></td></tr>`; }).join('');
     const tot = evs.reduce((a, e) => { const s = Evt.stats(e.id); a.sold += s.sold; a.rev += s.revenue; return a; }, { sold: 0, rev: 0 });
@@ -343,7 +343,7 @@
       ${UI.kpi({ label: 'Anomali gate', icon: 'gpp_maybe', value: anomN, vcls: anomN ? 'text-rose-300' : 'text-on-surface', foot: 'indikasi tiket palsu/calo' })}
       ${UI.kpi({ label: 'Laporan lapangan', icon: 'campaign', value: repN, vcls: repN ? 'text-amber-300' : 'text-on-surface', foot: 'menunggu tiket insiden' })}</div>
     <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5 mb-5">
-      <section class="card p-5 2xl:col-span-8">${UI.h('Portofolio acara', 'Semua acara di Summarecon Mall Bandung. Klik baris untuk detail (data dari Konsol Pengelola, hanya baca)', `<a class="btn-ghost" href="pengelola.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Konsol Pengelola</a>`, 'travel_explore')}
+      <section class="card p-5 2xl:col-span-8">${UI.h('Portofolio acara', 'Semua acara di Summarecon Mall Bandung. Klik baris untuk detail (data dari Konsol Pengelola, hanya baca)', `<a class="btn-ghost" href="/pengelola" target="_blank">${icon('open_in_new', 'text-[16px]')} Konsol Pengelola</a>`, 'travel_explore')}
         <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Acara</th><th>Jadwal</th><th>Status</th><th class="w-[22%]">Okupansi</th><th>Pendapatan</th><th>Kehadiran</th><th>Gate</th></tr></thead><tbody>
         ${st.map(({ e, s, an, rep }) => { const cap = s.total - s.blocked; return `<tr class="row" data-goto="${e.id}"><td><div class="font-label-lg text-label-lg"><span class="inline-block w-2.5 h-2.5 rounded-full mr-2" style="background:${e.color}"></span>${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id} · ${esc(e.cat)} · ${esc(e.venue.split('·')[0].trim())}</div></td>
           <td class="font-body-sm text-body-sm whitespace-nowrap">${Evt.fmtShort(e.start)} · ${Evt.fmtTime(e.start)}</td><td>${evChip(e)}</td>
@@ -378,8 +378,8 @@
   function header() {
     const tabs = TABS[ROLE]; const global = GLOBAL_TABS.includes(ui.tab);
     const links = isMgr()
-      ? `<a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a><a class="btn-ghost" href="checkin.html" target="_blank">${icon('qr_code_scanner', 'text-[16px]')} Check-in ponsel</a><button class="btn-ghost" id="evt-reset" title="Kembalikan data event ke kondisi awal">${icon('restart_alt', 'text-[16px]')} Reset</button>`
-      : `<a class="btn-ghost" href="pengelola.html" target="_blank">${icon('admin_panel_settings', 'text-[16px]')} Konsol Pengelola</a><a class="btn-ghost" href="pengunjung.html" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a>`;
+      ? `<a class="btn-ghost" href="/pengunjung" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a><a class="btn-ghost" href="/checkin" target="_blank">${icon('qr_code_scanner', 'text-[16px]')} Check-in ponsel</a><button class="btn-ghost" id="evt-reset" title="Kembalikan data event ke kondisi awal">${icon('restart_alt', 'text-[16px]')} Reset</button>`
+      : `<a class="btn-ghost" href="/pengelola" target="_blank">${icon('admin_panel_settings', 'text-[16px]')} Konsol Pengelola</a><a class="btn-ghost" href="/pengunjung" target="_blank">${icon('open_in_new', 'text-[16px]')} Portal pengunjung</a>`;
     const stale = isMgr() && Evt.demoStale() ? `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-stale-banner>${icon('history', 'text-amber-300 text-[20px]')}<span class="flex-1 min-w-[220px]"><b class="text-amber-300">Data contoh dibuat ${Evt.fmtDT(Evt.s.seededAt)}.</b> Jadwal acara contoh sudah lewat, jadi penjualan dan uji tekan bisa ditolak. Reset data sebelum demo.</span><button class="btn-ghost" data-stale-reset>${icon('restart_alt', 'text-[16px]')} Reset sekarang</button></div>` : '';
     let h = Evt.modeBanner() + stale + `<section class="card pagebar">
       <div class="pagebar-info">

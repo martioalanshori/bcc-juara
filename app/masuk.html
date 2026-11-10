@@ -7,15 +7,15 @@
   <meta name="theme-color" content="#181b1f" />
   <meta name="robots" content="noindex" />
   <title>Masuk dengan PIN · Summarecon Mall Bandung</title>
-  <!-- Halaman PIN untuk path 2 (pengelola) & 3 (Command Center). Verifikasi PIN dilakukan server.py. -->
-  <script src="js/theme.js?v=22"></script>
-  <link rel="stylesheet" href="vendor/fonts/fonts.css?v=4" />
-  <link rel="stylesheet" href="vendor/tailwind.css?v=22" />
-  <link rel="stylesheet" href="css/app.css?v=22" />
+  <!-- Halaman PIN untuk path 2 (pengelola) & 3 (Command Center). Verifikasi PIN dilakukan server.js. -->
+  <script src="/app/js/theme.js?v=23"></script>
+  <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=4" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=23" />
+  <link rel="stylesheet" href="/app/css/app.css?v=23" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex items-center justify-center px-4 py-10">
   <main class="w-full max-w-sm">
-    <div class="flex items-center justify-between mb-4"><a href="../index.html" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Pilih peran</a><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
+    <div class="flex items-center justify-between mb-4"><a href="/" class="inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Pilih peran</a><button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button></div>
     <section class="card p-6 flex flex-col gap-5">
       <div class="flex items-center gap-3">
         <span id="role-icon" class="w-11 h-11 rounded-xl bg-surface-container-high text-primary flex items-center justify-center"><span class="material-symbols-outlined">lock</span></span>
@@ -34,8 +34,8 @@
   <script>
     (function () {
       const ROLES = {
-        pengelola: { label: 'Konsol Pengelola Acara', icon: 'admin_panel_settings', home: '/app/pengelola.html', who: 'panitia/EO dan petugas gate' },
-        'command-center': { label: 'Command Center', icon: 'hub', home: '/app/index.html', who: 'manajemen mal dan operator Command Center' },
+        pengelola: { label: 'Konsol Pengelola Acara', icon: 'admin_panel_settings', home: '/pengelola', who: 'panitia/EO dan petugas gate' },
+        'command-center': { label: 'Command Center', icon: 'hub', home: '/command-center', who: 'manajemen mal dan operator Command Center' },
       };
       const q = new URLSearchParams(location.search);
       const role = ROLES[q.get('role')] ? q.get('role') : 'pengelola';
@@ -69,7 +69,7 @@
           if (r.status === 429) return lock(j.retry || 60);
           say(j.error || 'PIN tidak dapat diverifikasi. Coba lagi.');
         } catch (e) {
-          say('Server PIN tidak tersedia. Jalankan python3 server.py untuk memakai akses PIN.');
+          say('Server PIN tidak tersedia. Jalankan node server.js untuk memakai akses PIN.');
         }
         go.disabled = false; pin.focus();
       });
