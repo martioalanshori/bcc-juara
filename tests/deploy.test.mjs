@@ -79,3 +79,25 @@ test('polling Vercel: perubahan dari perangkat lain mempercepat lagi', async () 
   assert.ok(idle <= 2, 'sepi: ~2 tarikan per 30 dtk, dapat ' + idle);
   assert.ok(busy >= idle + 2, 'setelah perubahan lebih sering: sepi ' + idle + ', ramai ' + busy);
 });
+
+// Cache 1 tahun untuk aset hanya aman bila setiap tag aset ber-?v= (URL berubah saat versi naik).
+test('setiap aset di app/pages ber-?v= dan versinya seragam (aman untuk cache immutable)', async () => {
+  const { readdirSync } = await import('node:fs');
+  const dir = new URL('../app/pages/', import.meta.url);
+  const vers = new Set();
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.html'))) {
+    const html = readFileSync(new URL(f, dir), 'utf8');
+    for (const [, u] of html.matchAll(/(?:src|href)="(\/app\/[^"]+)"/g)) {
+      const m = /\?v=(\d+)$/.exec(u);
+      assert.ok(m, f + ': aset tanpa ?v= akan ter-cache 1 tahun: ' + u);
+      if (!u.includes('/fonts/fonts.css')) vers.add(m[1]); // fonts.css punya versi sendiri
+    }
+  }
+  assert.equal(vers.size, 1, 'semua JS/CSS memakai ?v= yang sama, dapat: ' + [...vers].join(', '));
+});
+
+test('vercel.json: aset /app di-cache immutable, tidak ada no-store untuk aset', () => {
+  const r = vercel.routes.find((x) => x.src.startsWith('/app/') && x.headers);
+  assert.match(r.headers['Cache-Control'], /max-age=31536000, immutable/);
+  assert.ok(!vercel.routes.some((x) => x.headers && /no-store/.test(x.headers['Cache-Control'] || '')));
+});

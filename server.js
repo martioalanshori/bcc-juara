@@ -20,7 +20,8 @@ const { createAuth, setPin, ensureInitialPins } = require('./server/auth');
 const ROOT = __dirname;
 const DATA = path.join(ROOT, 'data');
 const PIN_NOTE = path.join(DATA, 'PIN_AWAL.txt');
-const args = process.argv.slice(2);
+const DEV = process.argv.includes('--dev'); // npm run dev: aset tidak di-cache
+const args = process.argv.slice(2).filter((a) => a !== '--dev');
 
 if (args[0] === '--set-pin') {
   const [, role, pin] = args;
@@ -46,7 +47,7 @@ if (Object.keys(fresh).length) {
   for (const [r, p] of Object.entries(fresh)) console.log('  ' + r.padEnd(15) + ' ' + p);
 }
 
-const handler = createApp({ root: ROOT, store: fileStore(DATA), auth: createAuth({ dataDir: DATA }) });
+const handler = createApp({ root: ROOT, store: fileStore(DATA), auth: createAuth({ dataDir: DATA }), dev: DEV });
 http.createServer((req, res) => {
   if (req.method === 'POST') res.on('finish', () => console.log(req.socket.remoteAddress, req.method, req.url, res.statusCode));
   handler(req, res);
@@ -61,5 +62,6 @@ http.createServer((req, res) => {
     console.log('  3. Command Center mall 360  : ' + base + '/command-center');
     console.log('     Check-in gate (ponsel)   : ' + base + '/checkin');
   }
+  if (DEV) console.log('Mode dev: aset tidak di-cache, server restart otomatis saat file server/ berubah.');
   console.log('Path 2 & 3 (dan /checkin) meminta PIN peran. Ganti PIN: node server.js --set-pin <peran> <PIN>');
 });

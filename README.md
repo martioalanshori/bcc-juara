@@ -43,7 +43,7 @@ Butuh Node.js 20+ saja, **tanpa `npm install`** (proyek ini sengaja tanpa depend
 
 ```bash
 npm start          # sama dengan: node server.js (bisa diakses perangkat lain di LAN)
-npm run dev        # hanya komputer ini, server restart otomatis saat file server/ berubah
+npm run dev        # hanya komputer ini, server restart otomatis saat file server/ berubah, aset tidak di-cache
 npm test           # semua tes
 npm run set-pin -- pengelola 123456
 ```
@@ -111,3 +111,5 @@ Kuota gratis: Vercel Hobby ±1 juta (sebagian sumber menyebut 100 ribu) function
 Perkiraan: satu tab yang terus terlihat dan sepi ±5.800 request/hari. Untuk demo beberapa jam dengan beberapa perangkat jauh di bawah kuota. Jangan biarkan banyak tab Command Center terbuka 24 jam di Vercel; untuk pemakaian harian pakai versi LAN. Pantau di dashboard Vercel (Usage) dan Upstash.
 
 Aturan agar deploy tetap jalan (dijaga `tests/deploy.test.mjs`): `package.json` tanpa dependensi, tanpa script `build`/`postinstall`, dan tanpa `"type": "module"`.
+
+**Cache browser:** JS, CSS, dan font di-cache 1 tahun, jadi kunjungan berikutnya hanya mengunduh HTML (±4 KB, sebelumnya ±450 KB untuk Command Center). Akibatnya, **setiap mengubah JS/CSS wajib menaikkan `?v=` di semua `app/pages/*.html`**, kalau tidak pengguna tetap memakai versi lama. `npm run dev` mematikan cache selama pengembangan.

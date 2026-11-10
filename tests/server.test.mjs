@@ -125,6 +125,23 @@ test('API state: CAS berversi, 409 saat basi, 403 dari guard, reset hanya pengel
   assert.equal((await req('GET', '/api/evt/state')).json.state, null);
 });
 
+test('cache: aset ber-?v= immutable, unduhan 1 jam, HTML & API tidak di-cache', async () => {
+  const cc = async (p) => (await req('GET', p)).headers['cache-control'];
+  assert.equal(await cc('/app/js/event/engine.js?v=99'), 'public, max-age=31536000, immutable');
+  assert.equal(await cc('/app/vendor/qrcode.js?v=99'), 'public, max-age=31536000, immutable');
+  assert.equal(await cc('/docs/unduhan/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md'), 'public, max-age=3600');
+  assert.equal(await cc('/pengunjung'), 'no-store');
+  assert.equal(await cc('/api/health'), 'no-store');
+});
+
+test('cache: mode dev (npm run dev) tidak meng-cache aset', async () => {
+  const app = createApp({ root: ROOT, store: fileStore(dir), auth: createAuth({ dataDir: dir, env: {} }), dev: true });
+  const s = http.createServer(app); await new Promise((r) => s.listen(0, '127.0.0.1', r));
+  const cc = await new Promise((resolve) => http.get({ host: '127.0.0.1', port: s.address().port, path: '/app/js/event/engine.js?v=99' }, (res) => { res.resume(); resolve(res.headers['cache-control']); }));
+  s.close();
+  assert.equal(cc, 'no-store');
+});
+
 test('health & API tak dikenal', async () => {
   assert.equal((await req('GET', '/api/health')).json.ok, true);
   assert.equal((await req('GET', '/api/tidak-ada')).status, 404);

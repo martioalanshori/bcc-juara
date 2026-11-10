@@ -25,11 +25,23 @@ const TYPES = {
 };
 const MAX_BODY = 5 * 1024 * 1024;
 
+// Kebijakan cache aset (sama dengan header /app/ di vercel.json):
+//  - URL ber-?v= (semua tag di app/pages, dijaga tests/deploy.test.mjs) dan font .woff2 (nama ber-hash): 1 tahun,
+//    immutable. Mengubah JS/CSS WAJIB menaikkan ?v= di semua halaman, kalau tidak browser memakai versi lama.
+//  - Lainnya (unduhan docs/unduhan): 1 jam.  - HTML & API: tidak pernah di-cache.
+//  - dev (npm run dev): tanpa cache sama sekali, agar hasil edit langsung terlihat tanpa menaikkan ?v=.
+const IMMUTABLE = 'public, max-age=31536000, immutable';
+function assetCache(file, versioned, dev) {
+  if (dev) return 'no-store';
+  return versioned || file.endsWith('.woff2') ? IMMUTABLE : 'public, max-age=3600';
+}
+
 // opts: root (folder proyek), store (lihat store.js; null = belum diatur), auth (auth.js),
 //       secureCookie (true di HTTPS), clientIp(req) (alamat untuk kunci salah PIN),
-//       poll (jadwal tarik state di browser; default LAN = tiap 1 detik, juga saat tab tersembunyi).
+//       poll (jadwal tarik state di browser; default LAN = tiap 1 detik, juga saat tab tersembunyi),
+//       dev (true = aset tidak di-cache, untuk npm run dev).
 const LAN_POLL = { min: 1000, max: 1000, hidden: true };
-function createApp({ root, store, auth, secureCookie = false, clientIp = (req) => req.socket.remoteAddress || 'unknown', poll = LAN_POLL }) {
+function createApp({ root, store, auth, secureCookie = false, clientIp = (req) => req.socket.remoteAddress || 'unknown', poll = LAN_POLL, dev = false }) {
   const now = () => Date.now();
   const send = (res, code, headers, body) => { res.writeHead(code, headers); res.end(res.req.method === 'HEAD' ? undefined : body); };
   const json = (res, code, obj, extra) => send(res, code, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store', ...extra }, JSON.stringify(obj));
@@ -53,7 +65,7 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
     let data;
     try { data = fs.readFileSync(file); } catch (e) { return json(res, 404, { ok: false, error: 'Tidak ditemukan' }); }
     const ext = path.extname(file).toLowerCase();
-    send(res, 200, { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': cache || (/\.(html|js|css)$/.test(ext) ? 'no-store' : 'public, max-age=86400') }, data);
+    send(res, 200, { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': cache }, data);
   }
 
   async function api(req, res, p, url) {
@@ -137,7 +149,7 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
       // Aset: file harus benar-benar berada di dalam folder statis (kebal ../ dan %2e%2e).
       const file = path.resolve(root, '.' + p);
       const inStatic = STATIC_DIRS.some((d) => file.startsWith(path.resolve(root, '.' + d) + path.sep));
-      if (inStatic && path.extname(file).toLowerCase() !== '.html' && fs.existsSync(file) && fs.statSync(file).isFile()) return serveFile(res, file);
+      if (inStatic && path.extname(file).toLowerCase() !== '.html' && fs.existsSync(file) && fs.statSync(file).isFile()) return serveFile(res, file, assetCache(file, url.searchParams.has('v'), dev));
       return send(res, 404, { 'Content-Type': TYPES['.txt'] }, 'Halaman tidak ditemukan.');
     } catch (e) {
       return json(res, 500, { ok: false, error: 'Kesalahan server: ' + e.message });
