@@ -259,9 +259,11 @@
     // H. Tenant (logo berjalan + tombol Jeda) dan promo untuk pemegang tiket
     const T = (window.SMB_TENANTS || []).filter((x) => x && x.name);
     const logo = (x, hidden) => `<li class="pv-logo" ${hidden ? 'aria-hidden="true"' : ''} title="${esc(x.name)}${x.cat ? ' · ' + esc(x.cat) : ''}">${x.logo ? `<img src="${esc(x.logo)}" alt="${hidden ? '' : esc(x.name)}" loading="lazy" decoding="async">` : `<span>${esc(x.name)}</span>`}</li>`;
-    let run = T.slice(); while (T.length && run.length < 10) run = run.concat(T);
-    const marquee = T.length ? sec('tenant', L('Tenant di Summarecon Mall Bandung', 'Tenants at Summarecon Mall Bandung'), `<div class="pv-marquee" style="--dur:${Math.max(30, run.length * 3)}s">
-        <ul class="pv-marquee-track" aria-label="${L('Daftar tenant', 'Tenant list')}">${run.map((x, i) => logo(x, i >= T.length)).join('')}${run.map((x) => logo(x, true)).join('')}</ul></div>`,
+    // Dua baris berjalan berlawanan arah: baris atas ke kiri, baris bawah ke kanan. Tenant dibagi selang-seling.
+    const rows = T.length > 4 ? [T.filter((_, i) => i % 2 === 0), T.filter((_, i) => i % 2 === 1)] : [T];
+    const lane = (list, k) => { let run = list.slice(); while (run.length < 8) run = run.concat(list);
+      return `<div class="pv-marquee${k ? ' rev' : ''}" style="--dur:${Math.max(28, run.length * 3.5)}s"><ul class="pv-marquee-track" aria-label="${L('Daftar tenant', 'Tenant list')}${rows.length > 1 ? ' ' + (k + 1) + '/' + rows.length : ''}">${run.map((x, i) => logo(x, i >= list.length)).join('')}${run.map((x) => logo(x, true)).join('')}</ul></div>`; };
+    const marquee = T.length ? sec('tenant', L('Tenant di Summarecon Mall Bandung', 'Tenants at Summarecon Mall Bandung'), `<div class="pv-marquees">${rows.map(lane).join('')}</div>`,
       `<button type="button" class="lp-more" data-marquee aria-pressed="false">${ic('pause', 'text-[18px]')}${L('Jeda', 'Pause')}</button>`) : '';
     const promoHtml = sec('promo', L('Promo tenant untuk pemegang tiket', 'Tenant deals for ticket holders'), `<p class="lp-lead">${L('Contoh promo. Tunjukkan e-ticket di kasir tenant yang ikut serta.', 'Sample deals. Show your e-ticket at participating tenants.')}</p>
       <div class="lp-row4">${PROMOS.map((p) => `<article class="lp-promo"><img src="${img(p.img)}" alt="" loading="lazy"><div class="lp-promo-body"><p class="lp-meta">${plate(p.floor)}<span>${esc(tx2(p.place))}</span></p><h3 class="lp-promo-title">${esc(tx2(p.title))}</h3><p class="lp-promo-text">${esc(tx2(p.text))}</p></div></article>`).join('')}</div>`);
@@ -896,7 +898,7 @@
     bindHero();
     const mq = app.querySelector('[data-marquee]');
     if (mq) mq.addEventListener('click', () => {
-      const box = app.querySelector('.pv-marquee'); const paused = box.classList.toggle('paused');
+      const boxes = app.querySelectorAll('.pv-marquee'); const paused = !boxes[0].classList.contains('paused'); boxes.forEach((b) => b.classList.toggle('paused', paused));
       mq.setAttribute('aria-pressed', String(paused)); mq.innerHTML = ic(paused ? 'play_arrow' : 'pause', 'text-[18px]') + ' ' + (paused ? L('Putar', 'Play') : L('Jeda', 'Pause'));
     });
     app.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));

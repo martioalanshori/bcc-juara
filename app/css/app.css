@@ -1487,3 +1487,10 @@ html[data-theme="dark"] .pg-body .tk-it.warn b { color: rgb(var(--error)); font-
 .cc-prof-item:hover, .cc-prof-item:focus-visible { background: rgb(var(--on-surface) / .07); outline: none; }
 .cc-shift { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; line-height: 16px; color: rgb(var(--on-surface)); }
 .cc-shift i { width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--secondary)); }
+
+/* logo tenant: dua baris berlawanan arah, tanpa bingkai */
+.pv-marquees { display: grid; gap: 12px; }
+.pv-marquee.rev .pv-marquee-track { animation-direction: reverse; }
+.pv-logo, .pv-page .pv-logo { border: 0; box-shadow: none; background: transparent; padding: 8px 12px; }
+.pv-logo img { mix-blend-mode: multiply; } /* latar putih JPG menyatu dengan halaman */
+html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
