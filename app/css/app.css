@@ -378,7 +378,7 @@ body.pv-wide .pv-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1
 /* Logo tenant berjalan (marquee): track berisi daftar dua kali, digeser -50% lalu mengulang tanpa jeda */
 .pv-marquee { position: relative; overflow: hidden; padding: 4px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
 .pv-marquee-track { display: flex; width: max-content; animation: pv-marquee var(--dur, 40s) linear infinite; }
-.pv-marquee:hover .pv-marquee-track, .pv-marquee:focus-within .pv-marquee-track, .pv-marquee.paused .pv-marquee-track { animation-play-state: paused; }
+.pv-marquee.paused .pv-marquee-track { animation-play-state: paused; }
 @keyframes pv-marquee { to { transform: translateX(-50%); } }
 .pv-logo { flex: 0 0 auto; margin-right: 12px; width: 148px; height: 72px; display: flex; align-items: center; justify-content: center; padding: 10px 14px; border-radius: 12px; background: #fff; border: 1px solid rgb(var(--outline-variant) / .7); }
 .pv-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }

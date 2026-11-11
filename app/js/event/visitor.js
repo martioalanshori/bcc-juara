@@ -256,15 +256,14 @@
           ${plate(x.floor, true)}<span class="lp-dir-name"><b>${esc(x.key)}</b><small>${esc(tx2(x.note))}</small></span><span class="lp-dir-n"><b>${x.n}</b> ${L('acara', x.n === 1 ? 'event' : 'events')}</span></button></li>`).join('')}</ul></div>
       <figure class="lp-dir-photo" aria-hidden="true"><img src="${img(areas[dirIdx].img)}" alt="" loading="lazy" data-dir-img><figcaption data-dir-cap>${plate(areas[dirIdx].floor)}${esc(areas[dirIdx].key)}</figcaption></figure></section>`;
 
-    // H. Tenant (logo berjalan + tombol Jeda) dan promo untuk pemegang tiket
+    // H. Tenant (logo berjalan) dan promo untuk pemegang tiket
     const T = (window.SMB_TENANTS || []).filter((x) => x && x.name);
     const logo = (x, hidden) => `<li class="pv-logo" ${hidden ? 'aria-hidden="true"' : ''} title="${esc(x.name)}${x.cat ? ' · ' + esc(x.cat) : ''}">${x.logo ? `<img src="${esc(x.logo)}" alt="${hidden ? '' : esc(x.name)}" loading="lazy" decoding="async">` : `<span>${esc(x.name)}</span>`}</li>`;
     // Dua baris berjalan berlawanan arah: baris atas ke kiri, baris bawah ke kanan. Tenant dibagi selang-seling.
     const rows = T.length > 4 ? [T.filter((_, i) => i % 2 === 0), T.filter((_, i) => i % 2 === 1)] : [T];
     const lane = (list, k) => { let run = list.slice(); while (run.length < 8) run = run.concat(list);
       return `<div class="pv-marquee${k ? ' rev' : ''}" style="--dur:${Math.max(28, run.length * 3.5)}s"><ul class="pv-marquee-track" aria-label="${L('Daftar tenant', 'Tenant list')}${rows.length > 1 ? ' ' + (k + 1) + '/' + rows.length : ''}">${run.map((x, i) => logo(x, i >= list.length)).join('')}${run.map((x) => logo(x, true)).join('')}</ul></div>`; };
-    const marquee = T.length ? sec('tenant', L('Tenant di Summarecon Mall Bandung', 'Tenants at Summarecon Mall Bandung'), `<div class="pv-marquees">${rows.map(lane).join('')}</div>`,
-      `<button type="button" class="lp-more" data-marquee aria-pressed="false">${ic('pause', 'text-[18px]')}${L('Jeda', 'Pause')}</button>`) : '';
+    const marquee = T.length ? sec('tenant', L('Tenant di Summarecon Mall Bandung', 'Tenants at Summarecon Mall Bandung'), `<div class="pv-marquees">${rows.map(lane).join('')}</div>`) : '';
     const promoHtml = sec('promo', L('Promo tenant untuk pemegang tiket', 'Tenant deals for ticket holders'), `<p class="lp-lead">${L('Contoh promo. Tunjukkan e-ticket di kasir tenant yang ikut serta.', 'Sample deals. Show your e-ticket at participating tenants.')}</p>
       <div class="lp-row4">${PROMOS.map((p) => `<article class="lp-promo"><img src="${img(p.img)}" alt="" loading="lazy"><div class="lp-promo-body"><p class="lp-meta">${plate(p.floor)}<span>${esc(tx2(p.place))}</span></p><h3 class="lp-promo-title">${esc(tx2(p.title))}</h3><p class="lp-promo-text">${esc(tx2(p.text))}</p></div></article>`).join('')}</div>`);
 
@@ -896,11 +895,6 @@
     if (cr) cr.addEventListener('click', () => modal(L('Hubungi tim event mal', 'Contact the mall events team'), `<p class="font-body-sm text-body-sm text-on-surface-variant">${L('Contoh kontak untuk prototipe. Ganti dengan kontak tim event Summarecon Mall Bandung.', 'Sample contact for the prototype. Replace with the Summarecon Mall Bandung events team contact.')}</p>
       <ul class="mt-3 flex flex-col gap-2 font-body-sm text-body-sm"><li>${ic('support_agent', 'text-primary text-[18px] align-middle')} ${L('Customer Service, GF dekat lobi utama', 'Customer Service, GF near the main lobby')}</li><li>${ic('schedule', 'text-primary text-[18px] align-middle')} ${L('Setiap hari', 'Daily')} ${MALL.hours}</li><li>${ic('description', 'text-primary text-[18px] align-middle')} ${L('Siapkan: jenis acara, perkiraan pengunjung, tanggal, dan area yang diinginkan', 'Have ready: event type, expected visitors, date, and preferred area')}</li></ul>`));
     bindHero();
-    const mq = app.querySelector('[data-marquee]');
-    if (mq) mq.addEventListener('click', () => {
-      const boxes = app.querySelectorAll('.pv-marquee'); const paused = !boxes[0].classList.contains('paused'); boxes.forEach((b) => b.classList.toggle('paused', paused));
-      mq.setAttribute('aria-pressed', String(paused)); mq.innerHTML = ic(paused ? 'play_arrow' : 'pause', 'text-[18px]') + ' ' + (paused ? L('Putar', 'Play') : L('Jeda', 'Pause'));
-    });
     app.querySelectorAll('[data-jump]').forEach((b) => b.addEventListener('click', () => { const sec = document.getElementById('sec-' + b.dataset.jump); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
     const sh = app.querySelector('#share');
     if (sh) sh.addEventListener('click', async () => {
