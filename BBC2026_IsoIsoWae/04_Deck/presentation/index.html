@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMICC-TS · Pitch Deck Iso Iso Wae</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Ikon garis 24x24, satu gaya untuk semua slide -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/></symbol>
+  <symbol id="i-band" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/><circle cx="7.5" cy="13.5" r=".8"/><circle cx="16.5" cy="13.5" r=".8"/></symbol>
+  <symbol id="i-cctv" viewBox="0 0 24 24"><path d="M3 7l13 5 2-4L5 3z"/><path d="M10 10l-1 5H4"/><path d="M4 12v6"/><path d="M17 11l3 1"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10v10h16V10"/><path d="M3 10l2-6h14l2 6z"/><path d="M10 20v-6h4v6"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-park" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5.5 5"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M7 12h10"/></symbol>
+  <symbol id="i-hub" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="3.5" r="1.5"/><circle cx="12" cy="20.5" r="1.5"/><circle cx="4" cy="8" r="1.5"/><circle cx="20" cy="8" r="1.5"/><circle cx="4" cy="16" r="1.5"/><circle cx="20" cy="16" r="1.5"/><path d="M12 5v4M12 15v4M5.3 8.8l4 2M18.7 8.8l-4 2M5.3 15.2l4-2M18.7 15.2l-4-2"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/></symbol>
+  <symbol id="i-clean" viewBox="0 0 24 24"><path d="M14 3l-4 9"/><path d="M6 12h10l2 9H4z"/><path d="M9 16v5M13 16v5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+</svg>
+
+<main class="deck">
+
+<!-- 1 · Pembuka -->
+<section class="slide s-cover paper" data-title="Pembuka">
+  <div class="left">
+    <div class="event">Bandung Build Challenge 2026</div>
+    <div>
+      <h1 class="title">Event di Summarecon Mall Bandung, terpantau sebelum penuh.</h1>
+      <p class="product"><b>SMICC-TS</b>, sistem tiket dan check-in event yang terhubung ke Command Center mall. Dibuat oleh tim Iso Iso Wae.</p>
+    </div>
+    <div class="team">
+      <div><b>Dima Fathur Rahman</b><span>Hustler, ketua tim</span></div>
+      <div><b>Muhammad Martio Al Anshori</b><span>Hipster, UI/UX</span></div>
+      <div><b>Adnan Hadiyana</b><span>Hacker, engineering</span></div>
+    </div>
+  </div>
+  <figure class="plan">
+    <!-- sumber: assets/illustrations/denah-gf.svg (disisipkan agar memakai font Inter) -->
+    <svg role="img" aria-label="Denah Ground Floor Summarecon Mall Bandung yang disederhanakan, dengan Atrium Cibadag ditandai" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 620" font-family="Inter, sans-serif">
+  <g fill="#F6C48F">
+    <path d="M70 520 Q60 70 680 60 L680 120 Q130 130 130 520 Z"/>
+    <rect x="700" y="60" width="130" height="200" rx="6"/>
+    <rect x="700" y="290" width="130" height="270" rx="6"/>
+    <rect x="200" y="545" width="470" height="50" rx="6"/>
+    <rect x="20" y="380" width="90" height="200" rx="6"/>
+  </g>
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+    <path d="M190 490 Q180 150 640 150" stroke-width="44"/>
+    <path d="M190 500 L640 500" stroke-width="40"/>
+    <path d="M640 150 L640 500" stroke-width="40"/>
+  </g>
+  <path d="M245 465 Q245 212 600 205 L600 465 Z" fill="#1FA64A"/>
+  <text x="430" y="372" text-anchor="middle" fill="#FFFFFF" font-size="24" font-weight="600">Sawarga Courtyard</text>
+  <g stroke="#13233F" stroke-width="4" fill="#FFFFFF">
+    <circle cx="190" cy="500" r="50"/>
+    <circle cx="640" cy="150" r="50"/>
+  </g>
+  <circle cx="640" cy="500" r="50" fill="#FFFFFF" stroke="#EE8A2A" stroke-width="10"/>
+  <circle cx="640" cy="500" r="74" fill="none" stroke="#EE8A2A" stroke-width="3" stroke-dasharray="6 8"/>
+  <g font-size="20" font-weight="600" fill="#13233F" text-anchor="middle">
+    <text x="190" y="494">Atrium</text><text x="190" y="518">Ciunik</text>
+    <text x="640" y="144">Atrium</text><text x="640" y="168">Cileutik</text>
+    <text x="640" y="494">Atrium</text><text x="640" y="518">Cibadag</text>
+  </g>
+</svg>
+    <p>Denah Ground Floor, digambar ulang dari papan denah di mall (12 Nov 2026)</p>
+  </figure>
+  <div class="foot"><span class="src"></span><span class="no">1 / 11</span></div>
+</section>
+
+<!-- 2 · Masalah -->
+<section class="slide s-problem" data-title="Masalah">
+  <h2 class="h1">Event hampir setiap hari, tapi tidak ada yang tahu berapa orang yang sudah masuk.</h2>
+  <div class="flow4">
+    <div class="node"><div class="ic"><svg class="i"><use href="#i-ticket"/></svg></div><div class="gap"></div><h3 class="h3">Tiket</h3><p class="small muted">Dijual lewat loket.com. Datanya milik platform.</p></div>
+    <div class="node"><div class="ic"><svg class="i"><use href="#i-band"/></svg></div><div class="gap"></div><h3 class="h3">Peserta</h3><p class="small muted">Ditandai gelang. Tidak tercatat di sistem Summarecon.</p></div>
+    <div class="node"><div class="ic"><svg class="i"><use href="#i-car"/></svg></div><div class="gap"></div><h3 class="h3">Kendaraan</h3><p class="small muted">Gate parkir manual. Ditutup setelah penuh.</p></div>
+    <div class="node"><div class="ic"><svg class="i"><use href="#i-cctv"/></svg></div><h3 class="h3">Pemantauan</h3><p class="small muted">CCTV dan 2 petugas mobile per shift.</p></div>
+  </div>
+  <div class="bottom">
+    <div class="num">±30</div>
+    <p class="body">event per bulan, untuk Summarecon dan tenant. Keempatnya berjalan sendiri-sendiri.</p>
+  </div>
+  <div class="foot"><span class="src">Sumber: wawancara Pak Ade (PIC Event) dan Pak Asep (Security), Summarecon Mall Bandung, 12 Nov 2026</span><span class="no">2 / 11</span></div>
+</section>
+
+<!-- 3 · Bukti -->
+<section class="slide s-proof paper" data-title="Bukti">
+  <figure class="photo">
+    <img src="assets/images/foto-03_bu-mei_petugas-parkir_2026-11-12.jpeg" alt="Bu Mei, petugas parkir, di area parkir Summarecon Mall Bandung">
+    <figcaption>Bu Mei, petugas parkir, saat wawancara di area parkir</figcaption>
+  </figure>
+  <div class="right">
+    <h2 class="h1">Kamis pagi, parkir motor sudah penuh.</h2>
+    <div class="big num">1.200<span> / 1.200</span></div>
+    <div class="meter" role="img" aria-label="Kapasitas parkir motor terisi penuh"></div>
+    <p class="when body muted">Kamis, 12 November 2026, sebelum pukul 11.30. Hari kerja, belum ada event besar.</p>
+    <div class="support">
+      <div><div class="num">34 hari</div><p class="small muted">Area Parkir Barat dipakai Festival Kuliner Bandung Vol. 3</p></div>
+      <div><div class="num">72 <span class="muted" style="font-weight:400">dari 125</span></div><p class="small muted">keluhan pengunjung di Google Maps menyebut parkir</p></div>
+    </div>
+  </div>
+  <div class="foot" style="left:800px"><span class="src">Sumber: wawancara Bu Mei, 12 Nov 2026; Fimela (FKB Vol. 3, 25 Agu sampai 27 Sep 2026); scraping 2.300 ulasan Google Maps, 12 Nov 2026</span><span class="no">3 / 11</span></div>
+</section>
+
+<!-- 4 · Kerugian mall -->
+<section class="slide s-loss dark" data-title="Kerugian mall">
+  <p class="lead">Setiap 1% pengunjung yang batal datang, belanja yang hilang dari mall:</p>
+  <div class="money"><span class="num">Rp25 juta</span><span class="per">per hari</span></div>
+  <p class="year">Sekitar <b>Rp9 miliar per tahun</b>, dari belanja di tenant saja.</p>
+  <div class="formula">
+    <div class="term"><b>25.000</b>pengunjung per hari kerja</div><span class="op">×</span>
+    <div class="term"><b>Rp100.000</b>belanja per orang</div><span class="op">×</span>
+    <div class="term"><b>1%</b>pengunjung batal</div><span class="op">=</span>
+    <div class="term"><b>Rp25 juta</b>per hari</div>
+    <span style="margin-left:8px">Semua input memakai batas bawah.</span>
+  </div>
+  <div class="leaks">
+    <div><span class="k"><svg class="i"><use href="#i-store"/></svg>Omzet event</span><span class="v">Rp40 juta per hari untuk setiap 1% saat Roeang Kita (target Rp12 miliar dalam 3 hari)</span></div>
+    <div><span class="k"><svg class="i"><use href="#i-park"/></svg>Lahan parkir</span><span class="v">27.200 slot-hari hilang selama FKB (34 hari × ±800 slot)</span></div>
+    <div><span class="k"><svg class="i"><use href="#i-cal"/></svg>Jadwal area</span><span class="v">Pengajuan lewat 2 divisi lama, area tertahan, bentrok baru ketahuan belakangan</span></div>
+    <div><span class="k"><svg class="i"><use href="#i-star"/></svg>Reputasi</span><span class="v">125 keluhan di Google Maps, dibaca calon pengunjung sebelum datang</span></div>
+  </div>
+  <div class="foot"><span class="src">Sumber: target pengunjung, Bisnis.com 19 Jan 2024; belanja per orang, Ketua APPBI Malang Raya via Jatim Times 23 Jul 2025; Roeang Kita, Journal Arta; Bu Mei; scraping Google Maps. Rumus lengkap di Appendix A1</span><span class="no">4 / 11</span></div>
+</section>
+
+<!-- 5 · Target pengguna -->
+<section class="slide" data-title="Target pengguna">
+  <h2 class="h1">Kami bicara langsung dengan tiga orang yang merasakannya.</h2>
+  <div class="people">
+    <div class="person main">
+      <div class="media"><img src="assets/images/foto-02_pak-ade_manajemen-pic-event_2026-11-12.jpeg" style="object-view-box: inset(0 20% 0 49%); object-position: 50% 15%" alt="Pak Ade, manajemen mall dan PIC Event"></div>
+      <div class="who"><b>Pak Ade</b><span class="tag">Pengguna utama</span></div>
+      <div class="role">Manajemen mall, PIC Event</div>
+      <q>Inginnya yang masuk itu tercatat di sistem, jadi bisa kepantau.</q>
+    </div>
+    <div class="person">
+      <div class="media"><img src="assets/images/foto-01_pak-asep_security_2026-11-12.jpeg" style="object-view-box: inset(0 48% 0 23%); object-position: 50% 10%" alt="Pak Asep, security"></div>
+      <div class="who"><b>Pak Asep</b></div>
+      <div class="role">Security</div>
+      <q>Kalau sudah penuh baru gate di-cut, sisanya dilempar ke bahu jalan.</q>
+    </div>
+    <div class="person">
+      <div class="media"><img src="assets/images/foto-03_bu-mei_petugas-parkir_2026-11-12.jpeg" style="object-view-box: inset(0 17% 0 47%); object-position: 50% 50%" alt="Bu Mei, petugas parkir"></div>
+      <div class="who"><b>Bu Mei</b></div>
+      <div class="role">Petugas parkir</div>
+      <q>Kalau lagi rame banget, tidak ke-handle.</q>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Wawancara tatap muka di Summarecon Mall Bandung, Kamis 12 Nov 2026. Kutipan disusun dari catatan tim</span><span class="no">5 / 11</span></div>
+</section>
+
+<!-- 6 · Solusi -->
+<section class="slide paper" data-title="Solusi">
+  <h2 class="h1">Satu alur: dari pengajuan acara sampai orang dan kendaraan di lokasi.</h2>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3 class="h3">Ajukan dan setujui</h3><p class="actor">Tenant/EO mengajukan, Divisi Event dan Operasional Mall menyetujui. Area dan lahan parkir dicek.</p>
+      <div class="shot media top"><img src="assets/images/app-persetujuan-detail.png" alt="Layar Persetujuan Acara di Command Center"></div></div>
+    <div class="step"><div class="n">2</div><h3 class="h3">Jual tiket</h3><p class="actor">Pengunjung memilih kursi, kursi ditahan 8 menit, e-ticket QR terbit.</p>
+      <div class="shot phone ped"><img style="object-view-box: inset(13% 0 0 0)" src="assets/images/app-pengunjung.png" alt="Layar pilih kursi di portal pengunjung"></div></div>
+    <div class="step"><div class="n">3</div><h3 class="h3">Check-in QR</h3><p class="actor">Petugas gate memindai. Setiap peserta tercatat saat masuk.</p>
+      <div class="shot phone chk"><img src="assets/images/app-checkin.png" alt="Layar check-in dengan hasil valid"></div></div>
+    <div class="step"><div class="n">4</div><h3 class="h3">Command Center</h3><p class="actor">Jumlah orang, perkiraan kendaraan, dan insiden gate terlihat langsung.</p>
+      <div class="shot media top"><img src="assets/images/app-dampak.png" alt="Panel dampak operasional mall: perkiraan kendaraan dan orang per acara"></div></div>
+  </div>
+  <div class="foot"><span class="src">Tangkapan layar prototype SMICC-TS (smiccts.vercel.app), data contoh</span><span class="no">6 / 11</span></div>
+</section>
+
+<!-- 7 · Pembeda -->
+<section class="slide s-diff" data-title="Pembeda">
+  <div class="left">
+    <h2 class="h1">loket.com menjual tiket. <span>SMICC-TS memantau mall.</span></h2>
+    <p class="body muted" style="margin-top:32px">Summarecon sudah memakai loket.com. Datanya berhenti di penjualan.</p>
+  </div>
+  <table class="compare">
+    <thead><tr><th></th><th>loket.com (sekarang)</th><th class="us">SMICC-TS</th></tr></thead>
+    <tbody>
+      <tr><td>Data peserta</td><td class="them"><span class="mark no"><svg class="i"><use href="#i-x"/></svg></span>Milik platform, terpisah per event</td><td class="us"><span class="mark yes"><svg class="i"><use href="#i-check"/></svg></span>Milik Summarecon, satu dasbor untuk semua event</td></tr>
+      <tr><td>Event gratis dan tenant</td><td class="them"><span class="mark no"><svg class="i"><use href="#i-x"/></svg></span>Tidak tercakup</td><td class="us"><span class="mark yes"><svg class="i"><use href="#i-check"/></svg></span>Tercatat lewat registrasi dan check-in</td></tr>
+      <tr><td>Peserta yang masuk</td><td class="them"><span class="mark no"><svg class="i"><use href="#i-x"/></svg></span>Gelang, tidak terhubung</td><td class="us"><span class="mark yes"><svg class="i"><use href="#i-check"/></svg></span>Setiap peserta tercatat saat check-in QR</td></tr>
+      <tr><td>Parkir</td><td class="them"><span class="mark no"><svg class="i"><use href="#i-x"/></svg></span>Tidak ada</td><td class="us"><span class="mark yes"><svg class="i"><use href="#i-check"/></svg></span>Perkiraan tambahan kendaraan dari tiket terjual</td></tr>
+      <tr><td>Masalah di lapangan</td><td class="them"><span class="mark no"><svg class="i"><use href="#i-x"/></svg></span>Tidak ada</td><td class="us"><span class="mark yes"><svg class="i"><use href="#i-check"/></svg></span>Anomali gate otomatis jadi tiket insiden dan SOP</td></tr>
+    </tbody>
+  </table>
+  <div class="foot"><span class="src">Sumber: wawancara Pak Ade dan Pak Asep, 12 Nov 2026 (RISET_LAPANGAN §4)</span><span class="no">7 / 11</span></div>
+</section>
+
+<!-- 8 · Dampak -->
+<section class="slide" data-title="Dampak">
+  <h2 class="h1">Dari menangani setelah penuh, menjadi bertindak sebelum pengunjung pergi.</h2>
+  <div class="impact">
+    <div class="head"></div><div class="head">Tanpa SMICC-TS</div><div class="head"></div><div class="head">Dengan SMICC-TS</div>
+    <div class="area">Pengunjung dan belanja tenant</div><div class="before">Baru tahu penuh setelah penuh</div><div class="arr"><svg class="i"><use href="#i-arrow"/></svg></div><div class="after">Perkiraan orang dan kendaraan sejak tiket terjual</div>
+    <div class="area">Lahan parkir dan area</div><div class="before">Dipakai event tanpa terlihat dampaknya</div><div class="arr"><svg class="i"><use href="#i-arrow"/></svg></div><div class="after">Dicek saat acara diajukan, jadwal bentrok ditolak</div>
+    <div class="area">Pengajuan acara</div><div class="before">Berkas lewat 2 divisi, lama</div><div class="arr"><svg class="i"><use href="#i-arrow"/></svg></div><div class="after">Di sistem, waktu tunggu tiap divisi terlihat</div>
+    <div class="area">Keluhan</div><div class="before">Baru tahu dari media sosial</div><div class="arr"><svg class="i"><use href="#i-arrow"/></svg></div><div class="after">Insiden gate otomatis, ulasan dianalisis per topik</div>
+  </div>
+  <div class="foot"><span class="src">Kondisi sekarang dari wawancara 12 Nov 2026; kondisi dengan SMICC-TS dari fitur prototype</span><span class="no">8 / 11</span></div>
+</section>
+
+<!-- 9 · Pengembangan -->
+<section class="slide paper" data-title="Pengembangan ke depan">
+  <h2 class="h1">Mulai dari satu event, lalu terhubung langsung ke gate parkir dan CCTV.</h2>
+  <div class="road">
+    <div class="rail"></div>
+    <div class="stop now">
+      <div class="dot"><svg class="i"><use href="#i-flag"/></svg></div>
+      <div class="t"><span class="tag court">Siap sekarang</span></div>
+      <h3 class="h2">Uji coba satu event</h3>
+      <ul>
+        <li><b>Atrium Cibadag</b><span>Check-in QR dan Command Center untuk satu event Summarecon</span></li>
+        <li><b>Hitung ulang</b><span>Jumlah peserta tercatat dibandingkan hitungan manual</span></li>
+      </ul>
+    </div>
+    <div class="stop">
+      <div class="dot"><svg class="i"><use href="#i-car"/></svg></div>
+      <div class="t"><span class="tag plan">Rencana</span></div>
+      <h3 class="h2">Parkir terhubung</h3>
+      <ul>
+        <li><b>Plat didaftarkan saat beli tiket</b><span>Bu Mei tidak lagi mengetik plat manual</span></li>
+        <li><b>Gate parkir dan ANPR</b><span>Sisa slot terbaca langsung, peringatan muncul sebelum penuh</span></li>
+      </ul>
+    </div>
+    <div class="stop">
+      <div class="dot"><svg class="i"><use href="#i-hub"/></svg></div>
+      <div class="t"><span class="tag plan">Rencana</span></div>
+      <h3 class="h2">Mall terhubung</h3>
+      <ul>
+        <li><b>CCTV penghitung orang</b><span>Pak Asep tahu atrium mulai penuh tanpa menebak</span></li>
+        <li><b>Kebersihan mengikuti keramaian</b><span>Jadwal toilet menyesuaikan jumlah pengunjung</span></li>
+        <li><b>Ulasan dari X, TikTok, Instagram</b><span>Sekarang baru Google Maps</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Kebutuhan dari wawancara Pak Ade, Pak Asep, dan Bu Mei, 12 Nov 2026</span><span class="no">9 / 11</span></div>
+</section>
+
+<!-- 10 · Hook + demo -->
+<section class="slide dark s-hook" data-title="Hook dan demo">
+  <img class="bg" src="assets/images/app-command-center.png" alt="">
+  <h2 class="q">Bagaimana kalau Pak Ade tahu parkir akan penuh, <em>tiga hari sebelum event?</em></h2>
+  <div class="demo">
+    <img src="assets/icons/qr-smiccts.svg" alt="QR ke smiccts.vercel.app">
+    <div><b>Demo langsung, 1 menit</b><span>smiccts.vercel.app</span></div>
+  </div>
+  <div class="foot"><span class="src"></span><span class="no">10 / 11</span></div>
+</section>
+
+<!-- 11 · Terima kasih -->
+<section class="slide s-thanks paper" data-title="Terima kasih">
+  <div class="left">
+    <h2 class="title">Terima kasih.</h2>
+    <p class="tagline">Event Summarecon, terpantau sebelum penuh.</p>
+    <div class="links">
+      <div><svg class="i"><use href="#i-link"/></svg>smiccts.vercel.app</div>
+      <div><svg class="i"><use href="#i-code"/></svg>github.com/martioalanshori/bcc-juara</div>
+    </div>
+    <div class="team">
+      <div><b>Dima Fathur Rahman</b><span>Hustler, ketua tim</span></div>
+      <div><b>Muhammad Martio Al Anshori</b><span>Hipster, UI/UX</span></div>
+      <div><b>Adnan Hadiyana</b><span>Hacker, engineering</span></div>
+    </div>
+  </div>
+  <div class="qr">
+    <img src="assets/icons/qr-smiccts.svg" alt="QR ke smiccts.vercel.app">
+    <p>Pindai untuk mencoba prototype</p>
+  </div>
+  <div class="foot"><span class="src">Appendix A1 sampai A7 berisi jawaban untuk pertanyaan juri</span><span class="no">11 / 11</span></div>
+</section>
+
+<!-- A1 · Hitungan kerugian -->
+<section class="slide appx" data-title="A1 Hitungan kerugian">
+  <div class="marker">Appendix A1</div>
+  <h2 class="h1">Rp25 juta per hari itu dari mana?</h2>
+  <table class="ctable">
+    <thead><tr><th></th><th>Kebocoran</th><th>Hitungan</th><th>Hasil</th><th>Dasar</th></tr></thead>
+    <tbody>
+      <tr class="key"><td>A</td><td>Belanja di tenant mall</td><td>25.000 pengunjung per hari kerja × Rp100.000 = Rp2,5 miliar per hari. 1% batal = Rp25 juta</td><td class="res">Rp25 juta/hari per 1%</td><td>Bisnis.com (target pengunjung); APPBI via Jatim Times (belanja Rp100–150 ribu); Snapcart (82% pengunjung event berbelanja)</td></tr>
+      <tr><td>B</td><td>Omzet event</td><td>Roeang Kita: Rp12 miliar ÷ 3 hari = Rp4 miliar per hari. 1% batal = Rp40 juta</td><td class="res">Rp120 juta/event per 1%</td><td>Journal Arta</td></tr>
+      <tr><td>C</td><td>Lahan parkir dipakai event</td><td>34 hari × ±800 slot (asumsi Area Parkir Barat = satu area)</td><td class="res">27.200 slot-hari</td><td>Bu Mei; Fimela</td></tr>
+      <tr><td>D</td><td>Jadwal atrium dan area</td><td>Area tertahan selama pengajuan lewat 2 divisi; bentrok jadwal baru ketahuan belakangan</td><td class="res">±30 event/bulan</td><td>Pak Ade</td></tr>
+      <tr><td>E</td><td>Penanganan yang terlambat</td><td>Gate ditutup setelah penuh, kendaraan ke bahu jalan; toilet ditangani setelah ada keluhan</td><td class="res">Waktu petugas</td><td>Pak Asep; Pak Ade</td></tr>
+      <tr><td>F</td><td>Reputasi</td><td>Keluhan publik naik saat FKB dan Roeang Kita</td><td class="res">125 keluhan</td><td>Scraping Google Maps</td></tr>
+    </tbody>
+  </table>
+  <p class="note">1% adalah satuan supaya bisa dihitung ulang, bukan klaim. Kalau 5% pengunjung batal, berarti Rp125 juta per hari. Berapa yang batal belum pernah tercatat, dan itu yang akan dicatat SMICC-TS. Tarif parkir resmi belum tersedia, jadi C belum dirupiahkan.</p>
+  <div class="foot"><span class="src">Bisnis.com, 19 Jan 2024; Jatim Times, 23 Jul 2025; Databoks/Snapcart, Agu 2026 (1.507 responden); Journal Arta, 10 Nov 2026; Fimela; wawancara 12 Nov 2026</span><span class="no">A1</span></div>
+</section>
+
+<!-- A2 · Sistem mati -->
+<section class="slide appx paper" data-title="A2 Sistem mati">
+  <div class="marker">Appendix A2</div>
+  <h2 class="h1">Kalau sistem mati saat event, gate tetap jalan.</h2>
+  <div class="a2">
+    <ol class="sop">
+      <li><span class="when">T+0</span><div><b>Gate melapor</b><span>Check-in gagal memuat di semua gate, lapor ke Command Center lewat radio</span></div></li>
+      <li><span class="when">T+5</span><div><b>Mode cadangan</b><span>IT cek server dan jaringan. Tidak pulih dalam 5 menit, Command Center membuat tiket insiden P2</span></div></li>
+      <li><span class="when">T+6</span><div><b>Manifest cadangan</b><span>Gate membuka manifest di perangkat, cocokkan kode booking dan nama, centang manual, pasang gelang</span></div></li>
+      <li><span class="when">T+10</span><div><b>Antrean dijaga</b><span>Gate tambahan dibuka supaya pengunjung tidak menumpuk di atrium</span></div></li>
+      <li><span class="when">H+1</span><div><b>Data dipulihkan</b><span>Centang manual dimasukkan ulang ke sistem, laporan pasca-acara</span></div></li>
+    </ol>
+    <div class="side">
+      <div class="media"><img src="assets/images/app-cadangan.png" alt="Kartu Cadangan kalau sistem mati di halaman check-in"></div>
+      <p class="small muted">Manifest dicadangkan otomatis setiap pukul 23.00 di perangkat gate dan bisa diunduh tanpa server. Sistem juga bisa jalan di laptop tanpa internet.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="src">SOP-EVT-05 di Pusat SOP & Runbook prototype; kartu cadangan di halaman Check-in</span><span class="no">A2</span></div>
+</section>
+
+<!-- A3 · Ribuan pembeli -->
+<section class="slide appx" data-title="A3 Pembeli bersamaan">
+  <div class="marker">Appendix A3</div>
+  <h2 class="h1">Ribuan pembeli bersamaan: satu kursi tetap satu pembeli.</h2>
+  <div class="stats3">
+    <div><div class="num">25<small><svg class="i arr"><use href="#i-arrow"/></svg>1</small></div><h3 class="h3">Pembeli serentak, satu kursi</h3><p class="small muted">Hanya satu yang berhasil, 24 ditolak. Uji tekan di prototype.</p></div>
+    <div><div class="num">2<small> gate <svg class="i arr"><use href="#i-arrow"/></svg>1</small></div><h3 class="h3">QR sama dipindai bersamaan</h3><p class="small muted">Hanya satu yang diterima, gate lain mendapat SUDAH DIGUNAKAN.</p></div>
+    <div><div class="num">8<small> / 15 mnt</small></div><h3 class="h3">Kursi ditahan, lalu bayar</h3><p class="small muted">Tidak bayar dalam batas waktu, kursi dilepas dan dijual lagi. Pembayaran ganda tidak menerbitkan tiket dua kali.</p></div>
+  </div>
+  <div class="foot"><span class="src">Uji otomatis prototype SMICC-TS (tests/engine.test.mjs); alat demo "Uji tekan 25 pembeli" dan "Uji 2 gate"</span><span class="no">A3</span></div>
+</section>
+
+<!-- A4 · Siapa mengoperasikan -->
+<section class="slide appx paper" data-title="A4 Peran">
+  <div class="marker">Appendix A4</div>
+  <h2 class="h1">Siapa yang mengoperasikan?</h2>
+  <div class="chain">
+    <div class="r"><div class="c"><svg class="i"><use href="#i-store"/></svg></div><h3 class="h3">Tenant/EO</h3><p>Membuat acara, mengunggah dokumen, mengajukan</p></div>
+    <div class="r"><div class="c"><svg class="i"><use href="#i-cal"/></svg></div><h3 class="h3">Divisi Event</h3><p>Memeriksa konsep, jadwal, dan area</p></div>
+    <div class="r"><div class="c"><svg class="i"><use href="#i-shield"/></svg></div><h3 class="h3">Operasional Mall</h3><p>Memeriksa teknis, keamanan, dan parkir</p></div>
+    <div class="r"><div class="c"><svg class="i"><use href="#i-ticket"/></svg></div><h3 class="h3">Pengunjung</h3><p>Membeli tiket dan menerima QR</p></div>
+    <div class="r"><div class="c"><svg class="i"><use href="#i-scan"/></svg></div><h3 class="h3">Petugas gate</h3><p>Memindai QR di ponsel</p></div>
+    <div class="r cc"><div class="c"><svg class="i"><use href="#i-hub"/></svg></div><h3 class="h3">Command Center</h3><p>Tim operasional mall memantau dan menangani insiden</p></div>
+  </div>
+  <p class="note" style="margin-top:64px; margin-bottom:auto">Setiap peran punya akun sendiri. Tenant hanya melihat acaranya, divisi hanya memutuskan pada gilirannya, dan semua langkah tercatat di log aktivitas.</p>
+  <div class="foot"><span class="src">Alur peran di prototype SMICC-TS; perlu dikonfirmasi ke Pak Ade untuk uji coba</span><span class="no">A4</span></div>
+</section>
+
+<!-- A5 · Kata pengunjung -->
+<section class="slide appx" data-title="A5 Ulasan">
+  <div class="marker">Appendix A5</div>
+  <h2 class="h1">Apa kata pengunjung? Parkir paling sering dikeluhkan.</h2>
+  <div class="a5">
+    <div>
+      <div class="funnel">
+        <div class="row"><span class="num">2.300</span><div class="track"><i class="bar" style="width:340px"></i><span>ulasan Google Maps</span></div></div>
+        <div class="row"><span class="num">1.026</span><div class="track"><i class="bar" style="width:152px"></i><span>berisi teks</span></div></div>
+        <div class="row"><span class="num">125</span><div class="track"><i class="bar" style="width:18px"></i><span>berisi keluhan</span></div></div>
+        <div class="row"><span class="num">72</span><div class="track"><i class="bar hot" style="width:11px"></i><span>soal parkir</span></div></div>
+      </div>
+      <div class="topics">
+        <div><span>Parkir</span><i style="width:100%"></i><b>72</b></div>
+        <div><span>Event</span><i style="width:26%"></i><b>19</b></div>
+        <div><span>Penuh, ramai</span><i style="width:25%"></i><b>18</b></div>
+        <div><span>Antre, gate</span><i style="width:24%"></i><b>17</b></div>
+        <div><span>Toilet</span><i style="width:21%"></i><b>15</b></div>
+      </div>
+      <p class="note" style="font-size:18px">Keluhan per topik dari 125 keluhan; satu ulasan bisa menyebut lebih dari satu topik.</p>
+    </div>
+    <div class="quotes">
+      <div><q>Management parkir nya kacau, 1 jam sudah ngantri, dibuat satu jalur jadi macet nya domino, yang mau keluar harus nunggu parki juga.</q><p>Ulasan Google Maps, Oktober 2026, rating 1</p></div>
+      <div><q>Segitu luasnya parkiran masih juga sulit dptnya, apa karna asa acara ya.</q><p>Ulasan Google Maps, November 2026, rating 4</p></div>
+    </div>
+  </div>
+  <div class="foot"><span class="src">Scraping ulasan Google Maps Summarecon Mall Bandung, 12 Nov 2026, tanpa nama pengulas (01_Riset/scraping)</span><span class="no">A5</span></div>
+</section>
+
+<!-- A6 · Data dan akses -->
+<section class="slide appx paper" data-title="A6 Keamanan">
+  <div class="marker">Appendix A6</div>
+  <h2 class="h1">Bagaimana data dan akses dijaga?</h2>
+  <div class="guards">
+    <div><div class="gi"><svg class="i"><use href="#i-users"/></svg></div><div><h3 class="h3">Akun per peran</h3><p class="body muted">Tenant/EO, Tim Event Mall, Divisi Event, Operasional Mall, operator Command Center, dan petugas gate punya akun terpisah.</p></div></div>
+    <div><div class="gi"><svg class="i"><use href="#i-lock"/></svg></div><div><h3 class="h3">Login dikunci sementara</h3><p class="body muted">Setelah 5 kali salah, login dari perangkat itu dikunci 60 detik.</p></div></div>
+    <div><div class="gi"><svg class="i"><use href="#i-shield"/></svg></div><div><h3 class="h3">Server menolak yang tidak berhak</h3><p class="body muted">Tenant hanya bisa mengubah acaranya, divisi hanya memutuskan pada gilirannya, publikasi hanya setelah disetujui.</p></div></div>
+    <div><div class="gi"><svg class="i"><use href="#i-log"/></svg></div><div><h3 class="h3">Log aktivitas berantai</h3><p class="body muted">Setiap pengajuan, keputusan, dan perubahan tercatat dengan pelaku dan waktu, bisa diunduh sebagai CSV.</p></div></div>
+  </div>
+  <div class="foot"><span class="src">Fitur prototype SMICC-TS</span><span class="no">A6</span></div>
+</section>
+
+<!-- A7 · Riset -->
+<section class="slide appx" data-title="A7 Riset">
+  <div class="marker">Appendix A7</div>
+  <h2 class="h1">Riset dilakukan langsung di Summarecon Mall Bandung.</h2>
+  <div class="visit">
+    <div><div class="media"><img src="assets/images/foto-01_pak-asep_security_2026-11-12.jpeg" style="object-position:40% 25%" alt="Wawancara Pak Asep"></div><div class="time">09.00 sampai 09.30</div><h3 class="h3">Pak Asep, Security</h3><p>Pemantauan keramaian lewat CCTV, gate parkir ditutup setelah penuh</p></div>
+    <div><div class="media"><img src="assets/images/foto-02_pak-ade_manajemen-pic-event_2026-11-12.jpeg" style="object-position:60% 25%" alt="Wawancara Pak Ade"></div><div class="time">09.50 sampai 10.30</div><h3 class="h3">Pak Ade, PIC Event</h3><p>Event hampir setiap hari, tiket lewat loket.com, approval lewat 2 divisi</p></div>
+    <div><div class="media"><img src="assets/images/foto-03_bu-mei_petugas-parkir_2026-11-12.jpeg" style="object-position:62% 40%" alt="Wawancara Bu Mei"></div><div class="time">11.00 sampai 11.30</div><h3 class="h3">Bu Mei, Petugas Parkir</h3><p>Parkir motor penuh 1.200, plat motor diketik manual</p></div>
+  </div>
+  <div class="sources">
+    <div><b>2.300 ulasan</b><span>Scraping Google Maps, 12 Nov 2026</span></div>
+    <div><b>FKB Vol. 3</b><span>Fimela, 34 hari di Area Parkir Barat</span></div>
+    <div><b>Roeang Kita 2026</b><span>Journal Arta, target omzet Rp12 miliar</span></div>
+    <div><b>Target pengunjung</b><span>Bisnis.com, 25 sampai 40 ribu per hari</span></div>
+  </div>
+  <div class="foot"><span class="src">Kamis, 12 November 2026. Catatan lengkap di 01_Riset/RISET_LAPANGAN.md</span><span class="no">A7</span></div>
+</section>
+
+</main>
+<script src="script.js"></script>
+</body>
+</html>

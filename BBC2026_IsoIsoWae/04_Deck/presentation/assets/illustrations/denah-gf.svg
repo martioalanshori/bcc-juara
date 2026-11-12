@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 620" font-family="Inter, sans-serif">
+  <!-- Denah Ground Floor Summarecon Mall Bandung, disederhanakan dari papan denah (01_Riset/dokumentasi/denah-GF). -->
+  <!-- blok tenant -->
+  <g fill="#F6C48F">
+    <path d="M70 520 Q60 70 680 60 L680 120 Q130 130 130 520 Z"/>
+    <rect x="700" y="60" width="130" height="200" rx="6"/>
+    <rect x="700" y="290" width="130" height="270" rx="6"/>
+    <rect x="200" y="545" width="470" height="50" rx="6"/>
+    <rect x="20" y="380" width="90" height="200" rx="6"/>
+  </g>
+  <!-- koridor -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round">
+    <path d="M190 490 Q180 150 640 150" stroke-width="44"/>
+    <path d="M190 500 L640 500" stroke-width="40"/>
+    <path d="M640 150 L640 500" stroke-width="40"/>
+  </g>
+  <!-- Sawarga Courtyard -->
+  <path d="M245 465 Q245 212 600 205 L600 465 Z" fill="#1FA64A"/>
+  <text x="430" y="372" text-anchor="middle" fill="#FFFFFF" font-size="24" font-weight="600">Sawarga Courtyard</text>
+  <!-- atrium -->
+  <g stroke="#13233F" stroke-width="4" fill="#FFFFFF">
+    <circle cx="190" cy="500" r="50"/>
+    <circle cx="640" cy="150" r="50"/>
+  </g>
+  <circle cx="640" cy="500" r="50" fill="#FFFFFF" stroke="#EE8A2A" stroke-width="10"/>
+  <circle cx="640" cy="500" r="74" fill="none" stroke="#EE8A2A" stroke-width="3" stroke-dasharray="6 8"/>
+  <g font-size="20" font-weight="600" fill="#13233F" text-anchor="middle">
+    <text x="190" y="494">Atrium</text><text x="190" y="518">Ciunik</text>
+    <text x="640" y="144">Atrium</text><text x="640" y="168">Cileutik</text>
+    <text x="640" y="494">Atrium</text><text x="640" y="518">Cibadag</text>
+  </g>
+</svg>
