@@ -115,12 +115,15 @@
     <div class="pv-banner-txt"><span class="pv-tag">${esc(catName(e.cat))}</span>${big ? `<div><div class="pv-banner-title">${esc(e.name)}</div>${e.tagline ? `<div class="pv-banner-sub">${esc(e.tagline)}</div>` : ''}</div>` : ''}</div></div>`;
   // ---------------------------------------------------------------- komponen landing (DESIGN.md "Papan Petunjuk")
   // Area mal: lantai (plat) + kode warna area (CSS: [data-a=...]). Urutan seperti papan direktori lift: lantai atas dulu.
+  // Nama area = Evt.AREAS di engine.js (sesuai denah). a = kode warna CSS yang sudah ada; foto demo dipakai bersama.
   const AREAS = [
-    { key: 'Summarecon Hall', a: 'hall', floor: 'L3', img: 'area-hall', note: ['Auditorium kursi bernomor', 'Auditorium with numbered seats'] },
-    { key: 'Kids Zone', a: 'kids', floor: 'L2', img: 'area-kids', note: ['Kelas & acara anak', 'Kids classes & events'] },
-    { key: 'Exhibition Hall', a: 'expo', floor: 'L1', img: 'area-expo', note: ['Pameran, expo & kelas', 'Exhibitions, expos & classes'] },
-    { key: 'Main Atrium', a: 'atrium', floor: 'GF', img: 'area-atrium', note: ['Panggung utama di bawah kubah', 'Main stage under the dome'] },
-    { key: 'Outdoor Plaza', a: 'plaza', floor: 'GF', img: 'area-plaza', note: ['Bazar, festival & olahraga', 'Bazaars, festivals & sports'] },
+    { key: 'Exhibition Hall A', a: 'expo', floor: 'L2', img: 'area-expo', note: ['Pameran, bazar & trade expo', 'Exhibitions, bazaars & trade expos'] },
+    { key: 'Atrium Cibadak', a: 'atrium', floor: 'GF', img: 'area-atrium', note: ['Panggung utama, konser & pameran', 'Main stage, concerts & exhibitions'] },
+    { key: 'Atrium Ciunik', a: 'hall', floor: 'GF', img: 'area-hall', note: ['Pertunjukan kursi bernomor & aktivasi brand', 'Seated shows & brand activations'] },
+    { key: 'Atrium Cileutik', a: 'kids', floor: 'GF', img: 'area-kids', note: ['Kelas, komunitas & acara keluarga', 'Classes, communities & family events'] },
+    { key: 'Sawarga Courtyard', a: 'plaza', floor: 'GF', img: 'area-plaza', note: ['Courtyard outdoor ±3.600 m², konser & festival', 'Outdoor courtyard ±3,600 m², concerts & festivals'] },
+    { key: 'Downtown Walk', a: 'plaza', floor: 'GF', img: 'area-plaza', note: ['Kuliner & live music semi-outdoor', 'Semi-outdoor food & live music'] },
+    { key: 'Parkir Barat', a: 'plaza', floor: 'P', img: 'area-plaza', note: ['Festival besar di lahan parkir', 'Large festivals on the parking lot'] },
   ];
   const area = (e) => shortVenue(e.venue).split(',')[0];
   const areaOf = (e) => AREAS.find((x) => x.key === area(e)) || { key: area(e), a: '', floor: '-' };

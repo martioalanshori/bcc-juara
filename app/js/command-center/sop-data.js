@@ -3,7 +3,7 @@ window.SMICC_REF = {
  "mall": "Summarecon Mall",
  "mallSub": "Integrated Command Center",
  "system": "Summarecon Mall Integrated Command Center Ticketing System (SMICC-TS)",
- "generated": "2026-11-08",
+ "generated": "2026-11-12",
  "dashboards": [
   {
    "code": "TIC",
@@ -4427,7 +4427,7 @@ window.SMICC_REF = {
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
-    "location": "GF Main Atrium",
+    "location": "GF Atrium Cibadak",
     "source": "AI Crowd Density CAM-01",
     "sop": "SOP-VIS-01",
     "cam": "CAM-01",
@@ -4735,7 +4735,7 @@ window.SMICC_REF = {
   {
    "id": "UC-17",
    "name": "Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in",
-   "trigger": ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Main Atrium",
+   "trigger": ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadak",
    "primary": "EVT",
    "related": "TIC, CCTV, PARK, ANL",
    "sops": "SOP-EVT-03, SOP-EVT-01",
@@ -4743,11 +4743,11 @@ window.SMICC_REF = {
    "actors": "GTE, EO, CCO, QRT, CSEC, PKR",
    "goal": "Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali",
    "ticket": {
-    "title": "Indikasi tiket palsu/calo di Gate A Main Atrium",
+    "title": "Indikasi tiket palsu/calo di Gate A Atrium Cibadak",
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
-    "location": "Gate A (Lobby Utama) - Main Atrium",
+    "location": "Gate A (Lobby Utama) - Atrium Cibadak",
     "source": "Event Check-in (DB-EVT)",
     "sop": "SOP-EVT-03",
     "cam": "CAM-01",

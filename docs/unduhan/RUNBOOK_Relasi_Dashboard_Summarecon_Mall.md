@@ -1,7 +1,7 @@
 # Runbook relasi antar dashboard Summarecon Mall Integrated Command Center
 
 > **Sistem:** Summarecon Mall Integrated Command Center Ticketing System (SMICC-TS)  
-> **Versi:** 2026-11-08 · dihasilkan oleh `tools/docs/build_docs.py` (sumber data `tools/docs/sop_data.py` & `tools/docs/usecase_data.py`)  
+> **Versi:** 2026-11-12 · dihasilkan oleh `tools/docs/build_docs.py` (sumber data `tools/docs/sop_data.py` & `tools/docs/usecase_data.py`)  
 > **Pendamping:** `docs/unduhan/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx`, `docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx`, prototype `/command-center` (menu *Simulator Use Case*)
 
 ## Daftar isi
@@ -754,7 +754,7 @@ sequenceDiagram
 - **SOP acuan:** SOP-VIS-01, SOP-COM-04
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), QRT (Security Quick Response Team), BMSO (Operator BMS), MKT (Marketing & CRM), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Kepadatan < 70% <= 20 menit, 0 insiden desak-desakan
-- **Tiket:** "Kepadatan Atrium Utama 92% (event meet & greet)" · lokasi GF Main Atrium · sumber AI Crowd Density CAM-01 · kamera CAM-01
+- **Tiket:** "Kepadatan Atrium Utama 92% (event meet & greet)" · lokasi GF Atrium Cibadak · sumber AI Crowd Density CAM-01 · kamera CAM-01
 
 ```mermaid
 sequenceDiagram
@@ -905,12 +905,12 @@ sequenceDiagram
 ### UC-17
 #### Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in
 
-- **Trigger:** >= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Main Atrium
+- **Trigger:** >= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadak
 - **Prioritas:** P2 · **Dashboard utama:** Pemantauan Event · **Terkait:** TIC, CCTV, PARK, ANL
 - **SOP acuan:** SOP-EVT-03, SOP-EVT-01
 - **Aktor:** GTE (Petugas Gate Check-in (Usher)), EO (Event Officer / Panitia Acara), CCO (Operator Command Center (Dispatcher)), QRT (Security Quick Response Team), CSEC (Chief Security), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali
-- **Tiket:** "Indikasi tiket palsu/calo di Gate A Main Atrium" · lokasi Gate A (Lobby Utama) - Main Atrium · sumber Event Check-in (DB-EVT) · kamera CAM-01
+- **Tiket:** "Indikasi tiket palsu/calo di Gate A Atrium Cibadak" · lokasi Gate A (Lobby Utama) - Atrium Cibadak · sumber Event Check-in (DB-EVT) · kamera CAM-01
 
 ```mermaid
 sequenceDiagram

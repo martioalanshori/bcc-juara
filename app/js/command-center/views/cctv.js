@@ -23,7 +23,7 @@
       const focus = C.find((c) => c.id === F.focus) || cams[0];
       const others = cams.filter((c) => c.id !== focus.id).slice(0, F.grid === 1 ? 0 : F.grid === 4 ? 4 : 8);
       const alerts = Object.entries(Store.s.camAlerts).sort((a, b) => b[1].ts - a[1].ts);
-      const zones = [['ALL', 'Semua zona (1.420)'], ['GF', 'Main Atrium & Lobby (312)'], ['LG', 'LG & Retail (184)'], ['2F', 'Family & Kids (96)'], ['3F', 'Food Court & Hiburan (142)'], ['BASEMENT', 'Basement & Loading (420)']];
+      const zones = [['ALL', 'Semua zona (1.420)'], ['GF', 'Atrium Cibadak & Lobby (312)'], ['LG', 'LG & Retail (184)'], ['2F', 'Family & Kids (96)'], ['3F', 'Food Court & Hiburan (142)'], ['BASEMENT', 'Basement & Loading (420)']];
       const secTk = Store.activeTickets().filter((t) => t.category.startsWith('Keamanan'));
       return `
       <section class="card pagebar">

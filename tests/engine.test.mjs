@@ -316,7 +316,10 @@ test('data contoh: 28 acara di 5 area mal, foto demo ada di disk, beberapa hampi
   const { Evt } = await loadEvt();
   const evs = Evt.s.order.map(Evt.ev);
   assert.equal(evs.length, 28);
-  assert.equal(new Set(evs.map((e) => e.venue.split(',')[0])).size, 5, 'tersebar di 5 area');
+  const ids = new Set(Array.from(Evt.AREAS, (x) => x.id));
+  assert.ok(evs.every((e) => ids.has(e.area)), 'semua acara contoh punya area dari Evt.AREAS');
+  assert.ok(new Set(evs.map((e) => e.area)).size >= 6, 'tersebar di area mal');
+  for (const e of evs) assert.equal(Evt.areaClash(e.area, e.start, e.end, e.id).length, 0, e.id + ' bentrok jadwal area');
   for (const e of evs) {
     assert.ok(e.img, e.id + ' punya foto');
     assert.ok(existsSync(new URL('..' + e.img, import.meta.url)), 'file foto ' + e.img + ' ada (ganti foto dengan nama yang sama)');
@@ -455,4 +458,45 @@ test('acara lama tanpa data persetujuan tetap bisa dipublikasikan ulang', async 
   await Evt.updateEvent('EVT-01', { status: 'DRAFT' });
   await Evt.updateEvent('EVT-01', { status: 'PUBLISHED' });
   assert.equal(Evt.ev('EVT-01').status, 'PUBLISHED');
+});
+
+// ------------------------------------------------------------------ area acara & cek bentrok
+test('area: 7 area sesuai denah, nama Atrium Cibadak, venue memuat lantai', async () => {
+  const { Evt } = await loadEvt();
+  assert.deepEqual(Array.from(Evt.AREAS, (a) => a.id), ['sawarga', 'downtown', 'parkir-barat', 'exhibition', 'ciunik', 'cileutik', 'cibadak']);
+  assert.equal(Evt.AREAS.find((a) => a.id === 'cibadak').name, 'Atrium Cibadak');
+  assert.ok(Evt.AREAS.find((a) => a.id === 'parkir-barat').parking);
+  assert.match(Evt.ev('EVT-28').venue, /^Exhibition Hall A, 2F/);
+  const e4 = Evt.ev('EVT-04');
+  assert.equal(e4.area, 'parkir-barat');
+  assert.ok(e4.end - e4.start >= 2 * 86400000, 'Bazar Kuliner di Parkir Barat beberapa hari');
+  assert.equal(Evt.ev('EVT-12').area, 'downtown');
+});
+
+test('areaClash: tumpang tindih di area sama terdeteksi, acara batal diabaikan', async () => {
+  const { Evt } = await loadEvt();
+  const e = Evt.ev('EVT-28');
+  assert.deepEqual(Array.from(Evt.areaClash('exhibition', e.start + 3600000, e.start + 7200000), (x) => x.id), ['EVT-28']);
+  assert.equal(Evt.areaClash('exhibition', e.end, e.end + 3600000).length, 0, 'bersebelahan bukan bentrok');
+  assert.equal(Evt.areaClash('ciunik', e.start, e.end).filter((x) => x.id === 'EVT-28').length, 0, 'area lain');
+  await Evt.cancelEvent('EVT-28', 'uji');
+  assert.equal(Evt.areaClash('exhibition', e.start, e.end).length, 0);
+});
+
+test('addEvent ditolak bila area bentrok, diterima di area lain', async () => {
+  const { Evt } = await loadEvt();
+  const e = Evt.ev('EVT-28');
+  await assert.rejects(Evt.addEvent({ name: 'Pameran Lain', area: 'exhibition', template: 'KUOTA', start: e.start + 3600000, end: e.start + 5 * 3600000 }), /sudah dipakai Expo UMKM/);
+  const id = await Evt.addEvent({ name: 'Pameran Lain', area: 'cileutik', template: 'KUOTA', start: e.start + 3600000, end: e.start + 5 * 3600000 });
+  const x = Evt.ev(id);
+  assert.equal(x.area, 'cileutik');
+  assert.match(x.venue, /^Atrium Cileutik, GF/);
+  assert.equal(x.layout.rows.length, 0, 'format tiket kuota tanpa denah kursi');
+});
+
+test('area dikunci setelah diajukan', async () => {
+  const { Evt } = await loadEvt();
+  Evt.setActor({ name: 'Sari', role: 'Tenant/EO', org: 'Komunitas UMKM Gedebage' });
+  await Evt.submitApproval('EVT-28');
+  await assert.rejects(Evt.saveEvent('EVT-28', { patch: { area: 'cileutik' } }), /dikunci setelah diajukan/);
 });

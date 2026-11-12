@@ -61,7 +61,8 @@
       else UI.toast('Acara ' + esc(id) + ' tidak ditemukan atau sudah dihapus', 'P3');
     } else if (seg[0]) { const g = GTABS.find((x) => x[3] === seg[0]); if (g) ui.tab = g[0]; }
   }
-  const plateOf = (e) => { const m = /,\s*(GF|Lt\.\s*(\d+))/.exec(e.venue || ''); return m ? (m[2] ? 'L' + m[2] : 'GF') : '–'; };
+  // Plat lantai dari venue: "…, GF" -> GF, "…, 2F" / "…, Lt. 2" -> L2, Parkir Barat (luar gedung) -> P.
+  const plateOf = (e) => { const v = e.venue || '', m = /,\s*(GF|(\d)F|Lt\.\s*(\d+))/.exec(v); return m ? (m[2] || m[3] ? 'L' + (m[2] || m[3]) : 'GF') : /luar gedung/.test(v) ? 'P' : '–'; };
   const plate = (e) => `<span class="pg-plate" title="Lantai">${plateOf(e)}</span>`;
   const place = (e) => esc((e.venue || '').split(',')[0].trim());
   const liveOrders = (e) => { const t = Evt.now(); return Evt.stats(e.id).orders.filter((o) => o.status === 'PAID' || (o.status === 'PENDING' && o.until > t)).length; };
