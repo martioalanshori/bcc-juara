@@ -758,3 +758,17 @@ sop("SOP-EVT-04", "Pembatalan, refund, perubahan data peserta & daftar tunggu", 
      (F_MIT, "EO", "Ubah data peserta / batalkan pesanan menunggu bayar / proses refund pesanan lunas.", "EVT", "T+2 jam", "Status diperbarui"),
      (F_PUL, "FIN", "Eksekusi refund ke metode bayar asal (sandbox) & catat di rekonsiliasi.", "EVT", "<= 3x24 jam", "Bukti refund"),
      (F_TUT, "EO", "Kabari daftar tunggu bahwa kursi tersedia & kirim konfirmasi ke peserta. Acara batal: 'Batalkan acara' di daftar acara (refund otomatis semua pesanan lunas); hapus hanya untuk acara tanpa transaksi.", "EVT", "T+5 menit", "Notifikasi terkirim")])
+
+sop("SOP-EVT-05", "Sistem tiket atau check-in mati saat acara (mode cadangan)", P5, "Event Ticketing",
+    "Traffic per Pintu, ROI Event Atrium", "P2",
+    "Halaman check-in tidak bisa memuat data, server/jaringan putus, atau pindaian gagal massal di semua gate", "Manifest cadangan harian (23.00) di perangkat gate, Konsol Pengelola", "File CSV lokal", "EVT", "TIC, CCTV, PARK",
+    "EO", "Gate tetap berjalan <= 5 menit setelah gangguan; 0 peserta sah ditolak; data check-in manual masuk sistem <= H+1",
+    "Manifest yang dipakai, daftar centang manual, log pemulihan", "Sistem pulih & check-in manual sudah dimasukkan ulang",
+    "Manifest peserta tersimpan otomatis setiap pukul 23.00 di perangkat; bisa diunduh tanpa server",
+    [(F_DET, "GTE", "Check-in gagal memuat atau banner 'Mode lokal' muncul di semua gate; lapor ke CCO lewat radio CH-01.", "EVT", "T+0", "Laporan gangguan"),
+     (F_VER, "IT", "Cek server & jaringan LAN; bila tidak pulih dalam 5 menit, nyatakan mode cadangan.", "EVT", "T+5", "Keputusan mode cadangan"),
+     (F_TIK, "CCO", "Buat tiket insiden P2 'Sistem check-in mati' dan umumkan ke semua gate.", "TIC", "T+5", "Tiket P2"),
+     (F_MIT, "GTE", "Buka manifest cadangan (CSV, unduhan harian 23.00) di ponsel/laptop gate; cocokkan kode booking & nama, centang manual, pasang gelang.", "EVT", "T+6", "Gate berjalan manual"),
+     (F_MIT, "EO", "Tambah petugas & buka gate tambahan agar antrean tidak menumpuk di atrium; Security mengatur antrean via CCTV.", "CCTV", "T+10", "Antrean terkendali"),
+     (F_PUL, "IT", "Pulihkan server; bila perlu jalankan node server.js di laptop LAN dan muat cadangan terakhir.", "EVT", "T+30", "Sistem online"),
+     (F_TUT, "EO", "Masukkan centang manual ke sistem, bandingkan dengan manifest, tutup tiket & tulis laporan pasca-acara.", "TIC", "H+1", "Laporan pemulihan")])

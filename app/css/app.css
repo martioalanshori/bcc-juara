@@ -1681,3 +1681,9 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 .feed-row b { display: block; font-weight: 600; font-size: 13px; color: rgb(var(--on-surface)); }
 .feed-row small { display: block; font-size: 12px; color: rgb(var(--on-surface-variant)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .row-new { animation: none; } }
+
+/* Kartu cadangan manifest gate (SOP-EVT-05) */
+.ck-bk { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.ck-bk b { color: rgb(var(--on-surface)); }
+.ck-bk p { font-size: 13px; line-height: 1.5; color: rgb(var(--on-surface-variant)); margin-top: 4px; }
+.ck-bk-act { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; padding-left: 34px; }

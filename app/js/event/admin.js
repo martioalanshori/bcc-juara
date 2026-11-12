@@ -1263,6 +1263,7 @@
         ${EvtCheckin.panel()}</section>
       <div class="2xl:col-span-7 flex flex-col gap-5">
         <section class="card p-5"><div id="ck-stats">${ckStats(e, true)}</div></section>
+        <section class="card p-5">${EvtCheckin.backup.card(e.id, { sopHref: isMgr() ? '' : '/command-center/sop?id=SOP-EVT-05' })}</section>
         <section class="card p-5">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div></div>`;
   }
 
@@ -1445,7 +1446,8 @@
   function gate(e) {
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
       <div class="2xl:col-span-5 flex flex-col gap-5">${anomPanel(e)}
-        <section class="card p-5">${UI.h('Kehadiran per gate', 'Pemindaian dilakukan petugas gate pengelola (ponsel atau konsol)', '', 'how_to_reg')}<div id="ck-stats">${ckStats(e, true)}</div></section></div>
+        <section class="card p-5">${UI.h('Kehadiran per gate', 'Pemindaian dilakukan petugas gate pengelola (ponsel atau konsol)', '', 'how_to_reg')}<div id="ck-stats">${ckStats(e, true)}</div></section>
+        <section class="card p-5">${EvtCheckin.backup.card(e.id, { sopHref: '/command-center/sop?id=SOP-EVT-05' })}</section></div>
       <section class="card p-5 2xl:col-span-7">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div>`;
   }
 
@@ -1604,7 +1606,8 @@
     });
     // check-in
     const g = el.querySelector('#gate'); if (g) g.addEventListener('change', () => (ui.gate = g.value));
-    if (ui.tab === 'checkin') EvtCheckin.mount(el, () => ui.ev, () => ui.gate);
+    if (ui.tab === 'gate') EvtCheckin.backup.bind(el, () => { UI.toast('Manifest dicadangkan di perangkat ini', 'P4'); redraw(); });
+    if (ui.tab === 'checkin') { EvtCheckin.mount(el, () => ui.ev, () => ui.gate); EvtCheckin.backup.bind(el, () => { UI.toast('Manifest dicadangkan di perangkat ini', 'P4'); redraw(); }); }
     // notifikasi
     el.querySelectorAll('[data-ch]').forEach((b) => b.addEventListener('click', () => { ui.ch = b.dataset.ch; redraw(); }));
     const rm = el.querySelector('#remind'); if (rm) rm.addEventListener('click', async () => {

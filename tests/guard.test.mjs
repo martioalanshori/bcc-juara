@@ -172,7 +172,7 @@ test('guard + engine: jadwal dan area dikunci selama ditinjau dan setelah disetu
   await Evt.submitApproval(id);
   const s0 = snap(Evt), e0 = s0.events[id];
   assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.start += 86400000)), ['tenant'], undefined, T) === 'string', 'jadwal saat DIAJUKAN');
-  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.area = e.area === 'ciunik' ? 'cibadak' : 'ciunik')), ['tenant'], undefined, T) === 'string', 'area saat DIAJUKAN');
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.area = e.area === 'ciunik' ? 'cibadag' : 'ciunik')), ['tenant'], undefined, T) === 'string', 'area saat DIAJUKAN');
   assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.approval.docs.proposal.name = 'lain.pdf')), ['tenant'], undefined, T) === 'string', 'dokumen saat DIAJUKAN');
   assert.equal(guard(s0, mut(s0, id, (e) => (e.tagline = 'Tagline baru')), ['tenant'], undefined, T), null, 'teks lain boleh');
   await assert.rejects(Evt.saveEvent(id, { patch: { start: e0.start + 86400000, end: (e0.end || e0.start) + 86400000 } }), /dikunci|ditinjau/);

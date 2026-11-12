@@ -84,6 +84,9 @@ Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (terma
   dibatalkan, atau acara lain). Satu tiket hanya bisa masuk sekali walau dipindai di dua gate
   bersamaan.
 - Pilih gate, tombol **lapor ke Command Center** untuk kejadian di lapangan.
+- **Cadangan kalau sistem mati** (SOP-EVT-05): manifest peserta per acara dicadangkan otomatis di perangkat
+  (batas harian pukul 23.00, localStorage `smicc-manifest-v1`), bisa diunduh sebagai CSV tanpa server. Juga di menu
+  Check-in & gate konsol pengelola dan Pemantauan Event Command Center.
 
 ## 4. Command Center (`/command-center`)
 
@@ -122,7 +125,7 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   Data statis `app/js/command-center/sentimen-data.js` dari `analisis.py --export-js`.
 
 **SOP & Simulasi**
-- **Pusat SOP & Runbook**: 48 SOP, matriks SLA P1-P4, eskalasi berjenjang, keterlacakan
+- **Pusat SOP & Runbook**: 49 SOP, matriks SLA P1-P4, eskalasi berjenjang, keterlacakan
   mindmap → SOP → dashboard.
 - **Simulator Use Case**: menjalankan 18 use case langkah demi langkah dan melihat efeknya di
   dashboard, matriks relasi dashboard.

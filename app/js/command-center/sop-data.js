@@ -3309,6 +3309,82 @@ window.SMICC_REF = {
      "output": "Notifikasi terkirim"
     }
    ]
+  },
+  {
+   "id": "SOP-EVT-05",
+   "title": "Sistem tiket atau check-in mati saat acara (mode cadangan)",
+   "pillar": "5. Security, Safety & HSE",
+   "subdomain": "Event Ticketing",
+   "nodes": "Traffic per Pintu, ROI Event Atrium",
+   "priority": "P2",
+   "trigger": "Halaman check-in tidak bisa memuat data, server/jaringan putus, atau pindaian gagal massal di semua gate",
+   "source": "Manifest cadangan harian (23.00) di perangkat gate, Konsol Pengelola",
+   "protocol": "File CSV lokal",
+   "dashboard": "EVT",
+   "related": "TIC, CCTV, PARK",
+   "pic": "EO",
+   "kpi": "Gate tetap berjalan <= 5 menit setelah gangguan; 0 peserta sah ditolak; data check-in manual masuk sistem <= H+1",
+   "evidence": "Manifest yang dipakai, daftar centang manual, log pemulihan",
+   "closure": "Sistem pulih & check-in manual sudah dimasukkan ulang",
+   "auto_action": "Manifest peserta tersimpan otomatis setiap pukul 23.00 di perangkat; bisa diunduh tanpa server",
+   "steps": [
+    {
+     "phase": "1-Deteksi",
+     "role": "GTE",
+     "action": "Check-in gagal memuat atau banner 'Mode lokal' muncul di semua gate; lapor ke CCO lewat radio CH-01.",
+     "dashboard": "EVT",
+     "target": "T+0",
+     "output": "Laporan gangguan"
+    },
+    {
+     "phase": "2-Verifikasi",
+     "role": "IT",
+     "action": "Cek server & jaringan LAN; bila tidak pulih dalam 5 menit, nyatakan mode cadangan.",
+     "dashboard": "EVT",
+     "target": "T+5",
+     "output": "Keputusan mode cadangan"
+    },
+    {
+     "phase": "3-Tiket & Klasifikasi",
+     "role": "CCO",
+     "action": "Buat tiket insiden P2 'Sistem check-in mati' dan umumkan ke semua gate.",
+     "dashboard": "TIC",
+     "target": "T+5",
+     "output": "Tiket P2"
+    },
+    {
+     "phase": "5-Mitigasi",
+     "role": "GTE",
+     "action": "Buka manifest cadangan (CSV, unduhan harian 23.00) di ponsel/laptop gate; cocokkan kode booking & nama, centang manual, pasang gelang.",
+     "dashboard": "EVT",
+     "target": "T+6",
+     "output": "Gate berjalan manual"
+    },
+    {
+     "phase": "5-Mitigasi",
+     "role": "EO",
+     "action": "Tambah petugas & buka gate tambahan agar antrean tidak menumpuk di atrium; Security mengatur antrean via CCTV.",
+     "dashboard": "CCTV",
+     "target": "T+10",
+     "output": "Antrean terkendali"
+    },
+    {
+     "phase": "7-Pemulihan",
+     "role": "IT",
+     "action": "Pulihkan server; bila perlu jalankan node server.js di laptop LAN dan muat cadangan terakhir.",
+     "dashboard": "EVT",
+     "target": "T+30",
+     "output": "Sistem online"
+    },
+    {
+     "phase": "8-Penutupan & Pelaporan",
+     "role": "EO",
+     "action": "Masukkan centang manual ke sistem, bandingkan dengan manifest, tutup tiket & tulis laporan pasca-acara.",
+     "dashboard": "TIC",
+     "target": "H+1",
+     "output": "Laporan pemulihan"
+    }
+   ]
   }
  ],
  "usecases": [
@@ -4427,7 +4503,7 @@ window.SMICC_REF = {
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
-    "location": "GF Atrium Cibadak",
+    "location": "GF Atrium Cibadag",
     "source": "AI Crowd Density CAM-01",
     "sop": "SOP-VIS-01",
     "cam": "CAM-01",
@@ -4735,7 +4811,7 @@ window.SMICC_REF = {
   {
    "id": "UC-17",
    "name": "Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in",
-   "trigger": ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadak",
+   "trigger": ">= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadag",
    "primary": "EVT",
    "related": "TIC, CCTV, PARK, ANL",
    "sops": "SOP-EVT-03, SOP-EVT-01",
@@ -4743,11 +4819,11 @@ window.SMICC_REF = {
    "actors": "GTE, EO, CCO, QRT, CSEC, PKR",
    "goal": "Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali",
    "ticket": {
-    "title": "Indikasi tiket palsu/calo di Gate A Atrium Cibadak",
+    "title": "Indikasi tiket palsu/calo di Gate A Atrium Cibadag",
     "priority": "P2",
     "category": "Keamanan, Parkir & Crowd",
     "zone": "GF",
-    "location": "Gate A (Lobby Utama) - Atrium Cibadak",
+    "location": "Gate A (Lobby Utama) - Atrium Cibadag",
     "source": "Event Check-in (DB-EVT)",
     "sop": "SOP-EVT-03",
     "cam": "CAM-01",
@@ -5351,7 +5427,8 @@ window.SMICC_REF = {
    "sops": [
     "SOP-VIS-01",
     "SOP-SEC-09",
-    "SOP-EVT-03"
+    "SOP-EVT-03",
+    "SOP-EVT-05"
    ]
   },
   {
@@ -5418,7 +5495,8 @@ window.SMICC_REF = {
     "SOP-EVT-01",
     "SOP-EVT-02",
     "SOP-EVT-03",
-    "SOP-EVT-04"
+    "SOP-EVT-04",
+    "SOP-EVT-05"
    ]
   },
   {

@@ -29,7 +29,7 @@ Semua halaman memakai URL bersih tanpa `#` (mis. `/pengunjung/e/EVT-01`, `/comma
 | Path | Keterangan |
 |---|---|
 | `server.js` + `server/` | Aplikasi tunggal (Node 20+, tanpa npm): URL bersih, aset, login staf, API state event bersama dengan transaksi berversi (anti double-booking). Dipakai LAN dan Vercel |
-| `docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx` | 48 SOP, 255 langkah (termasuk SOP-EVT-01..04), SLA, eskalasi, RACI, traceability mindmap |
+| `docs/unduhan/SOP_Drilldown_Summarecon_Mall_Command_Center.xlsx` | 49 SOP, 262 langkah (termasuk SOP-EVT-01..05), SLA, eskalasi, RACI, traceability mindmap |
 | `docs/unduhan/UseCase_Relasi_Dashboard_Summarecon_Mall.xlsx` | 18 use case (termasuk UC-17/18 event), 43 relasi dashboard, matriks, event dictionary |
 | `docs/unduhan/RUNBOOK_Relasi_Dashboard_Summarecon_Mall.md` | Runbook relasi antar dashboard (diagram mermaid) |
 | `docs/EVENT_TICKETING_Asumsi_Alur_Logika.md` | Asumsi, alur, logika pemilihan kursi & validasi QR (bahan deck Bandung Build Challenge 2026) |

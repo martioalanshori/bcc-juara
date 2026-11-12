@@ -18,7 +18,7 @@
 
 Runbook ini menjadi panduan operasional bagi operator, Shift Lead, dan PIC lapangan Summarecon Mall dalam menjalankan skenario yang melibatkan **lebih dari satu dashboard**. Setiap use case menjelaskan siapa melakukan apa, di dashboard mana, data apa yang berpindah, dan kapan harus eskalasi. Detail langkah per SOP ada di Excel SOP drill-down.
 
-**Ruang lingkup:** 9 dashboard, 18 use case lintas dashboard, 48 SOP, 43 relasi data, dan 16 jenis event integrasi.
+**Ruang lingkup:** 9 dashboard, 18 use case lintas dashboard, 49 SOP, 43 relasi data, dan 16 jenis event integrasi.
 
 ## 2. Peta dashboard & relasi
 
@@ -754,7 +754,7 @@ sequenceDiagram
 - **SOP acuan:** SOP-VIS-01, SOP-COM-04
 - **Aktor:** CCO (Operator Command Center (Dispatcher)), CSEC (Chief Security), QRT (Security Quick Response Team), BMSO (Operator BMS), MKT (Marketing & CRM), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Kepadatan < 70% <= 20 menit, 0 insiden desak-desakan
-- **Tiket:** "Kepadatan Atrium Utama 92% (event meet & greet)" · lokasi GF Atrium Cibadak · sumber AI Crowd Density CAM-01 · kamera CAM-01
+- **Tiket:** "Kepadatan Atrium Utama 92% (event meet & greet)" · lokasi GF Atrium Cibadag · sumber AI Crowd Density CAM-01 · kamera CAM-01
 
 ```mermaid
 sequenceDiagram
@@ -905,12 +905,12 @@ sequenceDiagram
 ### UC-17
 #### Hari-H acara atrium: indikasi tiket palsu & lonjakan check-in
 
-- **Trigger:** >= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadak
+- **Trigger:** >= 3 pindaian QR tidak valid/duplikat di Gate A dalam 10 menit saat konser Atrium Cibadag
 - **Prioritas:** P2 · **Dashboard utama:** Pemantauan Event · **Terkait:** TIC, CCTV, PARK, ANL
 - **SOP acuan:** SOP-EVT-03, SOP-EVT-01
 - **Aktor:** GTE (Petugas Gate Check-in (Usher)), EO (Event Officer / Panitia Acara), CCO (Operator Command Center (Dispatcher)), QRT (Security Quick Response Team), CSEC (Chief Security), PKR (Koordinator Parkir)
 - **Kriteria sukses:** Gate kembali normal <= 30 menit; 0 tiket dipakai dua kali
-- **Tiket:** "Indikasi tiket palsu/calo di Gate A Atrium Cibadak" · lokasi Gate A (Lobby Utama) - Atrium Cibadak · sumber Event Check-in (DB-EVT) · kamera CAM-01
+- **Tiket:** "Indikasi tiket palsu/calo di Gate A Atrium Cibadag" · lokasi Gate A (Lobby Utama) - Atrium Cibadag · sumber Event Check-in (DB-EVT) · kamera CAM-01
 
 ```mermaid
 sequenceDiagram

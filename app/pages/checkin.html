@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#181b1f" />
   <title>Check-in Gate · Summarecon Mall Bandung</title>
-  <script src="/app/js/core/theme.js?v=75"></script>
+  <script src="/app/js/core/theme.js?v=76"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=75" />
-  <link rel="stylesheet" href="/app/css/app.css?v=75" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=76" />
+  <link rel="stylesheet" href="/app/css/app.css?v=76" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-xl border-b border-white/5">
@@ -22,11 +22,11 @@
   <main id="app" class="max-w-xl mx-auto px-4 pt-4 pb-10"></main>
   <div id="modal-root"></div>
 
-  <script src="/app/vendor/qrcode.js?v=75"></script>
-  <script src="/app/vendor/jsQR.js?v=75"></script>
-  <script src="/app/js/core/auth.js?v=75"></script>
-  <script src="/app/js/event/engine.js?v=75"></script>
-  <script src="/app/js/event/checkin-ui.js?v=75"></script>
+  <script src="/app/vendor/qrcode.js?v=76"></script>
+  <script src="/app/vendor/jsQR.js?v=76"></script>
+  <script src="/app/js/core/auth.js?v=76"></script>
+  <script src="/app/js/event/engine.js?v=76"></script>
+  <script src="/app/js/event/checkin-ui.js?v=76"></script>
   <script>
     (function () {
       const E = window.Evt, C = window.EvtCheckin, esc = E.esc;
@@ -48,10 +48,12 @@
           <label class="f">Gate<select class="inp" id="gate">${e.gates.map((g) => `<option ${g === gate ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select></label></div>
           <div id="stats">${stats()}</div>
           <section class="card p-4 mb-3">${C.panel({ compact: true })}</section>
+          <section class="card p-4 mb-3">${C.backup.card(evId)}</section>
           <section class="card p-4"><h2 class="font-headline-sm text-headline-sm mb-2">Pindaian terakhir</h2><div id="log" class="overflow-x-auto">${C.logTable(evId, 12)}</div></section>`;
         app.querySelector('#ev').addEventListener('change', (x) => { C.stopCam(); evId = x.target.value; render(); });
         app.querySelector('#gate').addEventListener('change', (x) => { gate = x.target.value; refresh(); });
         C.mount(app, () => evId, () => gate);
+        C.backup.bind(app, render);
         bindReport();
       }
       function bindReport() {

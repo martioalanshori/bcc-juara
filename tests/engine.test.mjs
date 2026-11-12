@@ -461,10 +461,10 @@ test('acara lama tanpa data persetujuan tetap bisa dipublikasikan ulang', async 
 });
 
 // ------------------------------------------------------------------ area acara & cek bentrok
-test('area: 7 area sesuai denah, nama Atrium Cibadak, venue memuat lantai', async () => {
+test('area: 7 area sesuai denah, nama Atrium Cibadag, venue memuat lantai', async () => {
   const { Evt } = await loadEvt();
-  assert.deepEqual(Array.from(Evt.AREAS, (a) => a.id), ['sawarga', 'downtown', 'parkir-barat', 'exhibition', 'ciunik', 'cileutik', 'cibadak']);
-  assert.equal(Evt.AREAS.find((a) => a.id === 'cibadak').name, 'Atrium Cibadak');
+  assert.deepEqual(Array.from(Evt.AREAS, (a) => a.id), ['sawarga', 'downtown', 'parkir-barat', 'exhibition', 'ciunik', 'cileutik', 'cibadag']);
+  assert.equal(Evt.AREAS.find((a) => a.id === 'cibadag').name, 'Atrium Cibadag');
   assert.ok(Evt.AREAS.find((a) => a.id === 'parkir-barat').parking);
   assert.match(Evt.ev('EVT-28').venue, /^Exhibition Hall A, 2F/);
   const e4 = Evt.ev('EVT-04');

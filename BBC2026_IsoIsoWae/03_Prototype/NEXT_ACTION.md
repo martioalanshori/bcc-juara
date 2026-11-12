@@ -16,14 +16,14 @@ Prototype SMICC-TS dibuat **sebelum** riset lapangan (7–11 Nov), jadi datanya 
 
 ### 1. Nama area event sesuai denah mall
 
-Aplikasi masih memakai "Main Atrium". Di denah Summarecon Mall Bandung namanya **Atrium Cibadak**, **Atrium Ciunik**, dan **Sawarga Courtyard**.
+Aplikasi masih memakai "Main Atrium". Di denah Summarecon Mall Bandung namanya **Atrium Cibadag**, **Atrium Ciunik**, dan **Sawarga Courtyard**.
 
 | Ganti | Menjadi | File |
 |---|---|---|
-| `Main Atrium, GF` | `Atrium Cibadak, GF` | `app/js/event/engine.js` (template `ATRIUM`, data contoh EVT-01, EVT-02, dll.) |
+| `Main Atrium, GF` | `Atrium Cibadag, GF` | `app/js/event/engine.js` (template `ATRIUM`, data contoh EVT-01, EVT-02, dll.) |
 | `PANGGUNG UTAMA · MAIN ATRIUM` | `PANGGUNG · ATRIUM CIBADAG` | `app/js/event/engine.js` |
-| Area "Main Atrium" di beranda pengunjung | Atrium Cibadak, Atrium Ciunik, Sawarga Courtyard | `app/js/event/visitor.js` |
-| Kamera/lokasi "Main Atrium" | Atrium Cibadak | `app/js/command-center/data.js`, `views/cctv.js`, `sop-data.js` |
+| Area "Main Atrium" di beranda pengunjung | Atrium Cibadag, Atrium Ciunik, Sawarga Courtyard | `app/js/event/visitor.js` |
+| Kamera/lokasi "Main Atrium" | Atrium Cibadag | `app/js/command-center/data.js`, `views/cctv.js`, `sop-data.js` |
 
 **Hasil:** saat demo, juri melihat nama tempat yang mereka kenal di Summarecon Mall Bandung.
 
@@ -67,11 +67,11 @@ Tambahkan satu event contoh yang **memakai area parkir** (seperti Festival Kulin
 
 ### 6. Peringatan kapasitas area event
 
-Check-in sudah menghitung peserta yang masuk. Tambahkan **kapasitas area** (misalnya Atrium Cibadak) dan peringatan bertahap:
+Check-in sudah menghitung peserta yang masuk. Tambahkan **kapasitas area** (misalnya Atrium Cibadag) dan peringatan bertahap:
 
 | Terisi | Tampilan | Aksi |
 |---|---|---|
-| 80% | Kuning: "Atrium Cibadak hampir penuh" | Notifikasi ke security |
+| 80% | Kuning: "Atrium Cibadag hampir penuh" | Notifikasi ke security |
 | 100% | Merah: "Penuh, tahan antrean" | Otomatis jadi tiket insiden di Command Center |
 
 **Menjawab:** Pak Asep yang sekarang hanya bisa memantau lewat CCTV.
@@ -96,7 +96,7 @@ Konsol pengelola (akun **Tenant/EO** dan **Tim Event Mall**) mengajukan; **Comma
 |---|---|
 | Alur | Penyelenggara unggah dokumen dan mengajukan → **Divisi Event** → **Operasional Mall** → baru bisa dipublikasikan. Minta revisi wajib beralasan |
 | Dokumen | 6 wajib: proposal, denah, legalitas (Divisi Event); teknis, K3, **surat izin keramaian** (Operasional Mall). Izin khusus opsional |
-| Area | Dropdown 7 area (Sawarga Courtyard, Downtown Walk, Parkir Barat, Exhibition Hall A, Atrium Ciunik/Cileutik/Cibadak) dengan status tersedia/dipakai; bentrok ditolak |
+| Area | Dropdown 7 area (Sawarga Courtyard, Downtown Walk, Parkir Barat, Exhibition Hall A, Atrium Ciunik/Cileutik/Cibadag) dengan status tersedia/dipakai; bentrok ditolak |
 | Waktu | Lama tiap divisi meninjau, total sejak pengajuan pertama. Menunggu lebih dari 2 hari ditandai di "Perlu tindakan" |
 | Log aktivitas | Siapa, kapan, apa, catatan. Hanya bisa ditambah; rantai hash mendeteksi entri yang diubah diam-diam ("Log utuh, N entri"). Ekspor CSV |
 
@@ -142,7 +142,7 @@ Ganti foto demo Wikimedia (`app/img/demo/`) dengan foto Summarecon Mall Bandung 
 
 ## Checklist
 
-- [x] 1. Nama area: Atrium Cibadak, Atrium Ciunik, Sawarga Courtyard (+ dropdown area & cek bentrok)
+- [x] 1. Nama area: Atrium Cibadag, Atrium Ciunik, Sawarga Courtyard (+ dropdown area & cek bentrok)
 - [ ] 2. Zona parkir: mobil ±2.000, motor 1.200, area sesuai lapangan
 - [ ] 3. Perkiraan kendaraan: motor + mobil, dibanding sisa kapasitas
 - [ ] 4. Teks panduan parkir + shuttle bus

@@ -118,7 +118,7 @@
   // Nama area = Evt.AREAS di engine.js (sesuai denah). a = kode warna CSS yang sudah ada; foto demo dipakai bersama.
   const AREAS = [
     { key: 'Exhibition Hall A', a: 'expo', floor: 'L2', img: 'area-expo', note: ['Pameran, bazar & trade expo', 'Exhibitions, bazaars & trade expos'] },
-    { key: 'Atrium Cibadak', a: 'atrium', floor: 'GF', img: 'area-atrium', note: ['Panggung utama, konser & pameran', 'Main stage, concerts & exhibitions'] },
+    { key: 'Atrium Cibadag', a: 'atrium', floor: 'GF', img: 'area-atrium', note: ['Panggung utama, konser & pameran', 'Main stage, concerts & exhibitions'] },
     { key: 'Atrium Ciunik', a: 'hall', floor: 'GF', img: 'area-hall', note: ['Pertunjukan kursi bernomor & aktivasi brand', 'Seated shows & brand activations'] },
     { key: 'Atrium Cileutik', a: 'kids', floor: 'GF', img: 'area-kids', note: ['Kelas, komunitas & acara keluarga', 'Classes, communities & family events'] },
     { key: 'Sawarga Courtyard', a: 'plaza', floor: 'GF', img: 'area-plaza', note: ['Courtyard outdoor ±3.600 m², konser & festival', 'Outdoor courtyard ±3,600 m², concerts & festivals'] },

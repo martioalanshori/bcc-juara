@@ -114,5 +114,45 @@
     return rows.length ? `<div class="overflow-x-auto -mx-1"><table class="tbl min-w-[520px]"><thead><tr><th>Waktu</th><th>Gate</th><th>Hasil</th><th>Tiket</th><th>Keterangan</th></tr></thead><tbody>${rows.map((s) => { const t = s.ticket && E.s.tickets[s.ticket]; return `<tr><td class="font-label-md text-label-md whitespace-nowrap">${E.fmtTime(s.ts)}</td><td class="font-body-sm text-body-sm">${esc(s.gate)}</td><td class="font-label-md text-label-md ${col[s.result]}">${s.result}</td><td class="font-label-md text-label-md">${s.ticket || '–'}${t ? '<br><span class="text-on-surface-variant">' + esc(t.holder) + ' · ' + (t.seat || 'Berdiri') + '</span>' : ''}</td><td class="font-body-sm text-body-sm text-on-surface-variant">${esc(s.reason)}</td></tr>`; }).join('')}</tbody></table></div>` : '<div class="font-body-sm text-body-sm text-on-surface-variant">Belum ada pindaian.</div>';
   }
 
-  window.EvtCheckin = { panel, mount, result, anomalies, logTable, stopCam };
+  // Manifest cadangan untuk gate saat sistem mati (SOP-EVT-05). Disimpan di perangkat ini (localStorage), dicadangkan
+  // otomatis sekali per hari dengan batas pukul 23.00, jadi gate tetap punya daftar peserta walau server atau jaringan putus.
+  const BK_KEY = 'smicc-manifest-v1', BK_HOUR = 23;
+  const backup = {
+    cutoff(t) { const d = new Date(t); d.setHours(BK_HOUR, 0, 0, 0); if (d.getTime() > t) d.setDate(d.getDate() - 1); return d.getTime(); },
+    all() { try { return JSON.parse(localStorage.getItem(BK_KEY) || '{}') || {}; } catch (e) { return {}; } },
+    load(evId) { return backup.all()[evId] || null; },
+    rows(evId) {
+      const e = E.ev(evId), out = [['ID Tiket', 'Booking', 'Kategori', 'Kursi', 'Pemegang', 'Pemesan', 'WhatsApp', 'Status', 'Check-in', 'Gate']];
+      Object.values(E.s.tickets).filter((t) => t.ev === evId).forEach((t) => { const o = E.s.orders[t.order] || {}, ty = e && E.typeById(e, t.type);
+        out.push([t.id, t.order || '', ty ? ty.name : t.type, t.seat || 'Berdiri', t.holder || '', o.name || '', o.phone || '', t.status, t.checkedInAt ? E.fmtDT(t.checkedInAt) : '', t.gate || '']); });
+      return out;
+    },
+    save(evId, at) {
+      const e = E.ev(evId); if (!e) return null;
+      const m = { ev: evId, name: e.name, at: at || backup.cutoff(E.now()), savedAt: E.now(), rows: backup.rows(evId) };
+      const A = backup.all(); A[evId] = m;
+      try { localStorage.setItem(BK_KEY, JSON.stringify(A)); } catch (x) { return m; } // penyimpanan penuh: tetap bisa diunduh dari memori
+      return m;
+    },
+    // Cadangan hari ini sudah ada? Pakai itu. Belum (lewat batas 23.00 berikutnya)? Simpan sekarang dengan label batas itu.
+    ensure(evId) { const m = backup.load(evId), c = backup.cutoff(E.now()); return m && m.at >= c ? m : backup.save(evId, c); },
+    download(evId) { const m = backup.load(evId) || backup.ensure(evId); if (m) E.csv('manifest_' + evId + '_' + new Date(m.at).toISOString().slice(0, 10) + '.csv', m.rows); return m; },
+    card(evId, opts) {
+      const m = backup.ensure(evId); if (!m) return '';
+      const n = m.rows.length - 1, sop = opts && opts.sopHref;
+      return `<div class="ck-bk" data-bk="${esc(evId)}">${ic('cloud_off', 'text-[22px] text-primary')}<div class="min-w-0 flex-1"><b>Cadangan kalau sistem mati</b>
+        <p>Manifest ${n} tiket tersimpan di perangkat ini. Cadangan otomatis setiap pukul 23.00, terakhir <b>${E.fmtDT(m.at)}</b>.</p>
+        <p>Server atau jaringan putus: unduh manifest, cocokkan kode booking dan nama, centang manual, pasang gelang${sop ? `. <a class="text-primary" href="${sop}">Lihat SOP-EVT-05</a>` : ' (SOP-EVT-05)'}.</p></div>
+        <div class="ck-bk-act"><button class="btn-ghost" data-bk-dl>${ic('download', 'text-[16px]')} Unduh manifest</button><button class="btn-ghost" data-bk-now>${ic('save', 'text-[16px]')} Cadangkan sekarang</button></div></div>`;
+    },
+    bind(root, onSaved) {
+      root.querySelectorAll('[data-bk]').forEach((el) => {
+        const id = el.dataset.bk;
+        const dl = el.querySelector('[data-bk-dl]'); if (dl) dl.addEventListener('click', () => backup.download(id));
+        const now = el.querySelector('[data-bk-now]'); if (now) now.addEventListener('click', () => { backup.save(id, E.now()); if (onSaved) onSaved(); });
+      });
+    },
+  };
+
+  window.EvtCheckin = { panel, mount, result, anomalies, logTable, stopCam, backup };
 })();

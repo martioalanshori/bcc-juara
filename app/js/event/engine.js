@@ -54,11 +54,11 @@
 
   // ------------------------------------------------------------------ seed (data contoh, bukan data pribadi nyata)
   function rowsSpec(spec) { return spec.map(([r, t, n]) => ({ r, t, n })); }
-  const ATRIUM = { stage: 'PANGGUNG · ATRIUM CIBADAK', rows: rowsSpec([['A', 'VIP', 12], ['B', 'VIP', 12], ['C', 'GLD', 16], ['D', 'GLD', 16], ['E', 'GLD', 16], ['F', 'GLD', 16], ['G', 'SLV', 18], ['H', 'SLV', 18], ['J', 'SLV', 18], ['K', 'SLV', 18], ['L', 'SLV', 18]]) };
+  const ATRIUM = { stage: 'PANGGUNG · ATRIUM CIBADAG', rows: rowsSpec([['A', 'VIP', 12], ['B', 'VIP', 12], ['C', 'GLD', 16], ['D', 'GLD', 16], ['E', 'GLD', 16], ['F', 'GLD', 16], ['G', 'SLV', 18], ['H', 'SLV', 18], ['J', 'SLV', 18], ['K', 'SLV', 18], ['L', 'SLV', 18]]) };
   const HALL = { stage: 'PANGGUNG · ATRIUM CIUNIK', rows: rowsSpec([['A', 'PRM', 14], ['B', 'PRM', 14], ['C', 'PRM', 14], ['D', 'REG', 14], ['E', 'REG', 14], ['F', 'REG', 14], ['G', 'REG', 14], ['H', 'REG', 14]]) };
   // Templat venue untuk acara baru (denah + jenis tiket default)
   const TEMPLATES = {
-    ATRIUM: { name: 'Kursi bernomor, 178 kursi + festival 200', area: 'cibadak', venue: 'Atrium Cibadak, GF · Summarecon Mall Bandung', layout: ATRIUM, gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'],
+    ATRIUM: { name: 'Kursi bernomor, 178 kursi + festival 200', area: 'cibadag', venue: 'Atrium Cibadag, GF · Summarecon Mall Bandung', layout: ATRIUM, gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'],
       types: [
         { id: 'VIP', name: 'VIP', price: 750000, color: '#c084fc', seated: true, onSale: true, perks: 'Baris A-B' },
         { id: 'GLD', name: 'Gold', price: 450000, color: '#facc15', seated: true, onSale: true, perks: 'Baris C-F' },
@@ -77,19 +77,19 @@
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
-  const SAMPLE_VER = 6;
+  const SAMPLE_VER = 7;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
     const start1 = Math.ceil((t + H) / H) * H; // acara hari ini, 1-2 jam lagi; gate dibuka 2,5 jam sebelumnya -> sudah buka
-    const ev1 = { id: 'EVT-01', name: 'Konser Akustik "Senja di Bandung"', tagline: 'Kalandra Trio & Teman · live acoustic session', cat: 'Konser', start: start1, doors: start1 - 2.5 * H, venue: 'Atrium Cibadak, GF · Summarecon Mall Bandung', layout: ATRIUM, desc: 'Malam akustik di bawah kubah Atrium Cibadak. Kursi bernomor untuk VIP, Gold, Silver; area Festival berdiri di belakang. Gate check-in dibuka 2,5 jam sebelum acara.', saleStart: t - 20 * D, saleEnd: start1 - 30 * 60000, status: 'PUBLISHED', holdMin: 8, maxPerOrder: 4, color: '#38bdf8', gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'], blocked: ['L1', 'L18'],
+    const ev1 = { id: 'EVT-01', name: 'Konser Akustik "Senja di Bandung"', tagline: 'Kalandra Trio & Teman · live acoustic session', cat: 'Konser', start: start1, doors: start1 - 2.5 * H, venue: 'Atrium Cibadag, GF · Summarecon Mall Bandung', layout: ATRIUM, desc: 'Malam akustik di bawah kubah Atrium Cibadag. Kursi bernomor untuk VIP, Gold, Silver; area Festival berdiri di belakang. Gate check-in dibuka 2,5 jam sebelum acara.', saleStart: t - 20 * D, saleEnd: start1 - 30 * 60000, status: 'PUBLISHED', holdMin: 8, maxPerOrder: 4, color: '#38bdf8', gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'], blocked: ['L1', 'L18'],
       types: [
         { id: 'VIP', name: 'VIP', price: 750000, color: '#c084fc', seated: true, onSale: true, perks: 'Baris A-B, merchandise, meet & greet' },
         { id: 'GLD', name: 'Gold', price: 450000, color: '#facc15', seated: true, onSale: true, perks: 'Baris C-F, view tengah' },
         { id: 'SLV', name: 'Silver', price: 250000, color: '#2dd4bf', seated: true, onSale: true, perks: 'Baris G-L' },
         { id: 'FES', name: 'Festival (Berdiri)', price: 150000, color: '#fb7185', seated: false, onSale: true, quota: 200, perks: 'Area berdiri belakang, tanpa nomor kursi' },
       ] };
-    const ev2 = { id: 'EVT-02', name: 'Bandung Build Challenge 2026 · Demo Day & Awarding', tagline: 'Bandung Innovation Week 2026', cat: 'Teknologi', start: new Date(2026, 10, 15, 13, 0).getTime(), doors: new Date(2026, 10, 15, 11, 30).getTime(), venue: 'Atrium Cibadak, GF · Summarecon Mall Bandung', layout: ATRIUM, desc: 'Demo Day finalis Event Ticketing System dan penganugerahan pemenang. Registrasi gratis dengan kursi bernomor; baris A-B khusus juri & sponsor (undangan).', saleStart: new Date(2026, 9, 26, 9, 0).getTime(), saleEnd: new Date(2026, 10, 15, 12, 0).getTime(), status: 'PUBLISHED', holdMin: 8, maxPerOrder: 2, color: '#4edea3', gates: ['Gate A (Lobby Utama)'], blocked: [],
+    const ev2 = { id: 'EVT-02', name: 'Bandung Build Challenge 2026 · Demo Day & Awarding', tagline: 'Bandung Innovation Week 2026', cat: 'Teknologi', start: new Date(2026, 10, 15, 13, 0).getTime(), doors: new Date(2026, 10, 15, 11, 30).getTime(), venue: 'Atrium Cibadag, GF · Summarecon Mall Bandung', layout: ATRIUM, desc: 'Demo Day finalis Event Ticketing System dan penganugerahan pemenang. Registrasi gratis dengan kursi bernomor; baris A-B khusus juri & sponsor (undangan).', saleStart: new Date(2026, 9, 26, 9, 0).getTime(), saleEnd: new Date(2026, 10, 15, 12, 0).getTime(), status: 'PUBLISHED', holdMin: 8, maxPerOrder: 2, color: '#4edea3', gates: ['Gate A (Lobby Utama)'], blocked: [],
       types: [
         { id: 'UND', name: 'Undangan Juri & Sponsor', price: 0, color: '#c084fc', seated: true, onSale: false, perks: 'Tidak dijual · undangan panitia' },
         { id: 'UMM', name: 'Umum (Registrasi)', price: 0, color: '#4edea3', seated: true, onSale: true, perks: 'Gratis, wajib registrasi' },
@@ -169,7 +169,7 @@
   // Acara contoh tambahan untuk beranda portal (EVT-04..12): tersebar di area mal & kategori, jadwal relatif terhadap
   // waktu seed (hari ini, akhir pekan, minggu ini) agar beranda selalu terisi. Foto demo di app/img/demo (lihat CREDITS.md).
   const IMG = (f) => '/app/img/demo/' + f + '.jpg';
-  // Area acara Summarecon Mall Bandung (daftar dari tim, lantai dari foto denah; ejaan Cibadak keputusan tim).
+  // Area acara Summarecon Mall Bandung (daftar dari tim, lantai dari foto denah; ejaan Cibadag keputusan tim).
   // parking = memakai lahan parkir (kapasitas parkir berkurang selama acara).
   const AREAS = [
     { id: 'sawarga', name: 'Sawarga Courtyard', floor: 'GF', kind: 'Outdoor', fit: 'Konser, festival, perayaan besar', size: '±3.600 m²', gates: ['Gate Sawarga Timur'] },
@@ -178,7 +178,7 @@
     { id: 'exhibition', name: 'Exhibition Hall A', floor: '2F', kind: 'Indoor', fit: 'Pameran produk, bazar, trade expo', gates: ['Gate Exhibition Hall 2F'] },
     { id: 'ciunik', name: 'Atrium Ciunik', floor: 'GF', kind: 'Indoor', fit: 'Promosi, aktivasi brand, acara kecil-menengah', gates: ['Gate Atrium Ciunik'] },
     { id: 'cileutik', name: 'Atrium Cileutik', floor: 'GF', kind: 'Indoor', fit: 'Pameran, bazar, aktivasi produk, komunitas', gates: ['Gate Atrium Cileutik'] },
-    { id: 'cibadak', name: 'Atrium Cibadak', floor: 'GF', kind: 'Indoor', fit: 'Pameran, bazar, aktivasi brand, promosi', gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'] },
+    { id: 'cibadag', name: 'Atrium Cibadag', floor: 'GF', kind: 'Indoor', fit: 'Pameran, bazar, aktivasi brand, promosi', gates: ['Gate A (Lobby Utama)', 'Gate B (Sisi Food Court)'] },
   ];
   const areaById = (id) => AREAS.find((a) => a.id === id);
   const areaVenue = (a) => a.name + (a.floor ? ', ' + a.floor : ', luar gedung') + ' · Summarecon Mall Bandung';
@@ -215,8 +215,8 @@
       open({ id: 'EVT-06', name: 'Workshop Lukis Cat Air untuk Anak', tagline: 'Usia 5-12 tahun, semua alat disediakan', cat: 'Anak', area: 'cileutik', img: 'ev-lukis-anak', color: '#ec4899', start: day(toSat, 10), max: 3,
         desc: 'Kelas melukis cat air 90 menit bersama ilustrator lokal. Kuas, cat, kertas, dan celemek disediakan; hasil karya dibawa pulang. Satu pendamping boleh menunggu di area Atrium Cileutik.',
         types: [fes('ANK', 'Peserta Anak', 120000, 16, 'Usia 5-12 tahun, termasuk alat lukis', '#ec4899')] }),
-      open({ id: 'EVT-07', name: 'Bandung Jazz Night', tagline: 'Malam jazz bersama kuartet & big band Bandung', cat: 'Konser', area: 'cibadak', img: 'ev-jazz', color: '#6366f1', start: day(toSat + 1, 19, 30), doorsH: 1.5, layout: ATRIUM, max: 4,
-        desc: 'Konser jazz dua sesi di Atrium Cibadak. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
+      open({ id: 'EVT-07', name: 'Bandung Jazz Night', tagline: 'Malam jazz bersama kuartet & big band Bandung', cat: 'Konser', area: 'cibadag', img: 'ev-jazz', color: '#6366f1', start: day(toSat + 1, 19, 30), doorsH: 1.5, layout: ATRIUM, max: 4,
+        desc: 'Konser jazz dua sesi di Atrium Cibadag. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
         types: [{ id: 'VIP', name: 'VIP', price: 550000, color: '#c084fc', seated: true, onSale: true, perks: 'Baris A-B, welcome drink' }, { id: 'GLD', name: 'Gold', price: 350000, color: '#facc15', seated: true, onSale: true, perks: 'Baris C-F' }, { id: 'SLV', name: 'Silver', price: 200000, color: '#2dd4bf', seated: true, onSale: true, perks: 'Baris G-L' }, fes('FES', 'Festival (Berdiri)', 120000, 200, 'Area berdiri belakang, tanpa nomor kursi', '#fb7185')] }),
       open({ id: 'EVT-08', name: 'Zumba Party Sabtu Pagi', tagline: 'Olahraga bareng 60 menit, cocok untuk semua umur', cat: 'Olahraga', area: 'sawarga', img: 'ev-zumba', color: '#14b8a6', start: day(toSat, 7),
         desc: 'Zumba bersama instruktur bersertifikat di Sawarga Courtyard. Tiket termasuk air mineral dan handuk kecil.',
@@ -234,10 +234,10 @@
         desc: 'Festival kopi dengan sesi cupping gratis tiap jam. Kelas Seduh Manual berlangsung 90 menit bersama barista juara regional.',
         types: [fes('MSK', 'Tiket Masuk', 30000, 250, 'Termasuk 2 cupping', '#a16207'), fes('KLS', 'Kelas Seduh Manual', 150000, 25, 'Kelas 90 menit, alat disediakan', '#f59e0b')] }),
       // EVT-13..27: acara dari penyelenggara lain (komunitas & mitra fiktif) agar katalog beranda ramai.
-      open({ id: 'EVT-13', name: 'Indie Pop Showcase "Suara Gedebage"', tagline: 'Empat band indie Bandung dalam satu malam', cat: 'Konser', area: 'cibadak', img: 'ev-indie', color: '#7c3aed', start: day(3, 19), doorsH: 1.5, layout: ATRIUM, max: 4, org: 'Gedebage Musik Kolektif',
-        desc: 'Showcase empat band indie pop dan shoegaze Bandung di bawah kubah Atrium Cibadak. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
+      open({ id: 'EVT-13', name: 'Indie Pop Showcase "Suara Gedebage"', tagline: 'Empat band indie Bandung dalam satu malam', cat: 'Konser', area: 'cibadag', img: 'ev-indie', color: '#7c3aed', start: day(3, 19), doorsH: 1.5, layout: ATRIUM, max: 4, org: 'Gedebage Musik Kolektif',
+        desc: 'Showcase empat band indie pop dan shoegaze Bandung di bawah kubah Atrium Cibadag. Kursi bernomor untuk VIP, Gold, dan Silver; area Festival berdiri di belakang.',
         types: [seatT('VIP', 'VIP', 350000, '#c084fc', 'Baris A-B, poster bertanda tangan'), seatT('GLD', 'Gold', 220000, '#facc15', 'Baris C-F'), seatT('SLV', 'Silver', 150000, '#2dd4bf', 'Baris G-L'), fes('FES', 'Festival (Berdiri)', 95000, 200, 'Area berdiri belakang, tanpa nomor kursi', '#fb7185')] }),
-      open({ id: 'EVT-14', name: 'Little Runway: Fashion Show Anak', tagline: 'Peragaan busana anak usia 4-12 tahun', cat: 'Fashion', area: 'cibadak', img: 'ev-fashion', color: '#db2777', start: day(toSat, 15), org: 'Little Runway Bandung',
+      open({ id: 'EVT-14', name: 'Little Runway: Fashion Show Anak', tagline: 'Peragaan busana anak usia 4-12 tahun', cat: 'Fashion', area: 'cibadag', img: 'ev-fashion', color: '#db2777', start: day(toSat, 15), org: 'Little Runway Bandung',
         desc: 'Peragaan busana anak bersama desainer lokal. Tiket Penonton untuk keluarga; Peserta Runway sudah termasuk gladi bersih dan sesi foto.',
         types: [fes('PNT', 'Penonton', 40000, 80, 'Area duduk lesehan & berdiri', '#db2777'), fes('PSR', 'Peserta Runway', 250000, 10, 'Gladi bersih, rias, sesi foto', '#f59e0b')] }),
       open({ id: 'EVT-15', name: 'Kelas Membatik dengan Canting', tagline: 'Belajar batik tulis dari perajin Priangan', cat: 'Workshop', area: 'exhibition', img: 'ev-batik', color: '#92400e', start: day(4, 13), max: 2, org: 'Rumah Batik Priangan',
@@ -315,7 +315,7 @@
     sell(E('EVT-24'), 'KLS', 10);
     sell(E('EVT-26'), 'PST', 6);
     sell(E('EVT-27'), 'KLS', 8);
-    [['EVT-01', 'cibadak'], ['EVT-02', 'cibadak'], ['EVT-03', 'ciunik']].forEach(([id, a]) => { const e = s.events[id]; e.area = a; e.venue = areaVenue(areaById(a)); e.end = e.start + 3 * H; if (a === 'ciunik') e.gates = areaById(a).gates.slice(); });
+    [['EVT-01', 'cibadag'], ['EVT-02', 'cibadag'], ['EVT-03', 'ciunik']].forEach(([id, a]) => { const e = s.events[id]; e.area = a; e.venue = areaVenue(areaById(a)); e.end = e.start + 3 * H; if (a === 'ciunik') e.gates = areaById(a).gates.slice(); });
     // Jadwal relatif terhadap hari seed bisa membuat dua acara jatuh di area & jam yang sama: geser yang belakangan.
     const done = [];
     s.order.forEach((id) => {
@@ -933,7 +933,7 @@
         d.evSeq = n;
         const id = 'EVT-' + String(n).padStart(2, '0');
         const T = TEMPLATES[info.template] || TEMPLATES.ATRIUM;
-        const start = info.start, A = areaById(info.area || T.area) || areaById('cibadak'), end = info.end > start ? info.end : start + 3 * 3600000;
+        const start = info.start, A = areaById(info.area || T.area) || areaById('cibadag'), end = info.end > start ? info.end : start + 3 * 3600000;
         clashFail(d, A.id, start, end);
         d.events[id] = { id, name: info.name, tagline: info.tagline || '', cat: info.cat || 'Umum', start, doors: start - 3600000, venue: areaVenue(A), area: A.id, end, layout: clone(T.layout), desc: info.desc || '', saleStart: t, saleEnd: start - 1800000, status: 'DRAFT', holdMin: 8, maxPerOrder: 4, color: info.color || '#a78bfa', gates: (T === TEMPLATES.KUOTA ? A.gates : T.gates).slice(), blocked: [], types: clone(T.types), createdAt: t, approval: newApproval(), org: info.org || actor.org || ORG_MALL };
         audit(d.events[id], t, 'BUAT', 'Acara dibuat sebagai draft (templat ' + T.name + ')');

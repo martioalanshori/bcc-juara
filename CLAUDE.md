@@ -53,7 +53,7 @@ UI changes still have to be checked by running `node server.js` and opening the 
 - `app/js/core/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=75`; `fonts.css`
+- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=76`; `fonts.css`
   has its own, `?v=5`). Assets are cached **1 year, immutable** (`assetCache` in `server/app.js`
   and the `/app/` header in `vercel.json`), so **bump it on every page (`app/pages/*.html`) whenever
   you change JS or CSS**, or browsers keep the old file. `npm run dev` (`--dev`) disables caching, so
@@ -132,7 +132,7 @@ dependency-free PDF writer: Helvetica/WinAnsi text, rects, lines, A4 pages). All
    same component `app/js/event/approval-ui.js` (`window.EvtApproval`). `Evt.setActor({name, role, div, org})` sets who
    is written to the log (`div` = event/ops for Command Center accounts, `org` = organiser for tenants).
    Every event has `area` (one of `Evt.AREAS`: Sawarga Courtyard, Downtown Walk, Parkir Barat, Exhibition Hall A,
-   Atrium Ciunik/Cileutik/Cibadak; spelling "Cibadak" is the team's decision) and `end`; `Evt.areaClash()` rejects
+   Atrium Ciunik/Cileutik/Cibadag; spelling "Cibadag" is the team's decision) and `end`; `Evt.areaClash()` rejects
    overlapping bookings of the same area in `addEvent`/`saveEvent`/`submitApproval`. Seeded state is ~348 KB of the
    350 KB test budget, so don't backfill logs into sample events.
    Seed data has 28 sample events (EVT-01..03 in `seed()`, EVT-04..28 in `seedMore()`; EVT-28 belongs to tenant
@@ -145,6 +145,8 @@ dependency-free PDF writer: Helvetica/WinAnsi text, rects, lines, A4 pages). All
    The visitor landing page (`V.home` / `homeSections()` in `visitor.js`) widens to 1200px via `body.pv-wide`;
    all other visitor screens stay phone-width. Its static content (mall hours, areas, tenant promos, guide) is the
    `MALL`, `AREAS`, `PROMOS`, `GUIDE` constants at the top of that block.
+   Gate backup (SOP-EVT-05): `EvtCheckin.backup` in `checkin-ui.js` keeps a per-event attendee manifest in localStorage
+   (`smicc-manifest-v1`, refreshed once per day with a 23:00 cutoff) that can be downloaded as CSV without the server.
    QR payload: `SMB1|ticketId|eventId|seat|sig`. The signature is a cyrb53 hash with a
    hard-coded sandbox secret (prototype only).
 
