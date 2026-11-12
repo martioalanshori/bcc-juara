@@ -11,10 +11,11 @@ browser.
 | Path | Untuk | Akses |
 |---|---|---|
 | `/pengunjung` | Pembeli tiket | Terbuka |
-| `/pengelola` | Panitia/EO | PIN pengelola |
-| `/checkin` | Petugas gate | PIN pengelola |
-| `/command-center` | Manajemen mall & operator | PIN command-center |
-| `/` | Semua | Halaman pilih path |
+| `/pengelola` | Panitia/EO, Divisi Event, Operasional Mall | Akun staf pengelola |
+| `/checkin` | Petugas gate | Akun staf gate atau pengelola |
+| `/command-center` | Manajemen mall & operator | Akun staf command-center |
+| `/` | Semua | Halaman pilih peran |
+| `/masuk` | Staf | Login email + password (kartu akun demo) |
 
 ---
 
@@ -43,18 +44,21 @@ Tampilan mobile-first untuk membeli tiket.
 
 ## 2. Konsol pengelola acara (`/pengelola`)
 
-| Tab | Fitur |
+Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Setelah satu acara dipilih:
+
+| Menu | Fitur |
 |---|---|
 | Daftar acara | Tambah acara baru, publikasikan, batalkan (refund otomatis ke semua pembeli), hapus |
-| Ringkasan | KPI penjualan, okupansi, kehadiran, panel anomali, lapor anomali ke Command Center |
+| Ringkasan | KPI penjualan, okupansi, kehadiran, blok **Perlu tindakan** (anomali gate, pesanan menunggu bayar, persetujuan tertunda), ticker aktivitas |
 | Denah kursi | Lihat status kursi langsung, blokir/buka kursi, uji rebutan kursi (2 pembeli memilih kursi yang sama) |
-| Kelola acara | Jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan |
+| Pengaturan | Poster, jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan, asumsi keuangan. Satu tombol simpan |
+| Persetujuan | Unggah dokumen (proposal, denah, surat izin keramaian, K3), ajukan, keputusan **Divisi Event** lalu **Operasional Mall**, minta revisi beralasan, waktu tunggu per divisi. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
 | Peserta & transaksi | Cari & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund). Detail pesanan: ubah data peserta, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
 | Keuangan & ROI | Bruto, refund, neto, biaya layanan, rekonsiliasi per metode pembayaran, deteksi selisih, penjualan per kategori, bagi hasil & ROI. **Unduh Rekonsiliasi (CSV)** |
-| Check-in QR | Pemindai QR di dalam konsol, statistik masuk per gate |
-| Notifikasi & daftar tunggu | Riwayat notifikasi, kelola daftar tunggu |
+| Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
+| Kirim broadcast | Kirim pengingat ke semua pemesan, riwayat pesan email & WhatsApp, kabari daftar tunggu |
 
-Lainnya: peringatan bila data contoh sudah kedaluwarsa, reset data event (butuh sesi pengelola).
+Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (termasuk alat demo dan reset data event), kartu KPI yang bisa diklik untuk rincian, **Laporan PDF** per acara, profil di kanan atas, peringatan bila data contoh sudah kedaluwarsa.
 
 ### Format file CSV
 
@@ -67,6 +71,7 @@ Lainnya: peringatan bila data contoh sudah kedaluwarsa, reset data event (butuh 
 |---|---|
 | `peserta_<acara>.csv` | Satu baris per tiket: acara, ID tiket, booking, kategori, kursi, pemegang, pemesan, email, WhatsApp, status tiket, waktu check-in, gate |
 | `transaksi_<acara>.csv` | Satu baris per pesanan: booking, pemesan, kontak, jumlah tiket, kursi, subtotal, biaya layanan, total, metode, status, waktu dibuat/dibayar, catatan refund |
+| `log_aktivitas_<acara>.csv` | Satu baris per entri log: waktu, pelaku, peran, aksi, keterangan, catatan, kode rantai |
 | `rekonsiliasi_<acara>.csv` | Pesanan lunas & refund: metode, status, subtotal, biaya layanan, total, jumlah tiket, waktu dibayar, waktu refund |
 
 ## 3. Check-in gate (`/checkin`)
@@ -102,6 +107,10 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   pembuat laporan BOD (PDF cetak atau CSV).
 - **Komersial & Keuangan**: zonasi & okupansi tenant, heatmap footfall, kontrak jatuh tempo,
   tagihan & umur piutang.
+- **Analisis Sentimen**: ulasan publik (sekarang Google Maps; X, TikTok, Instagram "Segera"), komposisi
+  positif/netral/negatif, keluhan per topik, tren per bulan, keluhan saat event besar, rekomendasi
+  pengembangan untuk mall dan event (masing-masing dengan dasar angkanya), dan kutipan tanpa nama.
+  Data statis `app/js/command-center/sentimen-data.js` dari `analisis.py --export-js`.
 
 **SOP & Simulasi**
 - **Pusat SOP & Runbook**: 48 SOP, matriks SLA P1-P4, eskalasi berjenjang, keterlacakan
@@ -118,8 +127,8 @@ Command Center yang membuat tiket walau beberapa terbuka.
 - **Anti double-booking**: setiap perubahan (tahan kursi, bayar, check-in) adalah transaksi
   berversi (compare-and-swap). Bila dua pengguna bentrok, satu ditolak lalu aturan dijalankan
   ulang.
-- **Login PIN per peran**: hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali
-  salah.
+- **Login staf per peran** (email + password): sesi cookie HttpOnly bertanda tangan HMAC, 12 jam,
+  kunci 60 detik setelah 5 kali salah.
 - **Pemeriksaan peran di server**: tanpa login hanya perubahan pembeli yang diterima; Command
   Center hanya boleh mengubah laporan gate; pengelola boleh semuanya. Aturan yang sama di
   `server/guard.js` (satu kode untuk LAN dan Vercel), diuji dengan `tests/guard_cases.json`.
@@ -133,3 +142,5 @@ Command Center yang membuat tiket walau beberapa terbuka.
 - Aturan bisnis dan kunci tanda tangan QR masih berjalan di browser. Produksi perlu API per aksi
   dan tanda tangan QR di server.
 - Data dashboard Command Center selain event adalah data contoh dan tersimpan per browser.
+- Persetujuan acara memakai satu akun pengelola untuk semua divisi (simulasi). Dokumen hanya dicatat
+  nama dan ukurannya, dan rantai hash log dihitung di browser.

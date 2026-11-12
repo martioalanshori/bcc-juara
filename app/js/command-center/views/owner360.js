@@ -4,6 +4,75 @@
   const { esc, icon, num } = UI;
   const fmt = (v, t) => (t === 'pct' ? (v * 100).toFixed(1) + '%' : t === 'int' ? num(v) : num(v, v % 1 ? 2 : 0));
 
+  // Laporan PDF Komersial & Keuangan (MiniPDF, app/js/core/pdf.js): ringkasan, scorecard KPI, tren bulanan,
+  // zonasi & okupansi, umur piutang & tenant menunggak, kontrak jatuh tempo. Angka sama dengan layar.
+  function reportPdf() {
+    if (!window.MiniPDF) return UI.toast('Modul PDF belum dimuat. Muat ulang halaman.', 'P2');
+    const S = window.SEED, K = S.KPIS, TR = S.TREND, Z = S.ZONES.filter((z) => z.nla), AR = S.AR;
+    const d = MiniPDF.doc(), M = 40, W = d.W - 2 * M, INK = '#1B2333', MUT = '#5B6577', LINE = '#D5DAE1', SOFT = '#F3F4F6', PRI = '#2F6FDB';
+    const nla = Z.reduce((a, z) => a + z.nla, 0), leased = Z.reduce((a, z) => a + z.leased, 0);
+    const rent = Z.reduce((a, z) => a + (z.leased * z.rate) / 1e6, 0), sales = Z.reduce((a, z) => a + z.sales, 0), arTot = AR.reduce((a, x) => a + x.v, 0);
+    const id = (v, dg) => Number(v).toLocaleString('id-ID', { minimumFractionDigits: dg || 0, maximumFractionDigits: dg || 0 });
+    const fit = (s, w, size, bold) => { let x = String(s); if (d.width(x, size, bold) <= w) return x; while (x.length > 1 && d.width(x + '…', size, bold) > w) x = x.slice(0, -1); return x + '…'; };
+    const now = new Date(), tgl = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    let y = 0;
+    const head = (first) => {
+      if (first) {
+        d.text(M, 50, 'Summarecon Mall Bandung · Command Center', { size: 9, color: MUT });
+        d.text(d.W - M, 50, 'Dibuat ' + tgl, { size: 9, color: MUT, align: 'right' });
+        d.text(M, 84, 'Laporan Komersial & Keuangan', { size: 22, bold: true, color: INK });
+        d.text(M, 102, 'Okupansi, pendapatan, piutang, dan kontrak tenant dari sudut pandang pemilik mal', { size: 10, color: MUT });
+        d.rect(M, 112, W, 2, PRI); y = 140;
+      } else { d.text(M, 34, 'Laporan Komersial & Keuangan', { size: 9, bold: true, color: INK }); d.text(d.W - M, 34, tgl, { size: 8.5, color: MUT, align: 'right' }); d.line(M, 42, d.W - M, 42, LINE); y = 66; }
+    };
+    const need = (h) => { if (y + h > d.H - 58) { d.addPage(); head(false); } };
+    const section = (t, sub) => { need(90); y += 10; d.text(M, y, t, { size: 13, bold: true, color: INK }); if (sub) d.text(M, y + 13, sub, { size: 8.5, color: MUT }); y += sub ? 26 : 14; };
+    // cols: [judul, lebar, 'right'?]; rows: array sel teks; total: baris terakhir tebal
+    const table = (cols, rows, total) => {
+      const hdr = () => { d.rect(M, y, W, 20, SOFT); let x = M; cols.forEach(([h, w, al]) => { d.text(al ? x + w - 6 : x + 6, y + 13.5, h, { size: 8, bold: true, color: MUT, align: al ? 'right' : 'left' }); x += w; }); y += 20; };
+      need(44); hdr();
+      rows.forEach((r, ri) => {
+        if (y + 19 > d.H - 58) { d.addPage(); head(false); hdr(); }
+        const bold = total && ri === rows.length - 1; let x = M;
+        cols.forEach(([, w, al], ci) => { d.text(al ? x + w - 6 : x + 6, y + 13, fit(r[ci], w - 12, 8.5, bold), { size: 8.5, bold, color: INK, align: al ? 'right' : 'left' }); x += w; });
+        y += 19; d.line(M, y, M + W, y, LINE, 0.4);
+      });
+      y += 10;
+    };
+    head(true);
+    // Ringkasan: 4 kotak angka
+    const boxes = [['Okupansi NLA', id((leased / nla) * 100, 1) + '%', id(leased) + ' / ' + id(nla) + ' m²'], ['Sewa bulanan', 'Rp ' + id(rent / 1000, 1) + ' M', 'Omzet tenant Rp ' + id(sales / 1000, 1) + ' M'],
+      ['Total piutang', 'Rp ' + id(arTot, 1) + ' M', 'Lewat 60 hari Rp ' + id(AR[2].v + AR[3].v, 1) + ' M'], ['NOI tahun berjalan', 'Rp ' + id(TR.reduce((a, r) => a + r[2] - r[3], 0), 1) + ' M', 'Pendapatan Rp ' + id(TR.reduce((a, r) => a + r[2], 0), 1) + ' M']];
+    const bw = (W - 3 * 10) / 4;
+    boxes.forEach(([l, v, f], i) => { const x = M + i * (bw + 10); d.rect(x, y, bw, 64, SOFT); d.rect(x, y, 3, 64, PRI); d.text(x + 12, y + 18, l, { size: 8.5, color: MUT }); d.text(x + 12, y + 40, v, { size: 15, bold: true, color: INK }); d.text(x + 12, y + 54, fit(f, bw - 18, 7.5), { size: 7.5, color: MUT }); });
+    y += 84;
+    section('Scorecard KPI eksekutif', 'Capaian dihitung sesuai arah KPI (naik lebih baik atau turun lebih baik)');
+    table([['Indikator', 225], ['Target', 70, 1], ['Realisasi', 70, 1], ['Capaian', 60, 1], ['Status', 90]], K.map((k) => {
+      const ach = k[5] === 'up' ? k[3] / k[2] : k[2] / k[3], v = (x) => (k[4] === 'pct' ? id(x * 100, 1) + '%' : id(x, x % 1 ? 2 : 0));
+      return [k[1], v(k[2]), v(k[3]), id(ach * 100, 1) + '%', ach >= 1 ? 'Optimal' : ach >= 0.95 ? 'Perlu perhatian' : 'Peringatan'];
+    }));
+    section('Tren kinerja bulanan', 'Rp miliar; pengunjung dalam ribu');
+    table([['Bulan', 80], ['Pengunjung', 100, 1], ['Pendapatan', 110, 1], ['Biaya energi & ops', 115, 1], ['NOI', 110, 1]],
+      TR.map((r) => [r[0], id(r[1]) + 'k', id(r[2], 1), id(r[3], 1), id(r[2] - r[3], 1)]).concat([['Total', id(TR.reduce((a, r) => a + r[1], 0)) + 'k', id(TR.reduce((a, r) => a + r[2], 0), 1), id(TR.reduce((a, r) => a + r[3], 0), 1), id(TR.reduce((a, r) => a + r[2] - r[3], 0), 1)]]), true);
+    section('Zonasi, okupansi & produktivitas tenant', 'Sewa dan omzet dalam Rp juta per bulan');
+    table([['Zona', 120], ['NLA (m²)', 70, 1], ['Okupansi', 65, 1], ['Sewa', 75, 1], ['Omzet', 75, 1], ['OCR', 110, 1]],
+      Z.map((z) => { const r = (z.leased * z.rate) / 1e6; return [z.name, id(z.nla), id((z.leased / z.nla) * 100, 1) + '%', id(r), id(z.sales), id((r / z.sales) * 100, 1) + '%']; })
+        .concat([['Total', id(nla), id((leased / nla) * 100, 1) + '%', id(rent), id(sales), id((rent / sales) * 100, 1) + '%']]), true);
+    need(30 + Z.length * 13);
+    d.text(M, y, 'Rekomendasi per zona', { size: 9.5, bold: true, color: INK }); y += 14;
+    Z.forEach((z) => { d.wrap(z.name + ': ' + z.rec, W, 8.5).forEach((l) => { need(13); d.text(M, y, l, { size: 8.5, color: MUT }); y += 12; }); });
+    y += 6;
+    section('Tagihan & umur piutang', 'Rp miliar');
+    table([['Umur piutang', 300], ['Nilai', 100, 1], ['Porsi', 115, 1]], AR.map((a) => [a.b, 'Rp ' + id(a.v, 1) + ' M', id((a.v / arTot) * 100, 1) + '%']).concat([['Total', 'Rp ' + id(arTot, 1) + ' M', '100%']]), true);
+    const late = S.TENANTS.filter((t) => t.ar);
+    if (late.length) table([['Tenant menunggak', 220], ['Unit', 70], ['Status', 135], ['Tunggakan', 90, 1]], late.map((t) => [t.name, t.id, t.pay, 'Rp ' + id(t.ar) + ' Jt']));
+    section('Kontrak jatuh tempo', 'Tim leasing dipicu 6 bulan sebelum kontrak habis');
+    table([['Tenant', 230], ['Sisa', 70, 1], ['Tindak lanjut', 215]], S.CONTRACTS.map((c) => [c.t, c.m + ' bulan', c.act]));
+    d.eachPage((n, tot) => { d.line(M, d.H - 40, d.W - M, d.H - 40, LINE); d.text(M, d.H - 26, 'SMICC-TS · data contoh prototype', { size: 8, color: MUT }); d.text(d.W - M, d.H - 26, 'Halaman ' + n + ' dari ' + tot, { size: 8, color: MUT, align: 'right' }); });
+    d.save('Laporan_Komersial_Keuangan_' + now.toISOString().slice(0, 10) + '.pdf');
+    UI.toast('Laporan Komersial & Keuangan diunduh (PDF)', 'P4');
+  }
+
   window.Views.owner360 = {
     title: 'Komersial & Keuangan', live: true,
     render() {
@@ -16,7 +85,7 @@
       return `
       <section class="card pagebar">
         <div class="pagebar-title"><span class="crumb">Owner 360° / Summarecon Mall Bandung</span><h2>Komersial & Keuangan</h2><p>Operasional, komersial dan keuangan dari sudut pandang pemilik mal (sumber: Blueprint sheet 1, 2, 3)</p></div>
-        <div class="pagebar-actions">${UI.dbLink('ANL', '', 'Laporan BOD')}${UI.dbLink('TEN', '', 'Layanan Tenant & SLA')}</div>
+        <div class="pagebar-actions"><button type="button" class="btn" id="o360-pdf">${icon('picture_as_pdf', 'text-[18px]')} Unduh laporan PDF</button>${UI.dbLink('ANL', '', 'Laporan BOD')}${UI.dbLink('TEN', '', 'Layanan Tenant & SLA')}</div>
       </section>
       ${esc0.length ? `<section class="card p-4 mb-5 crit-left"><div class="flex items-center gap-2 mb-2">${icon('notifications_active', 'text-rose-300')}<span class="font-headline-sm text-headline-sm">Eskalasi ke pemilik (EVT-ESCALATION)</span></div>${esc0.map((e) => `<a href="/command-center/ticketing?id=${e.ticketId}" class="rel-row mb-1">${UI.prio(e.sev)}<span class="font-label-md text-label-md text-outline">${UI.time(e.ts)}</span><span class="font-body-sm text-body-sm">${esc(e.detail)}</span></a>`).join('')}</section>` : ''}
       <div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
@@ -56,6 +125,7 @@
       ${UI.relasi('O360')}`;
     },
     mount(root) {
+      const pdf = root.querySelector('#o360-pdf'); if (pdf) pdf.addEventListener('click', reportPdf);
       root.querySelectorAll('[data-sp]').forEach((b) => b.addEventListener('click', () => {
         const t = window.SEED.TENANTS.find((x) => x.id === b.dataset.sp);
         Store.addEvent({ from: 'O360', to: 'TEN', code: 'EVT-AR-OVERDUE', title: 'Surat peringatan ' + t.name, detail: t.pay + ' · Rp ' + t.ar + ' Jt', sev: 'P3' });

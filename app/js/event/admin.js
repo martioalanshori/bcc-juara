@@ -12,7 +12,7 @@
   // [tab, label, ikon, segmen URL] untuk tampilan lintas acara (pemilih acara = "Semua acara")
   const GTABS_ = [['gdash', 'Dasbor', 'space_dashboard', 'dasbor'], ['acara', 'Daftar acara', 'event_note', 'acara'], ['gtrx', 'Transaksi', 'receipt_long', 'transaksi'], ['gck', 'Check-in & gate', 'qr_code_scanner', 'kehadiran'], ['gfin', 'Keuangan', 'account_balance', 'keuangan']];
   const TABS = {
-    pengelola: GTABS_.map((x) => x.slice(0, 3)).concat([['ringkasan', 'Ringkasan', 'monitoring'], ['pengaturan', 'Pengaturan', 'tune'], ['persetujuan', 'Persetujuan', 'approval'], ['kursi', 'Denah kursi', 'event_seat'], ['peserta', 'Peserta & transaksi', 'groups'], ['checkin', 'Check-in & gate', 'qr_code_scanner'], ['komunikasi', 'Komunikasi', 'forward_to_inbox'], ['keuangan', 'Keuangan & ROI', 'account_balance']]),
+    pengelola: GTABS_.map((x) => x.slice(0, 3)).concat([['ringkasan', 'Ringkasan', 'monitoring'], ['pengaturan', 'Pengaturan', 'tune'], ['persetujuan', 'Persetujuan', 'approval'], ['kursi', 'Denah kursi', 'event_seat'], ['peserta', 'Peserta & transaksi', 'groups'], ['checkin', 'Check-in & gate', 'qr_code_scanner'], ['komunikasi', 'Kirim broadcast', 'campaign'], ['keuangan', 'Keuangan & ROI', 'account_balance']]),
     mall: [['portofolio', 'Portofolio event', 'travel_explore'], ['ringkasan', 'Detail acara', 'monitoring'], ['kursi', 'Denah langsung', 'event_seat'], ['gate', 'Gate & keamanan', 'shield_person'], ['peserta', 'Transaksi', 'receipt_long'], ['keuangan', 'Keuangan & ROI', 'account_balance']],
   };
   const GLOBAL_TABS = ['acara', 'portofolio']; // tab lintas acara (tanpa pemilih acara)
@@ -87,9 +87,9 @@
   // Satu sumber untuk blok "Perlu tindakan" dan badge sidebar. n = angka badge, sev crit = merah.
   function attention(e) {
     const t = Evt.now(), out = [];
-    EvtCheckin.anomalies(e.id).forEach((a) => out.push({ sev: 'crit', tab: 'checkin', n: 1, text: `${a.n} pindaian gagal atau duplikat di ${a.gate} (ambang 3 dalam 10 menit)`, btn: 'Lihat gate' }));
+    EvtCheckin.anomalies(e.id).forEach((a) => out.push({ sev: 'crit', tab: 'checkin', focus: 'ck-anom', n: 1, text: `${a.n} pindaian gagal atau duplikat di ${a.gate} (ambang 3 dalam 10 menit)`, btn: 'Lihat gate' }));
     const rep = Evt.s.reports.filter((r) => r.ev === e.id && !r.ticketId).length;
-    if (rep) out.push({ sev: 'warn', tab: 'checkin', n: rep, text: rep + ' laporan gate menunggu tindak lanjut Command Center', btn: 'Lihat laporan' });
+    if (rep) out.push({ sev: 'warn', tab: 'checkin', focus: 'ck-anom', n: rep, text: rep + ' laporan gate menunggu tindak lanjut Command Center', btn: 'Lihat laporan' });
     const pend = Evt.stats(e.id).orders.filter((o) => o.status === 'PENDING' && o.until > t);
     if (pend.length) out.push({ sev: 'info', tab: 'peserta', st: 'PENDING', n: pend.length, text: `${pend.length} pesanan menunggu bayar, batas terdekat ${Evt.fmtTime(Math.min(...pend.map((o) => o.until)))} WIB`, btn: 'Lihat pesanan' });
     const mm = Evt.finance(e.id).mismatches.length;
@@ -272,7 +272,7 @@
   function attnBlock(e) {
     const a = attention(e);
     if (!a.length) return `<section class="card pg-attn ok">${icon('task_alt', 'text-emerald-300 text-[22px]')}<div><b>Tidak ada yang perlu ditindaklanjuti</b><p>Masalah gate, pesanan yang menunggu bayar, dan selisih keuangan akan muncul di sini.</p></div></section>`;
-    return `<section class="card pg-attn" aria-labelledby="attn-h"><h3 id="attn-h">Perlu tindakan <span>${a.length}</span></h3><ul>${a.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0">${esc(x.text)}</span>${x.publish ? `<button type="button" class="btn !py-1.5" data-status="PUBLISHED" data-ev-id="${e.id}">${x.btn}</button>` : `<a class="btn-ghost !py-1.5" href="${href(e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}>${x.btn}</a>`}</li>`).join('')}</ul></section>`;
+    return `<section class="card pg-attn" aria-labelledby="attn-h"><h3 id="attn-h">Perlu tindakan <span>${a.length}</span></h3><ul>${a.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0">${esc(x.text)}</span>${x.publish ? `<button type="button" class="btn !py-1.5" data-status="PUBLISHED" data-ev-id="${e.id}">${x.btn}</button>` : `<a class="btn-ghost !py-1.5" href="${href(e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}${x.focus ? ` data-attn-focus="${x.focus}"` : ''}>${x.btn}</a>`}</li>`).join('')}</ul></section>`;
   }
 
   // ------------------------------------------------------------------ Semua acara: dasbor, transaksi, check-in & keuangan lintas acara
@@ -290,7 +290,7 @@
     const a = attentionAll();
     if (!a.length) return `<section class="card pg-attn ok">${icon('task_alt', 'text-[22px]')}<div><b>Tidak ada yang perlu ditindaklanjuti</b><p>Masalah gate, pesanan yang menunggu bayar, dan selisih keuangan dari semua acara akan muncul di sini.</p></div></section>`;
     const shown = a.slice(0, 8);
-    return `<section class="card pg-attn" aria-labelledby="attn-all-h"><h3 id="attn-all-h">Perlu tindakan <span>${a.length}</span></h3><ul>${shown.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(x.e.name)}</b> ${esc(x.text)}</span><a class="btn-ghost !py-1.5" href="${href(x.e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}>${x.btn}</a></li>`).join('')}</ul>${a.length > shown.length ? `<p class="pg-mnote">Dan ${a.length - shown.length} hal lain. Buka acaranya untuk melihat semua.</p>` : ''}</section>`;
+    return `<section class="card pg-attn" aria-labelledby="attn-all-h"><h3 id="attn-all-h">Perlu tindakan <span>${a.length}</span></h3><ul>${shown.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(x.e.name)}</b> ${esc(x.text)}</span><a class="btn-ghost !py-1.5" href="${href(x.e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}${x.focus ? ` data-attn-focus="${x.focus}"` : ''}>${x.btn}</a></li>`).join('')}</ul>${a.length > shown.length ? `<p class="pg-mnote">Dan ${a.length - shown.length} hal lain. Buka acaranya untuk melihat semua.</p>` : ''}</section>`;
   }
   function globalHead() {
     const all = Evt.s.order.map(Evt.ev);
@@ -334,7 +334,7 @@
     const rows = liveEvs().filter((e) => e.status !== 'DRAFT').map((e) => ({ e, s: Evt.stats(e.id), an: EvtCheckin.anomalies(e.id), rep: Evt.s.reports.filter((r) => r.ev === e.id && !r.ticketId) })).sort((a, b) => a.e.start - b.e.start);
     const alerts = rows.filter((r) => r.an.length || r.rep.length);
     const today = rows.filter((r) => isHariH(r.e));
-    return `${alerts.length ? `<section class="card pg-attn" aria-labelledby="gck-h"><h3 id="gck-h">Masalah gate <span>${alerts.length}</span></h3><ul>${alerts.map((r) => `<li class="crit">${icon('error', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(r.e.name)}</b> ${[...r.an.map((a) => a.n + ' pindaian gagal di ' + esc(a.gate)), ...(r.rep.length ? [r.rep.length + ' laporan menunggu Command Center'] : [])].join(', ')}</span><a class="btn-ghost !py-1.5" href="${href(r.e.id, 'checkin')}">Lihat gate</a></li>`).join('')}</ul></section>` : `<section class="card pg-attn ok">${icon('task_alt', 'text-[22px]')}<div><b>Semua gate normal</b><p>Pindaian gagal berulang dan laporan petugas dari semua acara akan muncul di sini.</p></div></section>`}
+    return `${alerts.length ? `<section class="card pg-attn" aria-labelledby="gck-h"><h3 id="gck-h">Masalah gate <span>${alerts.length}</span></h3><ul>${alerts.map((r) => `<li class="crit">${icon('error', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(r.e.name)}</b> ${[...r.an.map((a) => a.n + ' pindaian gagal di ' + esc(a.gate)), ...(r.rep.length ? [r.rep.length + ' laporan menunggu Command Center'] : [])].join(', ')}</span><a class="btn-ghost !py-1.5" href="${href(r.e.id, 'checkin')}" data-attn-focus="ck-anom">Lihat gate</a></li>`).join('')}</ul></section>` : `<section class="card pg-attn ok">${icon('task_alt', 'text-[22px]')}<div><b>Semua gate normal</b><p>Pindaian gagal berulang dan laporan petugas dari semua acara akan muncul di sini.</p></div></section>`}
       <section class="card p-5">${UI.h('Kehadiran per acara', today.length ? today.length + ' acara berlangsung hari ini' : 'Tidak ada acara yang berlangsung hari ini', `<a class="btn-ghost" href="/checkin" target="_blank" rel="noopener">${icon('smartphone', 'text-[16px]')} Pemindai gate</a>`, 'how_to_reg')}
         <div class="overflow-x-auto"><table class="tbl min-w-[720px]"><thead><tr><th>Acara</th><th>Jadwal</th><th>Gate dibuka</th><th class="w-[28%]">Sudah masuk</th><th>Gate</th><th></th></tr></thead><tbody>
         ${rows.map(({ e, s, an, rep }) => `<tr><td><div class="font-label-lg text-label-lg">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}${isHariH(e) ? ' <span class="pg-hari">Hari H</span>' : ''}</div></td><td class="whitespace-nowrap">${Evt.fmtShort(e.start)}<div class="font-label-sm text-label-sm text-on-surface-variant">${Evt.fmtTime(e.start)} WIB</div></td><td class="whitespace-nowrap">${Evt.fmtTime(e.doors)}</td><td><div class="font-label-md text-label-md mb-1">${num(s.checkedIn)} / ${num(s.tickets)}</div>${UI.bar(s.tickets ? (s.checkedIn / s.tickets) * 100 : 0, 'bg-primary-container')}</td><td>${an.length || rep.length ? `<span class="pg-flag">${an.length + rep.length} peringatan</span>` : '<span class="text-on-surface-variant">Normal</span>'}</td><td class="text-right"><a class="btn-ghost !py-1.5" href="${href(e.id, 'checkin')}">Buka</a></td></tr>`).join('') || '<tr><td colspan="6" class="text-on-surface-variant">Belum ada acara yang dijual.</td></tr>'}
@@ -783,8 +783,9 @@
     const hit = (txt) => words.every((w) => txt.toLowerCase().includes(w));
     const out = [];
     const push = (group, it) => { if (!words.length || hit(it.label + ' ' + (it.sub || '') + ' ' + (it.kw || ''))) out.push(Object.assign({ group }, it)); };
-    if (e) ETABS.forEach(([k, l, i]) => push('Menu ' + e.id, { icon: i, label: l, sub: e.name, kw: 'buka menu', run: () => goTab(k) }));
-    GTABS.forEach(([k, l, i]) => push('Semua acara', { icon: i, label: l, sub: 'Semua acara', kw: 'menu global', run: () => goTab(k) }));
+    // Nama acara cukup di judul grup, tidak diulang di setiap baris menu.
+    if (e) ETABS.forEach(([k, l, i]) => push('Menu · ' + e.name, { icon: i, label: l, kw: 'buka menu ' + e.id + ' ' + e.name, run: () => goTab(k) }));
+    GTABS.forEach(([k, l, i]) => push('Semua acara', { icon: i, label: l, kw: 'menu global semua acara', run: () => goTab(k) }));
     const evs = Evt.s.order.map(Evt.ev);
     evs.filter((x) => !words.length || hit(x.name + ' ' + x.id + ' ' + x.cat + ' ' + (x.org || '') + ' ' + place(x))).slice(0, words.length ? 8 : 5)
       .forEach((x) => out.push({ group: 'Acara', plate: plateOf(x), label: x.name, sub: x.id + ', ' + Evt.fmtShort(x.start) + ', ' + phaseTxt(x).toLowerCase(), run: () => goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, x.id) }));
@@ -811,19 +812,27 @@
     const back = document.activeElement;
     const wrap = document.createElement('div'); wrap.id = 'pg-cmdk'; wrap.className = 'cmdk-wrap';
     wrap.innerHTML = `<div class="cmdk" role="dialog" aria-modal="true" aria-label="Cari dan navigasi">
-      <div class="cmdk-in">${icon('search', 'text-[20px]')}<input id="cmdk-q" role="combobox" aria-expanded="true" aria-controls="cmdk-list" aria-autocomplete="list" placeholder="Cari acara, menu, atau kode booking" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div>
-      <ul id="cmdk-list" class="cmdk-list" role="listbox" aria-label="Hasil"></ul></div>`;
+      <div class="cmdk-in">${icon('search', 'text-[22px]')}<input id="cmdk-q" role="combobox" aria-expanded="true" aria-controls="cmdk-list" aria-autocomplete="list" placeholder="Cari acara, menu, atau kode booking" autocomplete="off" spellcheck="false"><button type="button" class="cmdk-esc" data-cmdk-close aria-label="Tutup pencarian">Esc</button></div>
+      <ul id="cmdk-list" class="cmdk-list" role="listbox" aria-label="Hasil"></ul>
+      <div class="cmdk-foot" aria-hidden="true"><span><kbd>↑</kbd><kbd>↓</kbd> pilih</span><span><kbd>↵</kbd> buka</span><span><kbd>Esc</kbd> tutup</span><span class="cmdk-count" id="cmdk-count"></span></div></div>`;
     document.body.appendChild(wrap);
-    const q = wrap.querySelector('#cmdk-q'), list = wrap.querySelector('#cmdk-list');
+    const q = wrap.querySelector('#cmdk-q'), list = wrap.querySelector('#cmdk-list'), count = wrap.querySelector('#cmdk-count');
     let items = [], at = 0;
     const close = () => { wrap.remove(); if (back && back.focus) back.focus(); };
     const run = (i) => { const it = items[i]; if (!it) return; close(); it.run(); };
+    // Tebalkan bagian teks yang cocok dengan kata yang diketik (teks di-escape per potongan).
+    const mark = (txt) => {
+      const words = q.value.trim().split(/\s+/).filter(Boolean).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      if (!words.length) return esc(txt);
+      return String(txt).split(new RegExp('(' + words.join('|') + ')', 'gi')).map((p, i) => (i % 2 ? '<mark>' + esc(p) + '</mark>' : esc(p))).join('');
+    };
     function paint() {
       items = paletteItems(q.value); at = Math.min(at, Math.max(0, items.length - 1));
       let g = '';
       list.innerHTML = items.length ? items.map((it, i) => { const head = it.group !== g ? `<li class="cmdk-g" role="presentation">${esc((g = it.group))}</li>` : '';
-        return head + `<li id="cmdk-${i}" role="option" aria-selected="${i === at}" class="cmdk-it${i === at ? ' on' : ''}" data-i="${i}">${it.plate ? `<span class="cmdk-ic"><span class="pg-plate">${it.plate}</span></span>` : `<span class="cmdk-ic">${icon(it.icon, 'text-[20px]')}</span>`}<span class="min-w-0 flex-1"><b>${esc(it.label)}</b>${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</span></li>`; }).join('')
-        : `<li class="cmdk-empty">Tidak ada hasil untuk "${esc(q.value)}". Coba nama acara, EVT-01, atau kode booking.</li>`;
+        return head + `<li id="cmdk-${i}" role="option" aria-selected="${i === at}" class="cmdk-it${i === at ? ' on' : ''}" data-i="${i}">${it.plate ? `<span class="cmdk-ic"><span class="pg-plate">${it.plate}</span></span>` : `<span class="cmdk-ic">${icon(it.icon, 'text-[18px]')}</span>`}<span class="min-w-0 flex-1"><b>${mark(it.label)}</b>${it.sub ? `<small>${mark(it.sub)}</small>` : ''}</span><kbd class="cmdk-enter">↵</kbd></li>`; }).join('')
+        : `<li class="cmdk-empty">${icon('search_off', 'text-[28px]')}<b>Tidak ada hasil untuk "${esc(q.value)}"</b><span>Coba nama acara, EVT-01, atau kode booking.</span></li>`;
+      count.textContent = items.length ? items.length + ' hasil' : '';
       q.setAttribute('aria-activedescendant', items.length ? 'cmdk-' + at : '');
       const on = list.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' });
     }
@@ -838,6 +847,7 @@
     list.addEventListener('mousemove', (ev) => { const li = ev.target.closest('[data-i]'); if (li && +li.dataset.i !== at) { at = +li.dataset.i; paint(); } });
     list.addEventListener('click', (ev) => { const li = ev.target.closest('[data-i]'); if (li) run(+li.dataset.i); });
     wrap.addEventListener('mousedown', (ev) => { if (ev.target === wrap) close(); });
+    wrap.querySelector('[data-cmdk-close]').addEventListener('click', close);
     paint(); q.focus();
   }
 
@@ -1153,14 +1163,16 @@
       <div class="grid grid-cols-2 gap-3 mb-4">${UI.kpi({ label: 'Sudah check-in', value: num(s.checkedIn), unit: '/ ' + num(s.tickets), bar: s.tickets ? (s.checkedIn / s.tickets) * 100 : 0, barcls: 'bg-secondary' })}${UI.kpi({ label: 'Belum hadir', value: num(s.tickets - s.checkedIn), foot: 'Gate dibuka ' + Evt.fmtTime(e.doors) })}</div>
       <div class="flex flex-col gap-2 mb-4">${e.gates.map((g) => `<div class="inner px-3 py-2 flex justify-between font-body-sm text-body-sm"><span>${esc(g)}</span><b>${byGate[g] || 0}</b></div>`).join('')}</div>`;
   }
+  // Panel anomali & laporan gate di atas halaman Check-in; kosong bila tidak ada anomali maupun laporan.
+  const ckAnom = (e) => (EvtCheckin.anomalies(e.id).length || Evt.s.reports.some((r) => r.ev === e.id) ? anomPanel(e) : '');
   function checkin(e) {
     ui.gate = e.gates.includes(ui.gate) ? ui.gate : e.gates[0];
-    return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
+    return `<div id="ck-anom" class="pg-ck-anom">${ckAnom(e)}</div><div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
       <section class="card p-5 2xl:col-span-5">${UI.h('Pemindai gate', 'Pindai QR e-ticket pengunjung yang datang', `<a class="btn-ghost" href="/checkin" target="_blank" rel="noopener">${icon('smartphone', 'text-[16px]')} Versi ponsel</a>`, 'qr_code_scanner')}
         <label class="f mb-3">Gate<select class="inp" id="gate">${e.gates.map((g) => `<option ${g === ui.gate ? 'selected' : ''}>${esc(g)}</option>`).join('')}</select></label>
         ${EvtCheckin.panel()}</section>
       <div class="2xl:col-span-7 flex flex-col gap-5">
-        <section class="card p-5"><div id="ck-stats">${ckStats(e)}</div></section>
+        <section class="card p-5"><div id="ck-stats">${ckStats(e, true)}</div></section>
         <section class="card p-5">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div></div>`;
   }
 
@@ -1479,6 +1491,10 @@
       el.innerHTML = Evt.modeBanner() + staleBanner() + (lastHead ? `<div id="evt-head" class="pg-head-wrap">${lastHead}</div>` : '') + `<div id="evt-body">${body()}</div>`;
     } else el.innerHTML = header() + `<div id="evt-body">${body()}</div>`;
     bind(el);
+    if (ui.focus) {
+      const t = el.querySelector('#' + ui.focus + ' > *'); ui.focus = null;
+      if (t) { t.scrollIntoView({ block: 'start', behavior: 'smooth' }); t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash'); }
+    }
   }
   function refresh() {
     const el = document.getElementById('evt-root');
@@ -1498,7 +1514,7 @@
       if (ui.tab === 'pengaturan') return; // jangan timpa form yang sedang diisi
     } else if (ui.tab === 'kelola' && e) return;
     if (!e || GLOBAL_TABS.includes(ui.tab) || ui.tab === 'gate') { const y = window.scrollY; draw(host); window.scrollTo(0, y); return; }
-    if (ui.tab === 'checkin') { el.querySelector('#ck-stats').innerHTML = ckStats(e); el.querySelector('#ck-log').innerHTML = EvtCheckin.logTable(e.id, 30); bindInc(el); return; }
+    if (ui.tab === 'checkin') { el.querySelector('#ck-anom').innerHTML = ckAnom(e); el.querySelector('#ck-stats').innerHTML = ckStats(e, true); el.querySelector('#ck-log').innerHTML = EvtCheckin.logTable(e.id, 30); bindInc(el); return; }
     if (ui.tab === 'peserta') { el.querySelector('#evt-table').innerHTML = pesertaTable(e); bindRows(el); return; }
     if (ui.tab === 'persetujuan') { const n = el.querySelector('#ap-note'); if (n && (n.value || document.activeElement === n)) return; } // jangan hapus catatan yang sedang diketik
     const y = window.scrollY; draw(host); window.scrollTo(0, y);
@@ -1510,6 +1526,7 @@
     root.querySelectorAll('[data-cancel-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.cancelEv); if (x) cancelEv(x); }));
     root.querySelectorAll('[data-del-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.delEv); if (x) deleteEv(x); }));
     root.querySelectorAll('[data-attn-st]').forEach((a) => a.addEventListener('click', () => (ui.st = a.dataset.attnSt)));
+    root.querySelectorAll('[data-attn-focus]').forEach((a) => a.addEventListener('click', () => (ui.focus = a.dataset.attnFocus)));
     root.querySelectorAll('[data-report-all]').forEach((b) => b.addEventListener('click', reportAllPdf));
     root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', newEventModal));
     root.querySelectorAll('[data-report-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.reportEv); if (x) reportPdf(x); }));

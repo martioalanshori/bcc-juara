@@ -15,6 +15,7 @@
     { group: 'Eksekutif', items: [
       ['analytics', 'Analitik & Laporan', 'analytics', 'ANL'],
       ['owner360', 'Komersial & Keuangan', 'apartment', 'O360'],
+      ['sentimen', 'Analisis Sentimen', 'sentiment_satisfied'],
     ] },
     { group: 'SOP & Simulasi', items: [
       ['sop', 'Pusat SOP & Runbook', 'menu_book'],
