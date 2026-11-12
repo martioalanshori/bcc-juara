@@ -117,7 +117,7 @@
       if (patch.status === 'RESOLVED' || patch.status === 'CLOSED') t.resolvedAt = t.resolvedAt || Date.now();
       if (logText) t.log.push({ ts: Date.now(), who: who || 'CCO', text: logText });
       if (patch.status) {
-        api.addEvent({ from: 'TIC', to: t.tenant ? 'TEN' : 'ANL', code: 'EVT-TICKET-STATUS', title: id + ' → ' + STATUS_LABEL[patch.status], detail: t.title, sev: t.priority, ticketId: id, quiet: true });
+        api.addEvent({ from: 'TIC', to: t.tenant ? 'TEN' : 'ANL', code: 'EVT-TICKET-STATUS', title: id + ' → ' + STATUS_LABEL[patch.status], detail: t.title, note: logText ? (who || 'CCO') + ': ' + logText : '', sev: t.priority, ticketId: id, quiet: true });
       }
       emit('ticket');
     },

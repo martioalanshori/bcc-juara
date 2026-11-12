@@ -3,7 +3,9 @@
   window.Views = window.Views || {};
   const { esc, icon } = UI;
   const REF = window.SMICC_REF;
-  const F = { q: '', zone: 'ALL', prio: 'ALL', scope: 'ACTIVE', page: 1, sel: null };
+  const F = { q: '', zone: 'ALL', prio: 'ALL', scope: 'ACTIVE', page: 1, sel: null, sort: 'NEW' };
+  const seen = new Set(); // tiket yang sudah pernah tampil: yang belum, diberi animasi masuk
+  const fresh = (t) => Date.now() - t.createdAt < 3 * 60000;
   const PER = 7;
 
   function list() {
@@ -14,6 +16,7 @@
     if (F.prio === 'BREACH') t = t.filter((x) => Store.slaInfo(x).breached || Store.slaInfo(x).atRisk);
     else if (F.prio !== 'ALL') t = t.filter((x) => x.priority === F.prio);
     if (F.q) { const q = F.q.toLowerCase(); t = t.filter((x) => (x.id + x.title + x.location + (x.tenant || '') + x.sop + x.team).toLowerCase().includes(q)); }
+    if (F.sort === 'NEW') return t.sort((a, b) => b.createdAt - a.createdAt);
     return t.sort((a, b) => a.priority.localeCompare(b.priority) || Store.slaInfo(a).remain - Store.slaInfo(b).remain);
   }
 
@@ -32,7 +35,8 @@
     const s = Store.slaInfo(t);
     const ten = t.tenant ? window.SEED.TENANTS.find((x) => x.id === t.tenant) : null;
     const closed = t.status === 'CLOSED' || t.status === 'RESOLVED';
-    return `<tr class="row ${F.sel === t.id ? 'sel' : ''}" data-id="${t.id}">
+    const anim = seen.size && !seen.has(t.id) && fresh(t); seen.add(t.id);
+    return `<tr class="row ${F.sel === t.id ? 'sel' : ''}${anim ? ' row-new' : ''}" data-id="${t.id}">
       <td class="w-28"><div class="flex items-start gap-2"><span class="w-2 h-2 mt-1.5 rounded-md ${UI.PRIO[t.priority].dot} ${t.priority === 'P1' && !closed ? 'pulse-ring' : ''}"></span><div><div class="font-label-lg text-label-lg text-primary">#${t.id}</div><div class="mt-1">${UI.prio(t.priority)}</div></div></div></td>
       <td><div class="font-headline-sm text-[15px] text-on-surface leading-snug">${esc(t.title)}</div><div class="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">${esc(t.desc)}</div><div class="mt-1 flex flex-wrap gap-1">${UI.status(t.status)}${UI.chip(t.sop, 'bg-white/5 text-on-surface-variant')}${t.escalations.length ? UI.chip(icon('north_east', 'text-[12px]') + 'Eskalasi', 'bg-rose-500/15 text-rose-300') : ''}</div></td>
       <td class="w-40"><div class="font-label-md text-label-md text-on-surface">${esc(t.location)}</div><div class="font-label-sm text-label-sm text-on-surface-variant mt-1">${ten ? 'Tenant: ' + esc(ten.name) : esc(t.source)}</div></td>
@@ -77,6 +81,20 @@
         <div class="flex flex-col gap-1.5 mt-2">${sop.steps.map((st, i) => `<label class="flex gap-2 items-start inner p-2 cursor-pointer hover:bg-white/5"><input type="checkbox" data-chk="${i}" ${t.checks[i] ? 'checked' : ''} class="mt-0.5 accent-sky-400"><div class="min-w-0"><div class="font-label-sm text-label-sm text-outline">${esc(st.phase)} · ${st.role} · ${st.dashboard} · ${esc(st.target)}</div><div class="font-body-sm text-body-sm ${t.checks[i] ? 'text-on-surface-variant line-through' : 'text-on-surface'}">${esc(st.action)}</div></div></label>`).join('')}</div></details>` : ''}
       <div class="mt-4"><div class="lbl mb-2">Timeline & log</div><div class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">${t.log.slice().reverse().map((l) => `<div class="flex gap-2"><span class="font-label-sm text-label-sm text-outline w-14 shrink-0">${UI.hm(l.ts)}</span><div class="font-body-sm text-body-sm"><span class="text-primary">${esc(l.who)}</span> ${esc(l.text)}</div></div>`).join('')}</div></div>
     </section>`;
+  }
+
+  function liveBtn() {
+    const on = window.Live && Live.on();
+    return `<button class="chip-btn ${on ? 'on' : ''}" id="live-tg" title="${on ? 'Kejadian demo masuk tiap 7 sampai 15 detik. Klik untuk jeda' : 'Klik untuk jalankan lagi'}"><span class="w-1.5 h-1.5 rounded-full ${on ? 'bg-secondary animate-pulse' : 'bg-outline'}"></span>${on ? 'Langsung' : 'Dijeda'}</button>`;
+  }
+  const seenEv = new Set();
+  // Aktivitas tiket terbaru (Store.s.events): baris baru masuk di atas.
+  function feed() {
+    const ev = Store.s.events.filter((e) => e.ticketId && /^EVT-(TICKET|ESCALATION)/.test(e.code)).slice(0, 8);
+    const ic = (e) => (e.code === 'EVT-ESCALATION' ? ['north_east', 'text-rose-300'] : e.code === 'EVT-TICKET-CREATED' ? ['add_circle', 'text-primary'] : /Selesai|Ditutup/.test(e.title) ? ['check_circle', 'text-secondary'] : ['arrow_forward', 'text-on-surface-variant']);
+    const rows = ev.map((e) => { const anim = seenEv.size && !seenEv.has(e.id); seenEv.add(e.id); const [i, c] = ic(e); 
+      return `<a href="/command-center/ticketing?id=${esc(e.ticketId)}" class="feed-row${anim ? ' row-new' : ''}">${icon(i, 'text-[18px] ' + c)}<span class="min-w-0 flex-1">${e.code === 'EVT-TICKET-STATUS' ? `<b>${esc(e.ticketId + ' ' + e.detail)}</b><small><span class="${c}">${esc(e.title.split('→ ')[1] || '')}</span>${e.note ? ', ' + esc(e.note) : ''}</small>` : `<b>${esc(e.title)}</b><small>${esc(e.detail || '')}</small>`}</span><span class="font-label-sm text-label-sm text-outline shrink-0">${UI.hm(e.ts)}</span></a>`; }).join('');
+    return `<section class="card p-5">${UI.h('Aktivitas terbaru', 'Tiket masuk, perubahan status, dan eskalasi, terbaru di atas', '', 'history')}<div class="feed">${rows || '<p class="font-body-sm text-body-sm text-on-surface-variant">Belum ada aktivitas tiket. Kejadian baru muncul di sini.</p>'}</div></section>`;
   }
 
   window.Views.ticketing = {
@@ -125,12 +143,13 @@
       <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
         <div class="2xl:col-span-8 flex flex-col gap-5">
           <section class="card p-5">
-            ${UI.h(`Antrean tiket lapangan & mitigasi`, `${L.length} tiket sesuai filter, diurutkan menurut prioritas dan sisa SLA`, `<span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Sinkron tiap 1 detik</span>`, 'list_alt')}
+            ${UI.h(`Antrean tiket lapangan & mitigasi`, `${L.length} tiket sesuai filter, ${F.sort === 'NEW' ? 'terbaru di atas' : 'diurutkan menurut prioritas dan sisa SLA'}`, `<span class="flex flex-wrap gap-1.5">${[['NEW', 'Terbaru'], ['PRIO', 'Prioritas']].map(([k, l]) => `<button class="chip-btn ${F.sort === k ? 'on' : ''}" data-sort="${k}">${l}</button>`).join('')}${liveBtn()}</span>`, 'list_alt')}
             <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>ID & prioritas</th><th>Insiden & deskripsi</th><th>Lokasi / tenant</th><th>Sisa waktu SLA</th></tr></thead>
             <tbody>${L.slice((F.page - 1) * PER, F.page * PER).map(row).join('') || `<tr><td colspan="4" class="text-center text-on-surface-variant py-10">Tidak ada tiket sesuai filter.</td></tr>`}</tbody></table></div>
             <div class="flex items-center justify-between mt-3"><span class="font-label-sm text-label-sm text-outline">Menampilkan ${Math.min(L.length, PER)} dari ${L.length} tiket</span>
               <div class="flex gap-1">${Array.from({ length: pages }, (_, i) => `<button class="chip-btn ${F.page === i + 1 ? 'on' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('')}</div></div>
           </section>
+          ${feed()}
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <section class="card p-5">${UI.h('Performa penyelesaian SLA', 'Tiket selesai hari ini per prioritas', `<span class="font-label-md text-label-md text-secondary">${st.comp.toFixed(1)}% patuh</span>`)}
               <div class="flex items-center gap-5">${UI.ring(st.comp, { center: st.comp.toFixed(1), sub: 'indeks', size: 130 })}
@@ -158,6 +177,8 @@
       root.querySelectorAll('[data-zone]').forEach((b) => b.addEventListener('click', () => { F.zone = b.dataset.zone; F.page = 1; Shell.rerender(); }));
       root.querySelectorAll('[data-prio]').forEach((b) => b.addEventListener('click', () => { F.prio = b.dataset.prio; F.page = 1; Shell.rerender(); }));
       root.querySelectorAll('[data-scope]').forEach((b) => b.addEventListener('click', () => { F.scope = b.dataset.scope; F.page = 1; Shell.rerender(); }));
+      root.querySelectorAll('[data-sort]').forEach((b) => b.addEventListener('click', () => { F.sort = b.dataset.sort; F.page = 1; Shell.rerender(); }));
+      const lt = root.querySelector('#live-tg'); if (lt) lt.addEventListener('click', () => { Live.toggle(); UI.toast(Live.on() ? 'Demo berjalan lagi' : 'Demo dijeda', 'P4'); });
       root.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => { F.page = +b.dataset.page; Shell.rerender(); }));
       root.querySelectorAll('tr.row').forEach((r) => r.addEventListener('click', () => { F.sel = r.dataset.id; Router.replace('/ticketing?id=' + F.sel); Shell.rerender(); }));
       root.querySelector('#new').addEventListener('click', () => Shell.newTicket({}));

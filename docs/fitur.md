@@ -92,6 +92,10 @@ Sembilan dashboard dan dua alat SOP/simulasi.
 **Operasional**
 - **Tiket & Insiden**: distribusi masalah per domain, SLA tenant, kesiapan tim reaksi cepat,
   ekspor log tiket (CSV).
+  **Demo berjalan** (`live.js`): tiap 7 sampai 15 detik ada tiket baru (masuk di urutan teratas), tiket lama
+  bergerak sampai ditutup atau tertahan dengan catatan lapangan, dan pesan tenant. Feed **Aktivitas terbaru**,
+  urutan Terbaru/Prioritas, tombol **Langsung/Dijeda**. Berhenti sendiri saat operator mengetik, ada modal, atau
+  simulasi use case berjalan.
 - **Fasilitas & BMS**: chiller plant, gardu trafo, lift & eskalator, log diagnostik, aksi cepat,
   unduh laporan BMS (CSV).
 - **Layanan Tenant & SLA**: permintaan tenant, izin kerja/fit-out, kepatuhan regulasi, siaran.

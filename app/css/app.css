@@ -1671,3 +1671,13 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 .auth-demo-g { margin: 10px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgb(var(--on-surface-variant)); }
 .auth-demo-ic { position: relative; }
 .auth-step { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgb(var(--primary)); color: rgb(var(--on-primary)); font-size: 11px; font-style: normal; font-weight: 700; }
+
+/* Demo berjalan Command Center: baris baru masuk dari atas, feed aktivitas tiket */
+@keyframes row-in { from { opacity: 0; transform: translateY(-8px); background: rgb(var(--primary) / .18); } 60% { background: rgb(var(--primary) / .12); } to { opacity: 1; transform: none; background: transparent; } }
+.row-new { animation: row-in 1.6s ease-out; }
+.feed { display: flex; flex-direction: column; gap: 2px; }
+.feed-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 10px; }
+.feed-row:hover { background: rgb(var(--on-surface) / .05); }
+.feed-row b { display: block; font-weight: 600; font-size: 13px; color: rgb(var(--on-surface)); }
+.feed-row small { display: block; font-size: 12px; color: rgb(var(--on-surface-variant)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .row-new { animation: none; } }
