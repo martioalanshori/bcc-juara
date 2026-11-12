@@ -33,6 +33,12 @@ python -m venv .venv
 
 # 3. Analisis
 .venv/Scripts/python analisis.py data/ulasan_gmaps.csv
+
+# 4. Perbarui menu Analisis Sentimen di Command Center
+.venv/Scripts/python analisis.py data/ulasan_gmaps.csv --export-js
+#    Menulis app/js/command-center/sentimen-data.js (angka ringkasan + kutipan tanpa nama).
+#    Lalu naikkan ?v= di semua app/pages/*.html agar browser memuat data baru.
+#    Sumber lain (X, TikTok, Instagram): tambahkan CSV-nya ke perintah yang sama, kolom `sumber` diisi nama platform.
 ```
 
 Hasil:
