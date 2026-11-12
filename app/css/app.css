@@ -1038,6 +1038,15 @@ html.pg-mini .pg-body { --side: 72px; }
 .pg-ready li.warn > .material-symbols-outlined { color: rgb(var(--on-surface-variant)); }
 @media (max-width: 639px) { .pg-ready li { grid-template-columns: 20px minmax(0, 1fr); } .pg-ready li span { grid-column: 2; } }
 /* Persetujuan acara: alur bertahap, dokumen, log aktivitas */
+.ap-turn { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: rgb(var(--primary) / .08); font-size: 14px; color: rgb(var(--on-surface)); }
+.ap-turn > .material-symbols-outlined { color: rgb(var(--primary)); }
+.ap-turn b { flex: 1; min-width: 180px; font-weight: 600; }
+.ap-check { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid rgb(var(--outline-variant)); font-size: 13px; line-height: 18px; }
+.ap-check.ok > .material-symbols-outlined { color: #22c55e; }
+.ap-check.bad { border-color: rgb(var(--error) / .5); }
+.ap-check.bad > .material-symbols-outlined { color: rgb(var(--error)); }
+.ap-check.warn > .material-symbols-outlined { color: #b7791f; }
+.ap-check + .pg-ap, .ap-check:last-of-type { margin-bottom: 14px; }
 .pg-ap { display: grid; gap: 0; }
 .pg-ap li { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding-bottom: 14px; font-size: 13px; line-height: 18px; }
 .pg-ap li:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: rgb(var(--outline-variant)); }

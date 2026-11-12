@@ -106,8 +106,6 @@
     return out;
   }
   // ---- persetujuan acara: status singkat untuk "Perlu tindakan", daftar acara, dan header
-  const AP_CHIP = { DRAFT: 'bg-slate-500/20 text-slate-300', DIAJUKAN: 'bg-amber-500/15 text-amber-300', REVISI: 'bg-rose-500/15 text-rose-300', DISETUJUI: 'bg-emerald-500/15 text-emerald-300' };
-  const SLOW_MS = 2 * 86400000; // menunggu keputusan lebih dari 2 hari = ditandai terlambat
   const waitMs = (e) => { const c = Evt.currentStep(e); return c ? Evt.now() - e.approval.steps[c.id].since : 0; };
   const revNote = (e) => { const r = Evt.APPROVERS.map((a) => e.approval.steps[a.id]).find((x) => x && x.st === 'REVISI'); return r && r.note ? r.note : ''; };
   function apNext(e) {
@@ -120,7 +118,7 @@
   function apAttn(e) {
     const ap = e.approval;
     if (ap.st === 'REVISI') return { sev: 'warn', tab: 'persetujuan', n: 1, text: 'Diminta revisi' + (revNote(e) ? ': ' + revNote(e) : ''), btn: 'Lihat catatan' };
-    if (ap.st === 'DIAJUKAN') { const w = waitMs(e), slow = w > SLOW_MS; return { sev: slow ? 'warn' : 'info', tab: 'persetujuan', n: 1, text: 'Menunggu persetujuan ' + Evt.currentStep(e).name + ' sejak ' + Evt.durTxt(w) + (slow ? ', lewat dari 2 hari' : ''), btn: 'Lihat persetujuan' }; }
+    if (ap.st === 'DIAJUKAN') { const w = waitMs(e), slow = w > EvtApproval.SLOW_MS; return { sev: slow ? 'warn' : 'info', tab: 'persetujuan', n: 1, text: 'Menunggu persetujuan ' + Evt.currentStep(e).name + ' sejak ' + Evt.durTxt(w) + (slow ? ', lewat dari 2 hari' : ''), btn: 'Lihat persetujuan' }; }
     const t = apNext(e); return { sev: 'info', tab: 'persetujuan', n: 1, text: t[0].toUpperCase() + t.slice(1), btn: 'Ajukan' };
   }
   function badges(e) {
@@ -1244,7 +1242,7 @@
       PUBLISHED: isHariH(e) ? 'hari H, pantau check-in di gate' : sale.open ? 'penjualan berjalan, pantau ringkasan' : sale.label.toLowerCase(),
       CLOSED: 'penjualan ditutup, buka lagi bila perlu', DONE: 'acara selesai, periksa rekonsiliasi keuangan', CANCELLED: 'dibatalkan, refund peserta sudah diproses',
     }[ph];
-    const chip = (ph === 'DONE' ? UI.chip('Selesai', 'bg-slate-500/20 text-slate-300') : evChip(e)) + (e.status === 'DRAFT' && e.approval ? UI.chip(esc(Evt.AP_ST[e.approval.st]), AP_CHIP[e.approval.st]) : '');
+    const chip = (ph === 'DONE' ? UI.chip('Selesai', 'bg-slate-500/20 text-slate-300') : evChip(e)) + (e.status === 'DRAFT' && e.approval ? UI.chip(esc(Evt.AP_ST[e.approval.st]), EvtApproval.AP_CHIP[e.approval.st]) : '');
     return `<article class="pg-ev" style="--c:${e.color}">
       <div class="pg-ev-name"><a href="${href(e.id, primary[0])}" class="pg-ev-title">${esc(e.name)}</a><div class="pg-ev-sub">${plate(e)}<span>${place(e)} · ${e.id} · ${esc(e.cat)}${e.org ? ' · ' + esc(e.org) : ''}</span></div></div>
       <div class="pg-ev-date"><b>${Evt.fmtShort(e.start)}</b><span>${Evt.fmtTime(e.start)} WIB</span></div>
@@ -1335,28 +1333,8 @@
   }
 
   // ------------------------------------------------------------------ Persetujuan acara & log aktivitas
-  const ACT = { BUAT: ['Dibuat', 'bg-slate-500/20 text-slate-300'], DOKUMEN: ['Dokumen', 'bg-slate-500/20 text-slate-300'], AJUKAN: ['Diajukan', 'bg-primary/15 text-primary'], SETUJU: ['Disetujui', 'bg-emerald-500/15 text-emerald-300'], DISETUJUI: ['Persetujuan lengkap', 'bg-emerald-500/15 text-emerald-300'], REVISI: ['Revisi', 'bg-rose-500/15 text-rose-300'], STATUS: ['Status', 'bg-primary/15 text-primary'], UBAH: ['Diubah', 'bg-amber-500/15 text-amber-300'], BATAL: ['Dibatalkan', 'bg-rose-500/15 text-rose-300'], REFUND: ['Refund', 'bg-rose-500/15 text-rose-300'], PESAN: ['Pesan', 'bg-slate-500/20 text-slate-300'] };
-  const fsize = (n) => (n >= 1e6 ? (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
-  function apSteps(e) {
-    const ap = e.approval, t = Evt.now(), on = ap.st !== 'DRAFT';
-    const li = (cls, ic, title, body) => `<li class="${cls}"><span class="pg-ap-dot">${icon(ic, 'text-[16px]')}</span><div class="min-w-0"><b>${title}</b>${body}</div></li>`;
-    const q = (n) => (n ? `<q class="pg-q">${esc(n)}</q>` : '');
-    const rows = [on ? li('ok', 'send', 'Pengajuan' + (ap.round > 1 ? ' (putaran ' + ap.round + ')' : ''), `<p>Diajukan penyelenggara ${Evt.fmtDT(ap.submittedAt)}</p>`)
-      : li('wait', 'edit_document', 'Pengajuan', '<p>Belum diajukan. Unggah dokumen wajib, lalu ajukan.</p>')];
-    Evt.APPROVERS.forEach((a) => {
-      const x = (on && ap.steps[a.id]) || {};
-      if (x.st === 'SETUJU') rows.push(li('ok', 'check', a.name, `<p>Disetujui ${esc(x.by)}, ${Evt.fmtDT(x.at)}, ditinjau ${Evt.durTxt(x.at - x.since)}</p>${q(x.note)}`));
-      else if (x.st === 'REVISI') rows.push(li('bad', 'undo', a.name, `<p>Minta revisi: ${esc(x.by)}, ${Evt.fmtDT(x.at)}</p>${q(x.note)}`));
-      else if (x.st === 'MENUNGGU') { const w = t - x.since, slow = w > SLOW_MS; rows.push(li(slow ? 'wait slow' : 'wait', 'hourglass_top', a.name, `<p>Menunggu sejak ${Evt.fmtDT(x.since)}, sudah <b>${Evt.durTxt(w)}</b>${slow ? ' (lewat dari 2 hari)' : ''}</p>`)); }
-      else rows.push(li('todo', 'radio_button_unchecked', a.name, `<p>${x.st === 'ANTRE' ? 'Menunggu keputusan tahap sebelumnya' : 'Belum mulai'}</p>`));
-    });
-    rows.push(e.status !== 'DRAFT' ? li('ok', 'public', 'Publikasi', '<p>Sudah tampil di portal pengunjung</p>')
-      : li(ap.st === 'DISETUJUI' ? 'wait' : 'todo', 'public', 'Publikasi', `<p>${ap.st === 'DISETUJUI' ? 'Siap dipublikasikan' : 'Terbuka setelah kedua divisi setuju'}</p>`));
-    const total = ap.st === 'DISETUJUI' ? 'Selesai dalam <b>' + Evt.durTxt(ap.approvedAt - (ap.firstAt || ap.submittedAt)) + '</b> sejak pengajuan pertama' + (ap.round > 1 ? ', ' + ap.round + ' putaran' : '')
-      : ap.st === 'DIAJUKAN' ? 'Sudah berjalan <b>' + Evt.durTxt(t - (ap.firstAt || ap.submittedAt)) + '</b> sejak pengajuan pertama'
-      : ap.st === 'REVISI' ? 'Putaran ' + ap.round + ' dikembalikan untuk revisi' : '';
-    return `<ol class="pg-ap">${rows.join('')}</ol>${total ? `<div class="pg-ap-total">${icon('timer', 'text-[18px]')}<span>${total}</span></div>` : ''}`;
-  }
+  // Tampilan alur, dokumen, dan log ada di approval-ui.js (dipakai juga Command Center). Keputusan divisi hanya di
+  // Command Center; konsol ini mengajukan, mengunggah dokumen, dan mempublikasikan.
   function apActions(e) {
     const ap = e.approval;
     if (!isMgr() || e.status !== 'DRAFT') return '';
@@ -1367,65 +1345,27 @@
     }
     if (ap.st === 'DIAJUKAN') {
       const c = Evt.currentStep(e);
-      return `<div class="inner p-3 mt-4"><div class="lbl mb-1">Keputusan ${c.name}</div><p class="font-label-sm text-label-sm text-on-surface-variant mb-2">Simulasi prototype: Anda bertindak sebagai ${c.name}. Di sistem produksi tombol ini hanya muncul untuk akun divisi tersebut.</p>
-        <label class="f">Catatan (wajib bila minta revisi)<textarea class="inp" id="ap-note" rows="2" maxlength="300"></textarea></label>
-        <div class="flex flex-wrap gap-2 mt-3"><button type="button" class="btn" data-decide="1">${icon('check', 'text-[16px]')} Setujui</button><button type="button" class="btn-ghost" data-decide="0">${icon('undo', 'text-[16px]')} Minta revisi</button></div></div>`;
+      return `<div class="inner p-3 mt-4 flex items-start gap-3">${icon('hourglass_top', 'text-[20px] text-primary')}<span class="font-body-sm text-body-sm">Menunggu keputusan <b>${c ? c.name : 'divisi'}</b> di Command Center. Dokumen terkunci selama peninjauan.</span></div>`;
     }
     return `<div class="inner p-3 mt-4 flex flex-wrap items-center gap-3"><span class="flex-1 min-w-[220px] font-body-sm text-body-sm">Divisi Event dan Operasional Mall sudah setuju. Acara bisa dipublikasikan.</span><button type="button" class="btn" data-status="PUBLISHED" data-ev-id="${e.id}">${icon('publish', 'text-[16px]')} Publikasikan</button></div>`;
   }
-  function apDocs(e) {
-    const ap = e.approval, open = isMgr() && e.status === 'DRAFT' && (ap.st === 'DRAFT' || ap.st === 'REVISI');
-    return `<ul class="pg-docs">${Evt.DOCS.map((d) => {
-      const f = ap.docs[d.id];
-      return `<li class="${f ? 'ok' : d.req ? 'miss' : ''}">${icon(f ? 'task' : 'draft', 'text-[20px]')}<div class="min-w-0 flex-1"><b>${esc(d.name)}</b> <small>${d.req ? 'wajib' : 'opsional'}</small><p>${f ? esc(f.name) + ' · ' + fsize(f.size) + ' · ' + Evt.fmtDT(f.at) + ' oleh ' + esc(f.by) : 'Belum diunggah'}</p></div>${open ? `<label class="btn-ghost !py-1 pg-upload">${icon('upload', 'text-[16px]')} ${f ? 'Ganti' : 'Unggah'}<input type="file" class="sr-only" data-doc-up="${d.id}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"></label>${f ? `<button type="button" class="btn-ghost !py-1" data-doc-del="${d.id}" aria-label="Hapus ${esc(d.name)}">${icon('delete', 'text-[16px]')}</button>` : ''}` : ''}</li>`;
-    }).join('')}</ul><p class="font-label-sm text-label-sm text-on-surface-variant mt-2">Prototype: yang dicatat hanya nama dan ukuran file sebagai bukti di log. Isi file tidak dikirim ke server.</p>`;
-  }
-  function auditTable(e) {
-    const log = (e.audit || []).map((x, i) => Object.assign({ i }, x)).reverse();
-    if (!log.length) return '<p class="font-body-sm text-body-sm text-on-surface-variant">Belum ada aktivitas tercatat. Mulai sekarang setiap perubahan pada acara ini masuk ke log.</p>';
-    return `<div class="overflow-x-auto"><table class="tbl pg-log"><thead><tr><th>#</th><th>Waktu</th><th>Pelaku</th><th>Aktivitas</th></tr></thead><tbody>${log.map((x) => {
-      const a = ACT[x.act] || [x.act, 'bg-slate-500/20 text-slate-300'];
-      return `<tr><td class="font-label-sm text-label-sm text-on-surface-variant">${x.i + 1}</td><td class="whitespace-nowrap"><div class="font-body-sm text-body-sm">${Evt.fmtDT(x.ts)}</div><code class="pg-hash" title="Kode rantai log">${esc(x.h)}</code></td><td><div class="font-body-sm text-body-sm">${esc(x.by)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(x.role)}</div></td><td>${UI.chip(a[0], a[1])} <span class="font-body-sm text-body-sm">${esc(x.text)}</span>${x.note ? `<q class="pg-q">${esc(x.note)}</q>` : ''}</td></tr>`;
-    }).join('')}</tbody></table></div>`;
-  }
   function persetujuan(e) {
-    const ap = e.approval, v = Evt.verifyAudit(e);
-    const integ = v.ok ? UI.chip(icon('verified_user', 'text-[14px]') + ' Log utuh, ' + v.n + ' entri', 'bg-emerald-500/15 text-emerald-300') : UI.chip(icon('gpp_bad', 'text-[14px]') + ' Log tidak cocok mulai entri #' + (v.at + 1), 'bg-rose-500/15 text-rose-300');
-    const right = `<div class="flex flex-wrap items-center gap-2">${integ}<button type="button" class="btn-ghost !py-1" id="csv-audit"${v.n ? '' : ' disabled'}>${icon('download', 'text-[16px]')} Unduh CSV</button></div>`;
-    const miss = ap ? Evt.missingDocs(e).length : 0;
-    const flow = ap ? apSteps(e) + apActions(e) : '<p class="font-body-sm text-body-sm text-on-surface-variant">Acara ini dipublikasikan sebelum persetujuan digital dipakai, jadi tidak punya riwayat persetujuan. Acara baru selalu melewati Divisi Event lalu Operasional Mall.</p>';
+    const A = EvtApproval, ap = e.approval, miss = ap ? Evt.missingDocs(e).length : 0;
+    const flow = ap ? A.turnBar(e) + A.areaLine(e) + A.steps(e) + apActions(e) : '<p class="font-body-sm text-body-sm text-on-surface-variant">Acara ini dipublikasikan sebelum persetujuan digital dipakai, jadi tidak punya riwayat persetujuan. Acara baru selalu melewati Divisi Event lalu Operasional Mall.</p>';
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
       <div class="2xl:col-span-5 flex flex-col gap-5">
-        <section class="card p-5">${UI.h('Alur persetujuan', 'Penyelenggara mengajukan, Divisi Event lalu Operasional Mall memutuskan', ap ? UI.chip(esc(Evt.AP_ST[ap.st]), AP_CHIP[ap.st]) : '', 'approval')}${flow}</section>
-        ${ap ? `<section class="card p-5">${UI.h('Dokumen persyaratan', miss ? miss + ' dokumen wajib belum diunggah' : 'Semua dokumen wajib sudah ada', '', 'folder_open')}${apDocs(e)}</section>` : ''}
+        <section class="card p-5">${UI.h('Alur persetujuan', 'Penyelenggara mengajukan, Divisi Event lalu Operasional Mall memutuskan di Command Center', '', 'approval')}${flow}</section>
+        ${ap ? `<section class="card p-5">${UI.h('Dokumen persyaratan', miss ? miss + ' dokumen wajib belum diunggah' : 'Semua dokumen wajib sudah ada', '', 'folder_open')}${A.docs(e, { editable: isMgr() })}</section>` : ''}
       </div>
-      <section class="card p-5 2xl:col-span-7">${UI.h('Log aktivitas acara', 'Siapa melakukan apa dan kapan. Entri hanya bisa ditambah, tidak bisa diubah atau dihapus', right, 'history')}${auditTable(e)}</section></div>`;
+      <section class="card p-5 2xl:col-span-7">${UI.h('Log aktivitas acara', 'Siapa melakukan apa dan kapan. Entri hanya bisa ditambah, tidak bisa diubah atau dihapus', A.integrity(e), 'history')}${A.log(e)}</section></div>`;
   }
   function bindApproval(el, id) {
     const note = () => { const n = el.querySelector('#ap-note'); return n ? n.value.trim() : ''; };
     // Setelah aksi berhasil gambar ulang (refresh() menahan redraw selama catatan terisi); bila gagal, catatan tetap ada.
     const run = async (fn, ok) => { let bad = false; const r = await act(() => fn().catch((err) => { bad = true; throw err; }), ok); if (bad) return null; redraw(); return r === undefined ? true : r; };
-    el.querySelectorAll('[data-doc-up]').forEach((inp) => inp.addEventListener('change', () => {
-      const f = inp.files && inp.files[0]; if (!f) return;
-      if (f.size > 20 * 1024 * 1024) return UI.toast('Ukuran file maksimal 20 MB', 'P3');
-      run(() => Evt.uploadDoc(id, inp.dataset.docUp, { name: f.name, size: f.size }), 'Dokumen dicatat: ' + esc(f.name));
-    }));
-    el.querySelectorAll('[data-doc-del]').forEach((b) => b.addEventListener('click', async () => {
-      const d = Evt.DOCS.find((x) => x.id === b.dataset.docDel);
-      if (await UI.confirm({ title: 'Hapus dokumen?', body: esc(d.name) + ' dihapus dari pengajuan. Penghapusan tetap tercatat di log.', confirmText: 'Hapus', danger: true })) run(() => Evt.removeDoc(id, d.id), 'Dokumen dihapus');
-    }));
+    EvtApproval.bindDocs(el, id, run);
+    EvtApproval.bindCsv(el);
     const sub = el.querySelector('#ap-submit'); if (sub) sub.addEventListener('click', () => run(() => Evt.submitApproval(id, note()), 'Pengajuan dikirim ke Divisi Event'));
-    el.querySelectorAll('[data-decide]').forEach((b) => b.addEventListener('click', async () => {
-      const ok = b.dataset.decide === '1', c = Evt.currentStep(Evt.ev(id)); if (!c) return;
-      if (ok && !(await UI.confirm({ title: 'Setujui sebagai ' + c.name + '?', body: 'Keputusan dicatat di log dengan nama Anda dan waktu sekarang, dan tidak bisa diubah.', confirmText: 'Setujui' }))) return;
-      const r = await run(() => Evt.decide(id, c.id, ok, note()));
-      if (r) UI.toast(r === 'REVISI' ? 'Revisi diminta dan tercatat di log' : r === 'NEXT' ? c.name + ' menyetujui, diteruskan ke tahap berikutnya' : 'Persetujuan lengkap, acara siap dipublikasikan', 'P4');
-    }));
-    const ca = el.querySelector('#csv-audit'); if (ca) ca.addEventListener('click', () => {
-      const e = Evt.ev(id), rows = [['No', 'Waktu', 'Pelaku', 'Peran', 'Aksi', 'Keterangan', 'Catatan', 'Kode rantai']];
-      (e.audit || []).forEach((x, i) => rows.push([i + 1, Evt.fmtDT(x.ts), x.by, x.role, (ACT[x.act] || [x.act])[0], x.text, x.note || '', x.h]));
-      Evt.csv('log_aktivitas_' + id + '.csv', rows);
-    });
   }
 
   // ------------------------------------------------------------------ tab Command Center: gate & keamanan (pantau, tanpa pemindai)
