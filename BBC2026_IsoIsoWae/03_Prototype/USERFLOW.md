@@ -7,8 +7,9 @@ Alur pengguna pada prototype yang sudah berjalan di https://smiccts.vercel.app. 
 | Peran | Portal | Login | Tujuan utama |
 |---|---|---|---|
 | Pengunjung | `/pengunjung` | Tidak wajib (akun demo untuk "Tiket saya") | Cari acara, beli tiket, simpan e-ticket QR |
-| Penyelenggara acara (EO, tenant, tim event mall) | `/pengelola` | Akun staf `pengelola` | Buat acara, ajukan persetujuan, jual tiket, kelola peserta |
-| Divisi Event & Operasional Mall | `/pengelola` → menu Persetujuan | Akun staf `pengelola` (simulasi peran) | Menyetujui atau meminta revisi pengajuan acara |
+| Tenant/EO (penyelenggara eksternal) | `/pengelola` | Akun staf `tenant` | Hanya acara organisasinya: buat, unggah dokumen, ajukan, publikasi setelah disetujui |
+| Tim Event Mall | `/pengelola` | Akun staf `pengelola` | Semua acara: jual tiket, peserta, refund, keuangan |
+| Divisi Event & Operasional Mall | `/command-center` → Persetujuan Acara | Akun staf `divisi-event` / `divisi-ops` | Menyetujui atau meminta revisi pengajuan acara, sesuai giliran |
 | Petugas gate | `/checkin` (ponsel) | Akun staf `gate` atau `pengelola` | Pindai QR peserta di pintu masuk |
 | Manajemen mall / operator | `/command-center` | Akun staf `command-center` | Memantau semua acara, parkir, keramaian, dan insiden |
 
@@ -128,7 +129,7 @@ stateDiagram-v2
   Draft --> [*]: hapus (tanpa transaksi)
 ```
 
-## 5. Divisi Event dan Operasional Mall (menu Persetujuan)
+## 5. Divisi Event dan Operasional Mall (Command Center → Persetujuan Acara)
 
 ```mermaid
 stateDiagram-v2
@@ -148,9 +149,20 @@ stateDiagram-v2
 - Dokumen terkunci selama ditinjau dan setelah disetujui.
 - Layar menampilkan lama tiap divisi meninjau dan total waktu sejak pengajuan pertama. Pengajuan yang menunggu lebih dari 2 hari ditandai di **Perlu tindakan**.
 - **Log aktivitas** mencatat siapa, peran, kapan, aksi, dan catatan untuk setiap langkah dan perubahan acara (dokumen, pengajuan, keputusan, publikasi, perubahan harga atau jadwal, refund, pembatalan). Log hanya bisa ditambah dan bisa diunduh CSV. Tanda "Log utuh" berubah merah bila ada entri yang diubah.
-- Prototype: satu akun pengelola bertindak sebagai kedua divisi (ditandai "Simulasi"). Dokumen hanya dicatat nama dan ukurannya.
+- Pengajuan memuat area & jadwal (cek bentrok otomatis) dan 7 dokumen; tiap dokumen menyebut divisi pemeriksanya.
+- Tombol keputusan hanya muncul untuk divisi yang gilirannya; operator Command Center hanya melihat.
+- Dokumen hanya dicatat nama dan ukurannya.
 
-Contoh di data demo: **EVT-28 Expo UMKM Gedebage Berdaya**, sudah disetujui Divisi Event, menunggu Operasional Mall.
+**Skenario demo (±1 menit, EVT-28 Expo UMKM Gedebage Berdaya, Exhibition Hall A).** Riwayat contoh: Divisi Event minta revisi denah 3 hari lalu, tenant sudah mengganti denah.
+
+| # | Akun | Aksi | Yang terlihat |
+|---|---|---|---|
+| 1 | Tenant/EO (`tenant@example.com`) | Konsol → EVT-28 → Persetujuan → **Ajukan ulang** | Kartu "Lanjut sebagai Divisi Event" |
+| 2 | Divisi Event | Command Center → Persetujuan Acara (badge 1) → **Setujui** | Kartu "Lanjut sebagai Operasional Mall" |
+| 3 | Operasional Mall | **Setujui** | "Selesai dalam 5 hari … sejak pengajuan pertama, 2 putaran", kartu "Kembali ke Tenant/EO" |
+| 4 | Tenant/EO | **Publikasikan** | Acara tampil di `/pengunjung`, log "Log utuh" |
+
+Pindah akun cukup dengan tombol "Lanjut sebagai …" (mode demo, tanpa `STAFF_PASSWORD`). Data lama: tekan **Reset data contoh** (Ctrl+K, akun Tim Event Mall) dulu.
 
 ## 6. Petugas gate (`/checkin`)
 
@@ -218,5 +230,5 @@ stateDiagram-v2
 
 - Pembayaran, email, dan WhatsApp adalah simulasi (sandbox dan kotak keluar).
 - Login pengunjung adalah akun demo di browser, bukan akun sungguhan.
-- Persetujuan memakai satu akun pengelola untuk semua divisi.
+- Satu akun demo per peran (belum banyak tenant dengan login masing-masing).
 - Data tiket insiden Command Center tersimpan per browser.

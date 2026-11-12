@@ -67,8 +67,10 @@ Reset data: tombol **Reset demo** di sidebar Command Center (tiket insiden) dan,
 | Path | Akun demo | Keterangan |
 |---|---|---|
 | `/pengunjung` | - (opsional `pengunjung@example.com`) | Terbuka untuk pengunjung; akun hanya untuk Tiket saya & isi data otomatis |
-| `/pengelola` | `pengelola@example.com` | Panitia/EO. Reset data event juga butuh sesi ini. Juga boleh membuka `/checkin` |
+| `/pengelola` | `tenant@example.com` | Tenant/EO: hanya acara organisasinya (Komunitas UMKM Gedebage), ajukan persetujuan |
+| `/pengelola` | `pengelola@example.com` | Tim Event Mall: semua acara. Reset data event juga butuh sesi ini. Juga boleh membuka `/checkin` |
 | `/checkin` | `gate@example.com` | Petugas gate: pindai e-ticket & lapor ke Command Center |
+| `/command-center` | `divisi.event@example.com`, `divisi.ops@example.com` | Divisi Event dan Operasional Mall: memutuskan persetujuan acara (menu Persetujuan Acara) |
 | `/command-center` | `cc@example.com` | Manajemen mall & operator Command Center |
 
 - Password semua akun demo: `smicc-demo-2026` (ditampilkan di halaman `/masuk`, wajar untuk prototype). Ganti untuk

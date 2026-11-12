@@ -11,9 +11,9 @@ browser.
 | Path | Untuk | Akses |
 |---|---|---|
 | `/pengunjung` | Pembeli tiket | Terbuka |
-| `/pengelola` | Panitia/EO, Divisi Event, Operasional Mall | Akun staf pengelola |
+| `/pengelola` | Tenant/EO (acara milik sendiri) dan Tim Event Mall (semua acara) | Akun staf tenant atau pengelola |
 | `/checkin` | Petugas gate | Akun staf gate atau pengelola |
-| `/command-center` | Manajemen mall & operator | Akun staf command-center |
+| `/command-center` | Operator, Divisi Event, Operasional Mall | Akun staf command-center, divisi-event, divisi-ops |
 | `/` | Semua | Halaman pilih peran |
 | `/masuk` | Staf | Login email + password (kartu akun demo) |
 
@@ -52,11 +52,13 @@ Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi
 | Ringkasan | KPI penjualan, okupansi, kehadiran, blok **Perlu tindakan** (anomali gate, pesanan menunggu bayar, persetujuan tertunda), ticker aktivitas |
 | Denah kursi | Lihat status kursi langsung, blokir/buka kursi, uji rebutan kursi (2 pembeli memilih kursi yang sama) |
 | Pengaturan | Poster, jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan, asumsi keuangan. Satu tombol simpan |
-| Persetujuan | Unggah dokumen (proposal, denah, surat izin keramaian, K3), ajukan, keputusan **Divisi Event** lalu **Operasional Mall**, minta revisi beralasan, waktu tunggu per divisi. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
+| Persetujuan | Unggah 7 dokumen (6 wajib, tiap dokumen menyebut divisi pemeriksanya), cek otomatis area & jadwal, ajukan, status "Giliran: …", waktu tunggu per divisi. Keputusan **Divisi Event** lalu **Operasional Mall** dilakukan di Command Center. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
 | Peserta & transaksi | Cari & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund). Detail pesanan: ubah data peserta, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
 | Keuangan & ROI | Bruto, refund, neto, biaya layanan, rekonsiliasi per metode pembayaran, deteksi selisih, penjualan per kategori, bagi hasil & ROI. **Unduh Rekonsiliasi (CSV)** |
 | Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
 | Kirim broadcast | Kirim pengingat ke semua pemesan, riwayat pesan email & WhatsApp, kabari daftar tunggu |
+
+Header: **pemilih acara** (dropdown cari) dan **+ Acara baru** (panel: nama, area dengan ketersediaan, mulai, selesai, format tiket). Akun **Tenant/EO** hanya melihat acara organisasinya, tanpa refund, reset, dan alat demo; chip identitas di header.
 
 Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (termasuk alat demo dan reset data event), kartu KPI yang bisa diklik untuk rincian, **Laporan PDF** per acara, profil di kanan atas, peringatan bila data contoh sudah kedaluwarsa.
 
@@ -107,6 +109,9 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   pembuat laporan BOD (PDF cetak atau CSV).
 - **Komersial & Keuangan**: zonasi & okupansi tenant, heatmap footfall, kontrak jatuh tempo,
   tagihan & umur piutang.
+- **Persetujuan Acara**: kotak masuk pengajuan acara untuk akun **Divisi Event** dan **Operasional Mall**
+  (badge = menunggu keputusan akun ini), detail berisi cek area & jadwal, alur, dokumen, tombol Setujui atau
+  Minta revisi hanya pada giliran divisi itu, dan log aktivitas. Operator hanya melihat.
 - **Analisis Sentimen**: ulasan publik (sekarang Google Maps; X, TikTok, Instagram "Segera"), komposisi
   positif/netral/negatif, keluhan per topik, tren per bulan, keluhan saat event besar, rekomendasi
   pengembangan untuk mall dan event (masing-masing dengan dasar angkanya), dan kutipan tanpa nama.
@@ -142,5 +147,5 @@ Command Center yang membuat tiket walau beberapa terbuka.
 - Aturan bisnis dan kunci tanda tangan QR masih berjalan di browser. Produksi perlu API per aksi
   dan tanda tangan QR di server.
 - Data dashboard Command Center selain event adalah data contoh dan tersimpan per browser.
-- Persetujuan acara memakai satu akun pengelola untuk semua divisi (simulasi). Dokumen hanya dicatat
-  nama dan ukurannya, dan rantai hash log dihitung di browser.
+- Satu akun demo per peran (belum banyak tenant dengan login masing-masing). Dokumen persetujuan hanya
+  dicatat nama dan ukurannya, dan rantai hash log dihitung di browser.

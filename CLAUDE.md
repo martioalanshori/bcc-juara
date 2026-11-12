@@ -85,7 +85,7 @@ data/                runtime secrets & state (gitignored)
 | Path (`PAGES` in `server/config.js`) | Page | Scripts |
 |---|---|---|
 | `/` | `app/pages/beranda.html` | `core/theme` (role picker) |
-| `/command-center` | `app/pages/command-center.html` | everything: `core/*`, `command-center/*` + `views/*`, `event/engine`, `event/checkin-ui`, `event/admin`, `event/cc-bridge` |
+| `/command-center` | `app/pages/command-center.html` | everything: `core/*`, `command-center/*` + `views/*` (incl. `persetujuan` = `views/approval.js`, `sentimen`), `event/engine`, `event/approval-ui`, `event/checkin-ui`, `event/admin`, `event/cc-bridge` |
 | `/pengelola` | `app/pages/pengelola.html` | `core/router`, `core/ui`, `core/pdf`, `command-center/sop-data`, `event/engine`, `event/checkin-ui`, `event/admin` → `EvtAdmin.mount(el, 'pengelola')` (SPA: `/pengelola/acara`, `/pengelola/e/<id>/<menu>`) |
 | `/pengunjung` | `app/pages/pengunjung.html` | `core/router`, `event/engine`, `event/visitor` (mobile-first buyer portal) |
 | `/checkin` | `app/pages/checkin.html` | `event/engine`, `event/checkin-ui` (gate QR scanner) |
@@ -125,12 +125,20 @@ dependency-free PDF writer: Helvetica/WinAnsi text, rects, lines, A4 pages). All
      engine's transaction helper and must never write state directly.
    - `lokal`: the same CAS against localStorage (`smicc-evt-v1`). Tabs on one device stay in
      sync, and the pages show a yellow "Mode lokal" banner.
-   New events go through approval (`e.approval`: documents → Divisi Event → Operasional Mall, `submitApproval`/`decide`)
-   before they can be published, and important event changes append to a hash-chained log `e.audit` (`audit()`,
-   `verifyAudit()`); the "Persetujuan" menu in the organizer console shows both. Seeded state is ~347 KB of the
+   New events go through approval (`e.approval`: 7 documents in `DOCS` → Divisi Event → Operasional Mall,
+   `submitApproval`/`decide`, `Evt.turn(e)` = whose turn) before they can be published, and important event changes
+   append to a hash-chained log `e.audit` (`audit()`, `verifyAudit()`). The organizer console (menu Persetujuan) uploads
+   and submits; decisions happen only in Command Center (menu Persetujuan Acara, `views/approval.js`). Both render the
+   same component `app/js/event/approval-ui.js` (`window.EvtApproval`). `Evt.setActor({name, role, div, org})` sets who
+   is written to the log (`div` = event/ops for Command Center accounts, `org` = organiser for tenants).
+   Every event has `area` (one of `Evt.AREAS`: Sawarga Courtyard, Downtown Walk, Parkir Barat, Exhibition Hall A,
+   Atrium Ciunik/Cileutik/Cibadak; spelling "Cibadak" is the team's decision) and `end`; `Evt.areaClash()` rejects
+   overlapping bookings of the same area in `addEvent`/`saveEvent`/`submitApproval`. Seeded state is ~348 KB of the
    350 KB test budget, so don't backfill logs into sample events.
-   Seed data has 28 sample events (EVT-01..03 in `seed()`, EVT-04..28 in `seedMore()`; EVT-28 is a draft waiting for Operasional Mall; each with a demo photo and an `org` organiser name) across five mall areas
-   (`AREA` in `engine.js`), scheduled relative to seed time so the landing page always has "today/weekend/this week"
+   Seed data has 28 sample events (EVT-01..03 in `seed()`, EVT-04..28 in `seedMore()`; EVT-28 belongs to tenant
+   "Komunitas UMKM Gedebage" and was sent back for revision by Divisi Event, the start of the approval demo; each with a
+   demo photo and an `org` organiser name) spread over the mall areas (overlaps are shifted 3 h at seed time),
+   scheduled relative to seed time so the landing page always has "today/weekend/this week"
    content. Events may carry `img` (`/app/img/demo/*.jpg`); `banner()` in `visitor.js` falls back to a gradient
    and category icon without one. Demo photos are Wikimedia Commons (licences in `app/img/demo/CREDITS.md`) meant to
    be replaced in place under the same file names; keep sample sales small, state size is sent to every device.
@@ -166,9 +174,13 @@ open each Excel file in Excel and save it once so the formulas recalculate.
   (`/app/`, `/docs/unduhan/`; `.html` files there are never served raw). Anything else is 404, so `data/` and
   source files are not reachable.
 - Staff login: a page with a role (one or a list, e.g. `/checkin` = `['gate', 'pengelola']`) and no session → 302
-  `/masuk?role=…&next=<path+query>`. Accounts are `ACCOUNTS` in `server/config.js` (email → role: `pengelola`,
-  `gate`, `command-center`); one shared password, env `STAFF_PASSWORD` or the demo `smicc-demo-2026` shown on
-  `/masuk`. Sessions are stateless HMAC-signed HttpOnly cookies per role (12 h) keyed by `SESSION_SECRET` or
+  `/masuk?role=…&next=<path+query>`. Accounts are `ACCOUNTS` in `server/config.js`, one demo account per role:
+  `tenant` (Tenant/EO, sees only events with its `org`), `pengelola` (Tim Event Mall), `divisi-event`, `divisi-ops`,
+  `command-center` (operator), `gate`. `ROLES[r].portal`: logging in clears the other roles of the same portal, so a
+  browser has one identity per portal (`/api/auth/me` → `active[portal]`). One shared password, env `STAFF_PASSWORD` or
+  the demo `smicc-demo-2026`; without `STAFF_PASSWORD` the server is in demo mode: `/masuk` renders account cards from
+  `me.demoAccounts` and `POST /api/auth/demo` switches account in one click ("Lanjut sebagai …" cards,
+  `SMAuth.switchTo` in `core/auth.js`). Sessions are stateless HMAC-signed HttpOnly cookies per role (12 h) keyed by `SESSION_SECRET` or
   `data/session.key`. 5 wrong logins lock that IP for 60 s (`server/auth.js`). The visitor portal has its own
   client-side demo login (`/pengunjung/masuk`, `DEMO` in `visitor.js`), not a server session.
 - `server/store.js` has two stores with one interface: `fileStore` (`data/event_state.json`, LAN) and
@@ -177,6 +189,9 @@ open each Excel file in Excel and save it once so the formulas recalculate.
 - `POST /api/evt/state` is checked by `guard()` in `server/guard.js` (cases in
   `tests/guard_cases.json`). Without a session only buyer changes pass (holds, new orders,
   pay/cancel/expire PENDING orders, waitlist); `gate` may also add scans, change only `checkedInAt`/`gate` on tickets and gate reports; `command-center` may also change gate reports;
+  `tenant` may change only events of its org (new ones as draft, publish only after approval, never decide or drop
+  `approval`, log append-only); `divisi-event`/`divisi-ops` may change only `approval` + append `audit`, on their own
+  turn; with several role sessions in one browser a change passes if any role's rule allows it;
   `pengelola` may change anything. Rejections are 403 and `tx()` surfaces them without retrying.
   `POST /api/evt/reset` requires `pengelola`. The rules themselves still run in the browser, and the
   QR signing key is client-side.
