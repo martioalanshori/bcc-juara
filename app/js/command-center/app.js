@@ -11,6 +11,7 @@
       ['energy', 'Energi & Utilitas', 'bolt', 'ENE'],
       ['parking', 'Parkir & Mobilitas', 'local_parking', 'PARK'],
       ['event', 'Pemantauan Event', 'local_activity', 'EVT'],
+      ['persetujuan', 'Persetujuan Acara', 'approval', 'APR'],
     ] },
     { group: 'Eksekutif', items: [
       ['analytics', 'Analitik & Laporan', 'analytics', 'ANL'],
@@ -32,7 +33,7 @@
 
   function renderNav() {
     const act = Store.activeTickets();
-    const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length };
+    const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length, APR: window.CCApproval ? CCApproval.count() : 0 };
     document.getElementById('nav').innerHTML = NAV.map((g) => `<div class="lbl px-3 mt-2 mb-0.5">${g.group}</div>` + g.items.map(([r, n, ic, code]) =>
       `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt">${cnt[code]}</span>` : ''}</a>`).join('')).join('');
   }

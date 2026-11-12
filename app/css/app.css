@@ -1641,3 +1641,17 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 .pg-top > .flex-col { min-width: 120px; }
 @media (max-width: 1599px) { .pg-top .pg-prof-name, .pg-top .pg-prof-chev { display: none; } }
 @media (max-width: 767px) { .pg-top > .flex-col { display: none; } }
+
+/* Command Center: Persetujuan Acara */
+.apr-list { display: flex; flex-direction: column; gap: 14px; align-self: start; }
+.apr-g .lbl span { margin-left: 4px; padding: 0 6px; border-radius: 999px; background: rgb(var(--on-surface) / .08); }
+.apr-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgb(var(--outline-variant)); box-shadow: inset 3px 0 0 var(--c); }
+.apr-row:hover { background: rgb(var(--on-surface) / .04); }
+.apr-row.on { border-color: rgb(var(--primary)); background: rgb(var(--primary) / .08); }
+.apr-row b { display: block; font-size: 14px; line-height: 19px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apr-row small { display: block; font-size: 12px; line-height: 16px; color: rgb(var(--on-surface-variant)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apr-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 4px 0 14px; font-size: 13px; color: rgb(var(--on-surface-variant)); }
+.apr-facts span { display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 767px) { #cc-id-chip span { display: none; } }
+/* Header Command Center: chip identitas memakan tempat, ringkasan angka hanya di layar sangat lebar */
+@media (max-width: 1679px) { .cc-hstats { display: none !important; } }
