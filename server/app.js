@@ -99,7 +99,8 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
       if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });
       if (!Number.isInteger(body.base)) return json(res, 400, { ok: false, error: 'base tidak valid' });
       const next = body.state == null ? null : body.state;
-      const r = await store.write(body.base, next, (cur) => guard(cur, next, roles, now()));
+      const ctx = { org: roles.includes('tenant') ? (ACCOUNTS.find((a) => a.role === 'tenant') || {}).org || null : null };
+      const r = await store.write(body.base, next, (cur) => guard(cur, next, roles, now(), ctx));
       if (r.ok) return json(res, 200, { ok: true, version: r.version, now: now() });
       if (r.error) return json(res, 403, { ok: false, error: r.error });
       return json(res, 409, { ok: false, version: r.version, state: r.state, now: now() });

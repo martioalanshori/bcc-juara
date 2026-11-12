@@ -956,6 +956,1793 @@
    ],
    "nextNull": true,
    "ok": false
+  },
+  {
+   "name": "tenant boleh mengubah acara miliknya",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo Baru",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "tenant tidak boleh mengubah acara penyelenggara lain",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Penyelenggara Lain",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Penyelenggara Lain",
+      "status": "DRAFT",
+      "name": "X",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tenant boleh menambah acara miliknya (draft + order)",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ],
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      }
+     },
+     "T": {}
+    },
+    "qholds": {
+     "E": [],
+     "T": []
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "tenant tidak boleh menambah acara langsung terbit",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "PUBLISHED",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ],
+    "seats": {
+     "E": {
+      "A1": {
+       "st": "SOLD",
+       "order": "BK-1"
+      },
+      "B1": {
+       "st": "HELD",
+       "cart": "C2",
+       "order": "BK-2",
+       "until": 9
+      }
+     },
+     "T": {}
+    },
+    "qholds": {
+     "E": [],
+     "T": []
+    }
+   },
+   "ok": false
+  },
+  {
+   "name": "tenant tidak boleh publikasi sebelum disetujui",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "PUBLISHED",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tenant boleh publikasi setelah disetujui",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "PUBLISHED",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "tenant tidak boleh menyetujui sendiri",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tenant tidak boleh menghapus data persetujuan",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "tenant tidak boleh menghapus entri log",
+   "roles": [
+    "tenant"
+   ],
+   "ctx": {
+    "org": "Komunitas UMKM Gedebage"
+   },
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DRAFT",
+       "round": 0,
+       "steps": {},
+       "docs": {}
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "divisi-event menyetujui saat gilirannya, ops jadi menunggu",
+   "roles": [
+    "divisi-event"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "divisi-event tidak boleh mengubah data acara",
+   "roles": [
+    "divisi-event"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Ganti",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "divisi-event tidak boleh menghapus entri log",
+   "roles": [
+    "divisi-event"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "divisi-ops tidak boleh memutuskan sebelum Divisi Event",
+   "roles": [
+    "divisi-ops"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "divisi-ops menyetujui saat gilirannya",
+   "roles": [
+    "divisi-ops"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "SETUJU",
+         "since": 9,
+         "at": 12,
+         "by": "Rudi"
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       },
+       "approvedAt": 12
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "divisi-ops boleh minta revisi saat gilirannya",
+   "roles": [
+    "divisi-ops"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "REVISI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "REVISI",
+         "since": 9,
+         "at": 12,
+         "note": "Lengkapi K3"
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       },
+       {
+        "ts": 2,
+        "by": "x",
+        "role": "y",
+        "act": "UBAH",
+        "text": "z",
+        "h": "A2"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "divisi-event tidak boleh langsung menyatakan persetujuan lengkap",
+   "roles": [
+    "divisi-event"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DISETUJUI",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
+  },
+  {
+   "name": "operator Command Center tidak boleh memutuskan persetujuan",
+   "roles": [
+    "command-center"
+   ],
+   "old": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "MENUNGGU",
+         "since": 5
+        },
+        "ops": {
+         "st": "ANTRE",
+         "since": null
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "next": {
+    "events": {
+     "E": {
+      "id": "E",
+      "status": "PUBLISHED",
+      "fin": {
+       "rent": 1
+      }
+     },
+     "T": {
+      "id": "T",
+      "org": "Komunitas UMKM Gedebage",
+      "status": "DRAFT",
+      "name": "Expo",
+      "approval": {
+       "st": "DIAJUKAN",
+       "round": 1,
+       "submittedAt": 5,
+       "firstAt": 5,
+       "steps": {
+        "event": {
+         "st": "SETUJU",
+         "since": 5,
+         "at": 9,
+         "by": "Andi"
+        },
+        "ops": {
+         "st": "MENUNGGU",
+         "since": 9
+        }
+       },
+       "docs": {
+        "proposal": {
+         "name": "p.pdf"
+        }
+       }
+      },
+      "audit": [
+       {
+        "ts": 1,
+        "by": "Sari",
+        "role": "Penyelenggara",
+        "act": "BUAT",
+        "text": "dibuat",
+        "h": "A1"
+       }
+      ]
+     }
+    },
+    "order": [
+     "E",
+     "T"
+    ]
+   },
+   "ok": false
   }
  ]
 }

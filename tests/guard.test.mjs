@@ -12,7 +12,7 @@ const build = (over, isNull) => (isNull ? null : Object.assign(structuredClone(C
 
 for (const c of C.cases) {
   test('guard: ' + c.name, () => {
-    const err = guard(build(c.old, c.oldNull), build(c.next, c.nextNull), c.roles);
+    const err = guard(build(c.old, c.oldNull), build(c.next, c.nextNull), c.roles, undefined, c.ctx);
     if (c.ok) assert.equal(err, null);
     else assert.ok(typeof err === 'string' && err.length > 0, 'harus ditolak');
   });
@@ -99,4 +99,26 @@ test('mode server tanpa login: refund ditolak 403 dengan pesan jelas, tidak diul
   await assert.rejects(Evt.refund(paid.id, 'uji'), /pengelola/);
   assert.equal(srv.posts() - n, 1);
   assert.equal(srv.db.state.orders[paid.id].status, 'PAID');
+});
+
+// Alur persetujuan nyata dari engine: tiap langkah lolos guard dengan peran yang benar dan ditolak peran yang salah.
+test('guard + engine: tenant ajukan, divisi-event dan divisi-ops memutuskan, tenant publikasi', async () => {
+  const { Evt, clock } = await loadEvt();
+  const ORG = 'Komunitas UMKM Gedebage', T = { org: ORG };
+  const id = await Evt.addEvent({ name: 'Expo Alur', template: 'HALL', start: clock.now + 30 * 86400000 });
+  await Evt.updateEvent(id, { org: ORG }); // persiapan (pengelola), bukan langkah yang diuji
+  const as = (who) => Evt.setActor(who);
+  const check = ([a, b], okRoles, okCtx, badRoles) => {
+    assert.equal(guard(a, b, okRoles, undefined, okCtx), null, 'harus lolos untuk ' + okRoles);
+    assert.ok(typeof guard(a, b, badRoles, undefined, T) === 'string', 'harus ditolak untuk ' + badRoles);
+  };
+  as({ name: 'Sari', role: 'Tenant/EO', org: ORG });
+  for (const d of Evt.DOCS.filter((x) => x.req)) check(await step(Evt, () => Evt.uploadDoc(id, d.id, { name: d.id + '.pdf', size: 10 })), ['tenant'], T, ['divisi-event']);
+  check(await step(Evt, () => Evt.submitApproval(id)), ['tenant'], T, ['command-center']);
+  as({ name: 'Andi', role: 'Divisi Event', div: 'event' });
+  check(await step(Evt, () => Evt.decide(id, 'event', true)), ['divisi-event'], null, ['divisi-ops']);
+  as({ name: 'Rudi', role: 'Operasional Mall', div: 'ops' });
+  check(await step(Evt, () => Evt.decide(id, 'ops', true, 'Parkir aman')), ['divisi-ops'], null, ['tenant']);
+  as({ name: 'Sari', role: 'Tenant/EO', org: ORG });
+  check(await step(Evt, () => Evt.updateEvent(id, { status: 'PUBLISHED' })), ['tenant'], T, ['divisi-ops']);
 });

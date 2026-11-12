@@ -6,6 +6,10 @@
  *   - gate (petugas gate): seperti tanpa login, ditambah pindaian, check-in e-ticket (hanya checkedInAt & gate)
  *     dan laporan gate.
  *   - command-center: seperti tanpa login, ditambah laporan gate (klaim & tautan tiket insiden).
+ *   - tenant: seperti tanpa login, ditambah acara milik org-nya sendiri (ctx.org): buat (draft), ubah, ajukan,
+ *     publikasi setelah disetujui. Tidak boleh memutuskan persetujuan, menghapus data persetujuan, atau log.
+ *   - divisi-event / divisi-ops: seperti tanpa login, ditambah keputusan persetujuan pada gilirannya saja
+ *     (hanya approval & audit acara yang berubah; log hanya ditambah).
  *   - tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan PENDING,
  *     daftar tunggu, outbox. Tidak boleh mengubah acara, versi skema, e-ticket yang sudah ada,
  *     pindaian, pesanan non-PENDING, atau kursi terjual. Kursi SOLD dan e-ticket baru hanya boleh
@@ -25,8 +29,77 @@ function same(a, b) {
 const OPEN = ['PENDING', 'PAID', 'CANCELLED', 'EXPIRED'];
 const ARRS = ['order', 'scans', 'outbox', 'waitlist', 'reports'], OBJS = ['events', 'seats', 'qholds', 'orders', 'tickets'];
 const okUntil = (u, lim) => typeof u === 'number' && u <= lim;
+const STEPS = ['event', 'ops']; // urutan persetujuan: Divisi Event lalu Operasional Mall
+const DIV = { 'divisi-event': 'event', 'divisi-ops': 'ops' };
+// Log aktivitas acara hanya boleh ditambah: entri lama harus tetap sama dan berurutan.
+function appendOnly(a, b) {
+  const o = (a && Array.isArray(a.audit) && a.audit) || [], n = (b && b.audit) || [];
+  if (!Array.isArray(n) || n.length < o.length || !o.every((x, i) => same(x, n[i]))) return 'Log aktivitas acara hanya boleh ditambah.';
+  return null;
+}
+// Perubahan events/order untuk peran selain pengelola. null = boleh.
+function eventsGuard(old, next, roles, ctx) {
+  const oe = isObj(old.events) ? old.events : {}, ne = next.events;
+  const changed = Array.from(new Set(Object.keys(oe).concat(Object.keys(ne)))).filter((id) => !same(oe[id], ne[id]));
+  const orderSame = same(old.order, next.order);
+  if (!changed.length && orderSame) return null;
+  const div = roles.map((r) => DIV[r]).find(Boolean);
+  if (roles.includes('tenant') && ctx && ctx.org) {
+    const mine = (e) => isObj(e) && e.org === ctx.org;
+    if (!orderSame) {
+      const o = new Set(old.order || []), n = new Set(next.order || []);
+      const moved = Array.from(new Set([...o, ...n])).filter((id) => o.has(id) !== n.has(id));
+      if (moved.some((id) => !mine(oe[id]) && !mine(ne[id]))) return 'Acara ini milik penyelenggara lain.';
+      if ((old.order || []).filter((id) => n.has(id)).join() !== (next.order || []).filter((id) => o.has(id)).join()) return 'Urutan acara hanya diubah pengelola.';
+    }
+    for (const id of changed) {
+      const a = oe[id], b = ne[id];
+      if ((a && !mine(a)) || (b !== undefined && !mine(b))) return 'Acara ini milik penyelenggara lain.';
+      if (!b) continue; // hapus acara sendiri (pesanan dijaga aturan pesanan di bawah)
+      const e = appendOnly(a, b); if (e) return e;
+      const p0 = a && a.approval, p1 = b.approval;
+      if (!isObj(p1)) return 'Data persetujuan acara tidak boleh dihapus.';
+      if (!a && b.status !== 'DRAFT') return 'Acara baru dibuat sebagai draft.';
+      if (['DISETUJUI', 'REVISI'].includes(p1.st) && !(p0 && p0.st === p1.st)) return 'Keputusan persetujuan hanya dari Command Center.';
+      for (const k of Object.keys(p1.steps || {})) {
+        const s1 = p1.steps[k], s0 = p0 && p0.steps && p0.steps[k];
+        if (isObj(s1) && ['SETUJU', 'REVISI'].includes(s1.st) && !same(s0, s1)) return 'Keputusan persetujuan hanya dari Command Center.';
+      }
+      if (a && a.status === 'DRAFT' && b.status === 'PUBLISHED' && !(p0 && p0.st === 'DISETUJUI')) return 'Acara belum disetujui Divisi Event dan Operasional Mall.';
+    }
+    return null;
+  }
+  if (div) {
+    if (!orderSame) return 'Perubahan data acara hanya untuk penyelenggara.';
+    const strip = (e) => { const c = Object.assign({}, e); delete c.approval; delete c.audit; return c; };
+    const rest = (p) => { const c = Object.assign({}, p); delete c.steps; delete c.st; delete c.approvedAt; return c; };
+    for (const id of changed) {
+      const a = oe[id], b = ne[id];
+      if (!isObj(a) || !isObj(b)) return 'Acara tidak boleh ditambah atau dihapus dari Command Center.';
+      if (!same(strip(a), strip(b))) return 'Divisi hanya boleh mengubah keputusan persetujuan.';
+      const e = appendOnly(a, b); if (e) return e;
+      const p0 = isObj(a.approval) ? a.approval : {}, p1 = isObj(b.approval) ? b.approval : {};
+      if (same(p0, p1)) continue; // hanya log yang bertambah
+      if (p0.st !== 'DIAJUKAN') return 'Tidak ada pengajuan yang menunggu keputusan.';
+      if (!same(rest(p0), rest(p1))) return 'Data pengajuan dan dokumen hanya diubah penyelenggara.';
+      const s0 = (p0.steps || {})[div] || {}, s1 = (p1.steps || {})[div] || {};
+      if (STEPS.slice(0, STEPS.indexOf(div)).some((k) => !((p0.steps || {})[k] && p0.steps[k].st === 'SETUJU'))) return 'Keputusan ini giliran Divisi Event.';
+      if (s0.st !== 'MENUNGGU' || !['SETUJU', 'REVISI'].includes(s1.st)) return 'Keputusan ini bukan giliran divisi Anda.';
+      for (const k of STEPS.filter((x) => x !== div)) {
+        const o = (p0.steps || {})[k], n = (p1.steps || {})[k];
+        const activate = div === 'event' && k === 'ops' && s1.st === 'SETUJU' && isObj(o) && o.st === 'ANTRE' && isObj(n) && n.st === 'MENUNGGU';
+        if (!same(o, n) && !activate) return 'Langkah divisi lain tidak boleh diubah.';
+      }
+      const last = div === STEPS[STEPS.length - 1];
+      const want = s1.st === 'REVISI' ? 'REVISI' : last ? 'DISETUJUI' : 'DIAJUKAN';
+      if (p1.st !== want) return 'Status persetujuan tidak sesuai keputusan.';
+    }
+    return null;
+  }
+  return 'Perubahan data acara hanya untuk pengelola.';
+}
 
-function guard(old, next, roles, now) {
+function guard(old, next, roles, now, ctx) {
   roles = roles || [];
   if (roles.includes('pengelola')) return null;
   if (next == null) return 'Reset data hanya untuk pengelola.';
@@ -35,7 +108,8 @@ function guard(old, next, roles, now) {
   const lim = (now || Date.now()) + HOLD_MAX;
   if (old.v !== next.v || old.seededAt !== next.seededAt) return 'Versi data contoh hanya diubah pengelola (reset).';
   if (ARRS.some((k) => !Array.isArray(next[k])) || OBJS.some((k) => !isObj(next[k]))) return 'Format data tidak valid.';
-  if (!same(old.events, next.events) || !same(old.order, next.order)) return 'Perubahan data acara hanya untuk pengelola.';
+  if (!isObj(next.events) || !Array.isArray(next.order)) return 'Format data tidak valid.';
+  const evErr = eventsGuard(old, next, roles, ctx); if (evErr) return evErr;
   const gate = roles.includes('gate');
   if (!gate && !same(old.scans, next.scans)) return 'Check-in hanya dari halaman Check-in (login petugas gate atau pengelola).';
   if (!roles.includes('command-center') && !gate && !same(old.reports, next.reports)) return 'Laporan gate hanya dari Command Center atau petugas gate.';
