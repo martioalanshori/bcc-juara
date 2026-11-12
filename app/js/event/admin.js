@@ -150,7 +150,7 @@
     $('pg-prof-n2').textContent = p.name; $('pg-prof-sub').textContent = p.email ? p.title + ', ' + p.email : p.title + ' (mode lokal)';
     $('pg-prof-btn').setAttribute('aria-label', 'Menu profil ' + p.name);
     const ch = $('pg-id-chip');
-    if (ch && acct) { const t = who() === 'tenant'; ch.hidden = false; ch.className = 'id-chip ' + (t ? 'tenant' : 'mall'); ch.innerHTML = icon(t ? 'storefront' : 'admin_panel_settings', 'text-[18px]') + '<span><b>' + (t ? 'Tenant/EO' : 'Tim Event Mall') + '</b> · ' + esc(t ? acct.org : acct.name) + '</span>'; }
+    if (ch && acct) { const t = who() === 'tenant'; ch.hidden = false; ch.className = 'id-chip ' + (t ? 'tenant' : 'mall'); ch.innerHTML = icon(t ? 'storefront' : 'admin_panel_settings', 'text-[18px]') + '<span><b>' + (t ? 'Tenant/EO' : 'Tim Event Mall') + '</b>' + (t ? ' · ' + esc(acct.org) : '') + '</span>'; }
   }
   function profMenu(open) {
     const m = document.getElementById('pg-prof-menu'), b = document.getElementById('pg-prof-btn'); if (!m) return;
@@ -185,14 +185,10 @@
   function sideHtml() {
     const all = isG(ui.tab), e = all ? null : Evt.ev(ui.ev), b = all ? gBadges() : e ? badges(e) : {};
     const item = (tab, label, ic, badge) => `<a href="${href(ui.ev, tab)}" class="pg-nav-item${ui.tab === tab ? ' on' : ''}"${ui.tab === tab ? ' aria-current="page"' : ''} title="${esc(label)}">${icon(ic, 'text-[20px]')}<span class="pg-lbl">${esc(label)}</span>${badge || ''}</a>`;
-    const pick = e
-      ? `${plate(e)}<span class="pg-lbl pg-pick-txt"><b>${esc(e.name)}</b><small>${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span>`
-      : `<span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="pg-lbl pg-pick-txt"><b>Semua acara</b><small>${visEvs().length} acara</small></span>`;
     return `<div class="pg-brand"><a href="${Router.href('/dasbor')}" class="pg-brand-link" title="Konsol Pengelola Acara"><span class="pg-brand-ic">${icon('event_available', 'text-[18px]')}</span><span class="pg-lbl flex flex-col leading-tight min-w-0"><b>Konsol Pengelola</b><small>Summarecon Mall Bandung</small></span></a>
         <button type="button" class="pg-collapse" data-collapse aria-label="Ciutkan sidebar" title="Ciutkan atau lebarkan sidebar">${icon('left_panel_close', 'text-[20px]')}</button>
         <button type="button" class="pg-close" data-drawer-close aria-label="Tutup menu">${icon('close', 'text-[20px]')}</button></div>
       <nav class="pg-nav" aria-label="Navigasi konsol">
-        <button type="button" class="pg-pick${all ? ' on' : ''}" data-pick style="--c:${e ? e.color : 'transparent'}" title="Pilih acara" aria-haspopup="dialog">${pick}${icon('unfold_more', 'text-[18px] pg-lbl pg-pick-ic')}</button>
         ${(all ? GTABS : e ? ETABS : []).map(([k, l, i]) => item(k, l, i, cnt(b[k]))).join('')}
       </nav>
       <div class="pg-side-foot">
@@ -232,7 +228,8 @@
     document.getElementById('pg-title').textContent = title;
     document.getElementById('pg-crumb').textContent = g || !e ? 'Semua acara' : e.id + ' · ' + e.name;
     document.title = title + (!g && e ? ' · ' + e.name : ' · Semua acara') + ' · Konsol Pengelola';
-    side.querySelectorAll('[data-pick]').forEach((x) => x.addEventListener('click', pickModal));
+    const pk = document.getElementById('pg-evpick'); if (pk) { const lbl = pickerLabel(); if (pk.innerHTML !== lbl) pk.innerHTML = lbl; }
+    bindHeader();
     side.querySelector('[data-collapse]').addEventListener('click', () => {
       const mini = document.documentElement.classList.toggle('pg-mini');
       try { localStorage.setItem('smicc-pengelola-nav', mini ? 'mini' : 'open'); } catch (err) { /* tanpa storage */ }
@@ -240,15 +237,81 @@
     side.querySelector('[data-drawer-close]').addEventListener('click', () => drawer(false));
     document.querySelectorAll('#pg-bnav [data-drawer-open]').forEach((x) => x.addEventListener('click', () => drawer(true)));
   }
-  function pickModal() {
-    drawer(false);
-    const rows = (q) => visEvs().filter((e) => !q || (e.name + ' ' + e.id + ' ' + e.cat).toLowerCase().includes(q)).map((e) => `<a href="${href(e.id, isG(ui.tab) ? 'ringkasan' : ui.tab)}" class="pg-pick-row${e.id === ui.ev ? ' on' : ''}" data-pick-ev="${e.id}" style="--c:${e.color}">${plate(e)}<span class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${e.id}, ${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-2">Tidak ada acara yang cocok.</p>';
+  // ---- dropdown di header (pemilih acara, + Acara baru): menempel di bawah tombol, bukan modal, agar kursor tidak jauh.
+  let dd = null; // dropdown yang sedang terbuka
+  function dropdown(btn, html, onBind) {
+    if (dd) { const same = dd.btn === btn; dd.close(); if (same) return null; }
+    const wrap = btn.parentElement, el = document.createElement('div');
+    el.className = 'pg-dd-panel'; el.innerHTML = html; wrap.appendChild(el); btn.setAttribute('aria-expanded', 'true');
+    const onDoc = (ev) => { if (!wrap.contains(ev.target)) close(); };
+    const onKey = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); btn.focus(); } };
+    function close() { el.remove(); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey, true); if (dd && dd.el === el) dd = null; }
+    setTimeout(() => document.addEventListener('mousedown', onDoc)); document.addEventListener('keydown', onKey, true);
+    el.querySelectorAll('[data-dd-close]').forEach((b) => b.addEventListener('click', close));
+    dd = { el, btn, close }; if (onBind) onBind(el, close); return dd;
+  }
+  let headerBound = false;
+  function bindHeader() {
+    if (headerBound) return; const pk = document.getElementById('pg-evpick'), nw = document.getElementById('pg-new');
+    if (!pk || !nw) return; headerBound = true;
+    pk.addEventListener('click', evPicker); nw.addEventListener('click', newEventPanel);
+  }
+  const pickerLabel = () => { const all = isG(ui.tab), e = all ? null : Evt.ev(ui.ev);
+    return (e ? `${plate(e)}<span class="pg-evpick-t"><b>${esc(e.name)}</b><small>${e.id}, ${phaseTxt(e).toLowerCase()}</small></span>`
+      : `<span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="pg-evpick-t"><b>Semua acara</b><small>${visEvs().length} acara</small></span>`) + icon('expand_more', 'text-[20px] pg-evpick-ic'); };
+  function evPicker() {
+    const btn = document.getElementById('pg-evpick'); if (!btn) return; drawer(false);
+    const rows = (q) => visEvs().filter((e) => !q || (e.name + ' ' + e.id + ' ' + e.cat).toLowerCase().includes(q)).map((e) => `<a href="${href(e.id, isG(ui.tab) ? 'ringkasan' : ui.tab)}" class="pg-pick-row${e.id === ui.ev && !isG(ui.tab) ? ' on' : ''}" data-pick-ev="${e.id}" style="--c:${e.color}">${plate(e)}<span class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${e.id}, ${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-2">Tidak ada acara yang cocok.</p>';
     const allRow = `<a href="${Router.href('/dasbor')}" class="pg-pick-row${isG(ui.tab) ? ' on' : ''}" data-pick-all><span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="min-w-0 flex-1"><b>Semua acara</b><small>${visEvs().length} acara</small></span></a>`;
-    const root = UI.modal('Pilih acara', `<label class="sr-only" for="pick-q">Cari acara</label><input class="inp w-full mb-3" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off"><div class="pg-pick-list" id="pick-list">${allRow}${rows('')}</div>`, { small: true });
-    const q = root.querySelector('#pick-q'), list = root.querySelector('#pick-list');
-    q.addEventListener('input', () => (list.innerHTML = (q.value.trim() ? '' : allRow) + rows(q.value.trim().toLowerCase())));
-    list.addEventListener('click', (ev) => { if (ev.target.closest('[data-pick-all]')) { ev.preventDefault(); UI.closeModal(); return goTab('gdash'); } const a = ev.target.closest('[data-pick-ev]'); if (!a) return; ev.preventDefault(); UI.closeModal(); goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, a.dataset.pickEv); });
-    q.focus();
+    dropdown(btn, `<input class="inp w-full" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off" aria-label="Cari acara"><div class="pg-pick-list" id="pick-list">${allRow}${rows('')}</div>`, (el, close) => {
+      const q = el.querySelector('#pick-q'), list = el.querySelector('#pick-list'); let at = -1;
+      const items = () => Array.from(list.querySelectorAll('a'));
+      const mark = () => items().forEach((a, i) => { a.classList.toggle('kb', i === at); if (i === at) a.scrollIntoView({ block: 'nearest' }); });
+      q.addEventListener('input', () => { list.innerHTML = (q.value.trim() ? '' : allRow) + rows(q.value.trim().toLowerCase()); at = -1; });
+      q.addEventListener('keydown', (ev) => {
+        const it = items();
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); at = Math.min(it.length - 1, at + 1); mark(); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); at = Math.max(0, at - 1); mark(); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); const a = it[at] || it[0]; if (a) a.click(); }
+      });
+      list.addEventListener('click', (ev) => {
+        const all = ev.target.closest('[data-pick-all]'), a = ev.target.closest('[data-pick-ev]'); if (!all && !a) return;
+        ev.preventDefault(); close(); if (all) goTab('gdash'); else goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, a.dataset.pickEv);
+      });
+      q.focus();
+    });
+  }
+  // + Acara baru: nama, area (dengan ketersediaan), jadwal, format tiket. Sisanya diisi di Pengaturan.
+  function newEventPanel() {
+    const btn = document.getElementById('pg-new'); if (!btn) return; drawer(false);
+    const s0 = Math.ceil((Evt.now() + 14 * 86400000) / 3600000) * 3600000, e0 = s0 + 3 * 3600000;
+    const free = (Evt.AREAS.find((a) => !Evt.areaClash(a.id, s0, e0).length) || Evt.AREAS[0]).id;
+    dropdown(btn, `<form id="f-new-ev" class="pg-newform" novalidate>
+      <div class="pg-dd-h"><b>Acara baru</b><small>Disimpan sebagai draft, lalu diajukan ke Command Center</small></div>
+      <label class="f">Nama acara<input class="inp" name="name" required maxlength="80" placeholder="Mis. Expo UMKM Gedebage" autocomplete="off"></label>
+      <div class="grid grid-cols-2 gap-3"><label class="f">Mulai<input class="inp" type="datetime-local" name="start" required value="${dtl(s0)}"></label><label class="f">Selesai<input class="inp" type="datetime-local" name="end" required value="${dtl(e0)}"></label></div>
+      <label class="f">Area<select class="inp" name="area" id="ne-area">${areaOptions(s0, e0, free, null)}</select></label>
+      <div id="ne-area-info">${areaInfo(free)}</div>
+      <label class="f">Format tiket<select class="inp" name="template">${Object.entries(Evt.TEMPLATES).map(([k, T]) => `<option value="${k}"${k === 'KUOTA' ? ' selected' : ''}>${esc(T.name)}</option>`).join('')}</select></label>
+      <p class="pg-dd-err" id="ne-err" role="alert" hidden></p>
+      <div class="flex justify-end gap-2"><button type="button" class="btn-ghost" data-dd-close>Batal</button><button class="btn">${icon('add', 'text-[18px]')} Buat draft</button></div></form>`, (el, close) => {
+      const f = el.querySelector('#f-new-ev'), ar = el.querySelector('#ne-area'), err = el.querySelector('#ne-err');
+      const say = (t) => { err.hidden = !t; err.textContent = t || ''; };
+      const upd = () => { const v = ar.value; ar.innerHTML = areaOptions(new Date(f.elements.start.value).getTime(), new Date(f.elements.end.value).getTime(), v, null); ar.value = v; el.querySelector('#ne-area-info').innerHTML = areaInfo(v); say(''); };
+      ['start', 'end', 'area'].forEach((n) => f.elements[n].addEventListener('change', upd));
+      f.addEventListener('submit', async (ev) => {
+        ev.preventDefault(); const x = Object.fromEntries(new FormData(f)), start = new Date(x.start).getTime(), end = new Date(x.end).getTime();
+        if (!x.name.trim()) return say('Isi nama acara.');
+        if (!(start > Evt.now())) return say('Waktu mulai sudah lewat. Pilih waktu setelah sekarang.');
+        if (!(end > start)) return say('Acara harus selesai setelah mulai.');
+        try {
+          Evt.setActor(actorOf());
+          const id = await Evt.addEvent({ name: x.name.trim(), cat: 'Umum', start, end, area: x.area, template: x.template });
+          close(); UI.toast('Draft dibuat. Lengkapi datanya, unggah dokumen, lalu ajukan persetujuan.', 'P4'); goTab('pengaturan', id);
+        } catch (e) { say(e.message); }
+      });
+      f.elements.name.focus();
+    });
   }
   // Header acara (menempel): nama, status, aksi utama sesuai status, menu aksi lain.
   const PRIMARY = { DRAFT: ['PUBLISHED', 'Publikasikan', 'publish', 'btn'], PUBLISHED: ['CLOSED', 'Tutup penjualan', 'block', 'btn-ghost'], CLOSED: ['PUBLISHED', 'Buka lagi penjualan', 'storefront', 'btn'] };
@@ -800,7 +863,7 @@
       .forEach((x) => out.push({ group: 'Acara', plate: plateOf(x), label: x.name, sub: x.id + ', ' + Evt.fmtShort(x.start) + ', ' + phaseTxt(x).toLowerCase(), run: () => goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, x.id) }));
     if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && hit([o.id, o.name, o.email].join(' '))).slice(0, 5)
       .forEach((o) => out.push({ group: 'Pesanan', icon: 'receipt_long', label: o.id + ', ' + o.name, sub: Evt.ev(o.ev) ? Evt.ev(o.ev).name : o.ev, run: () => { goTab('peserta', o.ev); orderModal(o.id); } }));
-    push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: newEventModal });
+    push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: newEventPanel });
     push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF semua acara', kw: 'report cetak export', run: reportAllPdf });
     if (e) push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF', sub: e.id, kw: 'report cetak export', run: () => reportPdf(e) });
     if (e && e.status !== 'DRAFT') push('Perintah', { icon: 'open_in_new', label: 'Lihat di portal pengunjung', sub: e.id, run: () => window.open('/pengunjung/e/' + encodeURIComponent(e.id), '_blank', 'noopener') });
@@ -1304,24 +1367,6 @@
       <div id="acara-list" class="pg-ev-list">${acaraList()}</div>
       <p class="pg-note">${icon('info', 'text-[18px]')}<span>Acara yang sudah punya pesanan tidak bisa dihapus. Batalkan acaranya, lalu peserta otomatis di-refund dan dikabari.</span></p></section>`;
   }
-  function newEventModal() {
-    const r = UI.modal(icon('add', 'text-primary align-middle') + ' Acara baru', `<form id="f-new-ev" class="pg-form grid grid-cols-2 gap-4">
-      <label class="f col-span-2">Nama acara<input class="inp" name="name" required maxlength="80"></label>
-      <label class="f col-span-2">Tagline<input class="inp" name="tagline" maxlength="120"></label>
-      <label class="f">Kategori<select class="inp" name="cat" required><option value="" disabled selected>Pilih kategori</option>${catOptions('')}</select></label>
-      <label class="f">Mulai acara<input class="inp" type="datetime-local" name="start" required value="${dtl(Math.ceil((Evt.now() + 14 * 86400000) / 3600000) * 3600000)}"></label>
-      <label class="f col-span-2">Venue & denah templat<select class="inp" name="template">${Object.entries(Evt.TEMPLATES).map(([k, T]) => `<option value="${k}">${esc(T.name)}</option>`).join('')}</select></label>
-      <label class="f col-span-2">Deskripsi<textarea class="inp" name="desc" rows="2"></textarea></label>
-      <p class="col-span-2 font-body-sm text-body-sm text-on-surface-variant">Acara disimpan sebagai draft dan belum tampil di portal. Denah dan jenis tiket diambil dari templat venue. Setelah itu, atur harga, kuota, gate, dan periode jual di Pengaturan, lalu publikasikan.</p>
-      <div class="col-span-2 flex justify-end gap-2"><button type="button" class="btn-ghost" data-close>Batal</button><button class="btn">${icon('add')} Buat acara</button></div></form>`);
-    r.querySelector('#f-new-ev').addEventListener('submit', async (ev) => {
-      ev.preventDefault(); const f = Object.fromEntries(new FormData(ev.target)); const start = new Date(f.start).getTime();
-      if (!(start > Evt.now())) return UI.toast('Waktu mulai sudah lewat. Pilih waktu setelah sekarang.', 'P2');
-      const id = await act(() => Evt.addEvent({ name: f.name.trim(), tagline: f.tagline.trim(), cat: f.cat.trim() || 'Umum', desc: f.desc.trim(), start, template: f.template }), 'Acara dibuat sebagai draft. Lengkapi datanya lalu publikasikan.');
-      if (id) { UI.closeModal(); goTab('pengaturan', id); }
-    });
-  }
-
   // ------------------------------------------------------------------ tab Command Center: portofolio event 360 (hanya baca)
   function portofolio() {
     const t = Evt.now(), D = 86400000; const d0 = new Date(t); d0.setHours(0, 0, 0, 0);
@@ -1495,7 +1540,7 @@
     root.querySelectorAll('[data-attn-st]').forEach((a) => a.addEventListener('click', () => (ui.st = a.dataset.attnSt)));
     root.querySelectorAll('[data-attn-focus]').forEach((a) => a.addEventListener('click', () => (ui.focus = a.dataset.attnFocus)));
     root.querySelectorAll('[data-report-all]').forEach((b) => b.addEventListener('click', reportAllPdf));
-    root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', newEventModal));
+    root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(); }));
     root.querySelectorAll('[data-report-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.reportEv); if (x) reportPdf(x); }));
     root.querySelectorAll('[data-kpi]').forEach((c) => { const go = () => kpiModal(c.dataset.kpi); c.addEventListener('click', go); c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } }); });
     root.querySelectorAll('[data-clear-filter]').forEach((b) => b.addEventListener('click', () => { ui.aq = ''; ui.ast = 'ALL'; redraw(); }));
@@ -1520,7 +1565,7 @@
     // Semua acara & header acara (pengelola)
     if (isMgr()) {
       bindActions(el); bindGlobal(el);
-      const ne = el.querySelector('#new-ev'); if (ne) ne.addEventListener('click', newEventModal);
+      const ne = el.querySelector('#new-ev'); if (ne) ne.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(); });
       const list = el.querySelector('#acara-list');
       const relist = () => { list.innerHTML = acaraList(); bindActions(list); };
       const aq = el.querySelector('#aq'); if (aq) aq.addEventListener('input', () => { ui.aq = aq.value; relist(); });
@@ -1571,6 +1616,7 @@
   function setupShell() {
     if (shellReady || !window.Router) return; shellReady = true;
     Router.on(async () => {
+      if (dd) dd.close(); // dropdown header ditutup saat pindah halaman
       if (!document.getElementById('evt-root')) return;
       if (ui.dirty && ui.tab === 'pengaturan') {
         const target = Router.current(); Router.replace(evUrl(ui.ev, 'pengaturan'));

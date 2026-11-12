@@ -1611,3 +1611,33 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 .area-info b { display: block; font-weight: 600; }
 .area-info span { display: block; color: rgb(var(--on-surface-variant)); }
 .area-info p { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: rgb(245 158 11 / .12); color: rgb(var(--on-surface)); }
+
+/* Header konsol: pemilih acara & + Acara baru sebagai dropdown yang menempel di bawah tombol */
+.pg-dd { position: relative; flex-shrink: 0; }
+.pg-evpick { display: flex; align-items: center; gap: 10px; max-width: 320px; height: 44px; padding: 0 8px 0 6px; border-radius: 10px; border: 1px solid rgb(var(--outline-variant)); background: rgb(var(--surface-container)); color: rgb(var(--on-surface)); text-align: left; }
+.pg-evpick:hover, .pg-evpick[aria-expanded="true"] { border-color: rgb(var(--primary)); }
+.pg-evpick-t { display: flex; flex-direction: column; min-width: 0; }
+.pg-evpick-t b { font-size: 13.5px; line-height: 18px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-evpick-t small { font-size: 11.5px; line-height: 15px; color: rgb(var(--on-surface-variant)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-evpick-ic { margin-left: auto; color: rgb(var(--on-surface-variant)); }
+.pg-dd-panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: 380px; max-width: calc(100vw - 24px); padding: 10px; border-radius: 14px; border: 1px solid rgb(var(--outline-variant)); background: rgb(var(--surface-container-lowest)); box-shadow: 0 18px 44px rgb(0 0 0 / .22); animation: cmdk-in .12s ease-out; }
+.pg-dd-panel .pg-pick-list { margin-top: 8px; max-height: min(62vh, 480px); }
+.pg-pick-row.kb { outline: 2px solid rgb(var(--primary)); outline-offset: -2px; }
+.pg-new-btn { height: 40px; }
+.pg-dd:has(#pg-new) .pg-dd-panel { left: auto; right: 0; width: 420px; padding: 16px; }
+.pg-newform { display: flex; flex-direction: column; gap: 12px; }
+.pg-dd-h b { display: block; font-size: 16px; line-height: 22px; font-weight: 600; }
+.pg-dd-h small { display: block; font-size: 12.5px; color: rgb(var(--on-surface-variant)); }
+.pg-dd-err { padding: 8px 10px; border-radius: 8px; background: rgb(var(--error) / .1); color: rgb(var(--error)); font-size: 13px; }
+@media (max-width: 767px) {
+  .pg-evpick { max-width: 170px; height: 40px; } .pg-evpick-t small { display: none; }
+  .pg-new-t { display: none; } .pg-new-btn { width: 40px; padding: 0; justify-content: center; }
+  .pg-dd { position: static; }
+  .pg-dd-panel, .pg-dd:has(#pg-new) .pg-dd-panel { position: fixed; top: 64px; left: 8px; right: 8px; width: auto; max-height: calc(100dvh - 140px); overflow-y: auto; }
+}
+@media (max-width: 767px) { .pg-top { gap: 6px; padding-left: 10px; padding-right: 10px; } .pg-dd:has(#pg-evpick) { flex: 1 1 auto; min-width: 0; } .pg-evpick { max-width: none; width: 100%; } .pg-top .id-chip { display: none; } }
+/* Header konsol penuh (pemilih acara, cari, Acara baru, chip): cari lebih ringkas, judul tetap terbaca, nama profil hanya di layar lebar */
+.pg-top .pg-search-btn { width: min(220px, 17vw); }
+.pg-top > .flex-col { min-width: 120px; }
+@media (max-width: 1599px) { .pg-top .pg-prof-name, .pg-top .pg-prof-chev { display: none; } }
+@media (max-width: 767px) { .pg-top > .flex-col { display: none; } }
