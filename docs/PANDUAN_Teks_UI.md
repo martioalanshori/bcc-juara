@@ -41,7 +41,7 @@ Nama yang sama dipakai di menu, judul halaman, panel relasi, data SOP, Excel, da
 - Tombol memakai kata kerja yang menyebut hasilnya: "Buat tiket", "Bayar", "Lepas kursi",
   "Kirim siaran". Toast setelahnya memakai kata yang sama: "Tiket dibuat", "Kursi dilepas".
 - Pesan error menyebut apa yang terjadi lalu apa yang bisa dilakukan. Tanpa "maaf", tanpa tanda
-  seru. Contoh: "PIN salah. Sisa 3 percobaan sebelum dikunci 60 detik."
+  seru. Contoh: "Email atau password salah. Sisa 3 percobaan sebelum dikunci 60 detik."
 - Tanpa em dash (—) dan en dash (–) sebagai penyambung. Pakai titik, koma, titik dua, atau
   kurung. Rentang angka atau jam pakai tanda hubung biasa: "07-15".
 - Tanpa string meta yang disambung titik tengah (" · ") kecuali pemisah data yang memang berbeda
@@ -52,7 +52,7 @@ Nama yang sama dipakai di menu, judul halaman, panel relasi, data SOP, Excel, da
   berupa perintah cek.
 - Tanpa tanda seru, kecuali kutipan.
 - Tanpa panah (→) di teks tombol atau tautan. Panah boleh di urutan langkah atau alur.
-- Angka, jam SLA, batas PIN, harga, dan nama tidak berubah saat teks ditulis ulang.
+- Angka, jam SLA, batas percobaan login, harga, dan nama tidak berubah saat teks ditulis ulang.
 
 ## Yang tidak disentuh
 

@@ -8,7 +8,7 @@ Bahan deck Bandung Build Challenge 2026: asumsi, alur, logika pemilihan kursi, d
 | `/pengelola` (`app/pages/pengelola.html`) + `/checkin` | Pengelola acara (panitia/EO) & petugas gate | Kendali penuh atas acaranya: tambah, publikasikan, batalkan, hapus, kelola tiket/denah/peserta/refund, check-in, lapor anomali |
 | `/command-center` (`app/pages/command-center.html` → Pemantauan Event) | Manajemen mall | Hanya memantau semua acara, dampak operasional mall, dan keamanan gate; membuat tiket insiden. Tidak dapat mengubah data acara |
 
-Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` memakai PIN command-center, `/pengunjung` terbuka. PIN diverifikasi server (`server/auth.js`) (hash PBKDF2, sesi cookie HttpOnly 12 jam, kunci 60 detik setelah 5 kali salah). Detail di README.
+Akses: `/pengelola`, `/checkin` dan `/command-center` memakai login staf (email + password, akun per peran di `server/config.js`), `/pengunjung` terbuka. Login diperiksa server (`server/auth.js`): sesi cookie HttpOnly bertanda tangan HMAC per peran, berlaku 12 jam, kunci 60 detik setelah 5 kali salah. `/checkin` juga boleh dibuka akun pengelola. Detail di README.
 
 ## 1. Asumsi
 | Topik | Asumsi pada prototype |
@@ -46,14 +46,14 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
   - **Hapus**: hanya untuk acara tanpa transaksi lunas atau menunggu bayar (draft atau salah input). Acara yang sudah terjual harus dibatalkan dulu.
 - **Ringkasan**: tiket terjual/kapasitas, pendapatan, pendaftar unik, kehadiran, kursi sedang dipesan, menunggu bayar, komposisi per kategori, tren penjualan & arus check-in.
 - **Denah kursi live**: detail pemesan per kursi, mode blokir kursi (kamera/FOH/kursi roda), uji rebutan kursi.
-- **Kelola acara**: nama, jadwal, gate, venue, status (Draft/Dipublikasikan/Ditutup), periode jual, durasi hold, maks per pesanan; jenis tiket, harga, kuota, dijual/undangan.
+- **Pengaturan**: nama, jadwal, gate, venue, status (Draft/Dipublikasikan/Ditutup), periode jual, durasi hold, maks per pesanan; jenis tiket, harga, kuota, dijual/undangan.
 - **Peserta & transaksi**: pencarian, filter status, ubah data peserta, kirim ulang e-ticket, batal, refund; ekspor CSV peserta (per tiket) & transaksi.
 - **Keuangan & ROI** (`Evt.finance(evId)`, untuk Finance & Marketing):
   - Rekonsiliasi per metode pembayaran: bruto = total pesanan lunas + refund, refund, neto = bruto - refund, biaya layanan. Ekspor CSV rekonsiliasi.
   - Selisih rekonsiliasi: pesanan lunas yang total-nya tidak sama dengan subtotal + biaya layanan, jumlah e-ticket tidak sama dengan jumlah tiket, atau punya e-ticket tidak aktif; pesanan refund yang masih punya e-ticket aktif.
   - Penjualan per kategori memakai harga per item yang disimpan saat pesanan dibuat (`items[i].price`), bukan harga jenis tiket terbaru. Pesanan lama tanpa harga per item: subtotal dibagi sebanding harga jenis saat ini.
   - ROI untuk mall: manfaat = sewa venue + bagi hasil tiket (persen dari pendapatan tiket lunas, yaitu subtotal tanpa biaya layanan; biaya layanan milik platform); ROI = (manfaat - biaya operasional mall) / biaya, tampil "-" bila biaya 0. Estimasi belanja pengunjung di tenant = pengunjung (check-in bila acara sudah mulai, selain itu tiket aktif) × rata-rata belanja; tidak masuk ROI.
-  - Angka kontrak venue (`e.fin`: sewa, bagi hasil, biaya, belanja) diisi pengelola di Kelola acara. Bila kosong dipakai asumsi demo `FIN_DEFAULT` (sewa Rp 35 jt, bagi hasil 10%, biaya Rp 12 jt, belanja Rp 150 rb); seed Summarecon Hall memakai sewa Rp 20 jt. Command Center melihat tab ini read-only.
+  - Angka kontrak venue (`e.fin`: sewa, bagi hasil, biaya, belanja) diisi pengelola di Pengaturan. Bila kosong dipakai asumsi demo `FIN_DEFAULT` (sewa Rp 35 jt, bagi hasil 10%, biaya Rp 12 jt, belanja Rp 150 rb); seed Summarecon Hall memakai sewa Rp 20 jt. Command Center melihat tab ini read-only.
 - **Check-in QR**: kamera / foto QR / ketik kode, dengan hasil **VALID**, **SUDAH DIGUNAKAN**, atau **TIDAK VALID**; statistik per gate; log pindaian langsung.
 - **Anomali gate**: tombol **Laporkan ke Command Center** (konsol & ponsel gate). Statusnya tampil "menunggu CC" lalu "Ditangani TCK-…".
   - Tiket insiden P2 dibuat **otomatis** oleh Command Center (`app/js/event/cc-bridge.js`, hanya dimuat di `/command-center`): setiap anomali (`Evt.anomalies`, ambang >= 3 pindaian gagal/duplikat per gate dalam 10 menit) diklaim lewat `Evt.claimAnomaly(evId, gate, idCC)`, dan setiap laporan petugas gate yang belum punya tiket (30 menit terakhir) lewat `Evt.claimReport(id, idCC)`. Klaim adalah transaksi CAS, jadi bila beberapa browser CC terbuka hanya satu yang membuat tiket (SOP-EVT-03, P2, Regu Bravo, CAM-01) lalu menautkannya dengan `linkReport`. Klaim yang belum tertaut setelah 60 detik (browser ditutup) boleh diambil alih CC lain. Pemeriksaan berjalan setiap ada perubahan state dan setiap 5 detik. Sebuah gate dianggap sudah ditangani selama ada laporannya dalam 30 menit terakhir, jadi anomali yang berlangsung lama tetap satu insiden; anomali setelah itu menjadi insiden baru. Tombol manual "Buat tiket insiden" di Command Center menjalankan pemeriksaan yang sama saat itu juga (klaim atomik), bukan membuat tiket terpisah. Klaim yang tidak mengubah apa pun tidak melakukan commit (`tx` mengenali penanda NOOP), jadi anomali yang sudah ditangani tidak menaikkan versi data. Bila penautan tiket gagal (konflik/jaringan), nomor tiket disimpan di localStorage (`smicc-cc-pending-link`) dan penautan dicoba lagi, sehingga tidak muncul tiket kedua.
@@ -62,7 +62,7 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 - **Notifikasi & waitlist**: outbox, kirim pengingat massal, kabari daftar tunggu.
   - Daftar tunggu dikabari **otomatis** saat kursi/kuota kembali tersedia: pesanan di-refund (`refund`), pesanan menunggu bayar kedaluwarsa (`sweep`), atau pesanan dibatalkan (`cancel`). Untuk tiap jenis tiket yang dilepas, entri antrean jenis itu dikabari urut waktu daftar (FIFO) sampai jumlah tiket yang diminta menutup jumlah yang dilepas; entri pertama selalu dikabari. Entri yang sudah dikabari tidak dikabari lagi. Bila acara tidak berstatus PUBLISHED atau penjualan sudah ditutup (`saleEnd` lewat), daftar tunggu tidak dikabari otomatis karena kursi tidak bisa dibeli; tombol manual pengelola tetap bisa mengirim.
   - Acara dibatalkan (`cancelEvent`): semua antrean acara itu yang belum dikabari menerima pesan pembatalan sekali.
-  - Setiap entri mencatat `notified` dan `reason` (`refund`, `kedaluwarsa`, `batal`, `acara-batal`, `manual`); alasan tampil di tab Notifikasi & daftar tunggu. Tombol manual tetap ada.
+  - Setiap entri mencatat `notified` dan `reason` (`refund`, `kedaluwarsa`, `batal`, `acara-batal`, `manual`); alasan tampil di menu Kirim broadcast. Tombol manual tetap ada.
 
 ## 3b. Pemantauan Event di Command Center (`/command-center`, manajemen mall, hanya baca)
 - **Portofolio Event 360**:
@@ -136,7 +136,7 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 ## 7. Batasan prototype
 - Tidak terhubung ke payment gateway, sistem internal Summarecon, CRM, POS, atau layanan pesan sungguhan.
 - Kamera live hanya di HTTPS/localhost. Di HTTP LAN gunakan *Foto QR*.
-- PIN per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server/guard.js`, kasus uji `tests/guard_cases.json`, penolakan 403):
+- Login staf per peran mengunci halaman, dan server memeriksa setiap penulisan state menurut peran (`guard()` di `server/guard.js`, kasus uji `tests/guard_cases.json`, penolakan 403):
   - Tanpa login (pengunjung): hold kursi, pesanan baru, bayar/batal/kedaluwarsa pesanan yang masih menunggu bayar, daftar tunggu, outbox.
   - Command Center: seperti tanpa login, ditambah laporan gate (klaim dan tautan tiket insiden).
   - Pengelola: semua, termasuk ubah acara dan kontrak venue, refund, check-in (halaman Check-in), batal acara, reset.

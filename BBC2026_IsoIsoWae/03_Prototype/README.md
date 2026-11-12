@@ -8,6 +8,7 @@
 | **Website** | https://smiccts.vercel.app |
 | **Video demo** | _[isi link]_ |
 | **Daftar fitur** | [fitur.md](https://github.com/martioalanshori/bcc-juara/blob/main/docs/fitur.md) |
+| **Alur pengguna** | [USERFLOW.md](USERFLOW.md) |
 | **Yang perlu diubah** | [NEXT_ACTION.md](NEXT_ACTION.md) |
 
 ## Empat portal

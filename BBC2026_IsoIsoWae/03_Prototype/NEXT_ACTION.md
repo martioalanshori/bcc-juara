@@ -116,6 +116,7 @@ Ganti foto demo Wikimedia (`app/img/demo/`) dengan foto Summarecon Mall Bandung 
 | Fitur | Menjawab | Bentuk di deck |
 |---|---|---|
 | Approval event lanjutan: akun terpisah per divisi, unggah file sungguhan, notifikasi WhatsApp ke peninjau, tampil di Command Center | Approval lama (Pak Ade) | Versi dasar sudah ada (item 8b), sisanya satu baris di slide rencana |
+| Konsol pengelola lanjutan: wizard buat acara 4 langkah, pagination peserta, panel transaksi bertaut URL, target sentuh 44 px | Kemudahan EO/tenant | Tidak perlu di slide |
 | Integrasi ke gate parkir sungguhan | Gate manual (Bu Mei) | Satu baris di slide rencana |
 | Registrasi kendaraan saat beli tiket (jenis + plat, opsional) | Perkiraan parkir lebih akurat, motor tanpa plat | Satu baris di slide rencana |
 | Ganti loket.com untuk semua event Summarecon dan tenant | Data peserta milik Summarecon | Model bisnis |

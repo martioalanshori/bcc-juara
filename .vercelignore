@@ -2,7 +2,7 @@ data/
 __pycache__/
 tools/
 tests/
-docs/rencana/
+docs/rewrite/
 docs/sumber/
 *.zip
 *.xlsx

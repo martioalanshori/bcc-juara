@@ -11,14 +11,14 @@
 | `app/css/`, `app/vendor/` | Gaya, Tailwind hasil build, font, library QR |
 | `tests/` | Semua tes (`npm test`) |
 | `tools/` | Generator dokumen (`tools/docs/`), config Tailwind, unduh font |
-| `docs/` | Dokumen referensi. `unduhan/` = Excel & runbook yang ditautkan aplikasi, `sumber/` = mindmap & blueprint, `rencana/` = rencana kerja lama |
+| `docs/` | Dokumen referensi. `unduhan/` = Excel & runbook yang ditautkan aplikasi, `sumber/` = mindmap & blueprint, `rewrite/` = draf PRD & desain untuk versi berikutnya |
 | `data/` | State & rahasia saat berjalan (tidak di-commit) |
 
-## Tiga path
+## Halaman
 | Path | Halaman | Untuk | Isi |
 |---|---|---|---|
 | `/pengunjung` | `app/pages/pengunjung.html` | **1. Pengunjung** yang membeli tiket (beranda responsif sampai desktop, langkah beli mobile-first) | Acara → pilih kategori → pilih kursi (kategori bernomor kursi) → data peserta → bayar (sandbox) → e-ticket QR, Tiket Saya, Kotak Masuk, daftar tunggu |
-| `/pengelola` | `app/pages/pengelola.html` | **2. Pengelola acara** (panitia/EO) | Pemilih acara di sidebar, bawaannya **Semua acara** dengan menu Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Menu per acara: (cari, saring status, tambah, publikasikan, batalkan dengan refund otomatis, hapus) dan menu per acara: Ringkasan + Perlu tindakan, Pengaturan, Denah kursi, Peserta & transaksi, Check-in & gate, Komunikasi, Keuangan & ROI. Alamat bisa ditautkan (`/pengelola/e/EVT-01/peserta`). **Ctrl+K** (atau `/`) membuka pencarian cepat: menu, acara, kode booking/nama pemesan, perintah. Kartu angka bisa diklik untuk rincian. **Laporan PDF** per acara (ringkasan, penjualan per kategori, tren 14 hari, rekonsiliasi, kehadiran per gate, ROI) dari header acara, menu ⋯, atau halaman Keuangan. Alat demo (uji rebutan kursi, uji tekan, uji 2 gate, reset) lewat Ctrl+K, ketik "uji". Profil dan Keluar ada di kanan atas |
+| `/pengelola` | `app/pages/pengelola.html` | **2. Pengelola acara** (panitia/EO) | Pemilih acara di sidebar, bawaannya **Semua acara** dengan menu Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Daftar acara: cari, saring status, tambah, publikasikan, batalkan dengan refund otomatis, hapus. Menu per acara: Ringkasan + Perlu tindakan, Pengaturan, **Persetujuan** (dokumen, Divisi Event lalu Operasional Mall, log aktivitas), Denah kursi, Peserta & transaksi, Check-in & gate, Kirim broadcast, Keuangan & ROI. Alamat bisa ditautkan (`/pengelola/e/EVT-01/peserta`). **Ctrl+K** (atau `/`) membuka pencarian cepat: menu, acara, kode booking/nama pemesan, perintah. Kartu angka bisa diklik untuk rincian. **Laporan PDF** per acara (ringkasan, penjualan per kategori, tren 14 hari, rekonsiliasi, kehadiran per gate, ROI) dari header acara, menu ⋯, atau halaman Keuangan. Alat demo (uji rebutan kursi, uji tekan, uji 2 gate, reset) lewat Ctrl+K, ketik "uji". Profil dan Keluar ada di kanan atas |
 | `/command-center` | `app/pages/command-center.html` | **3. Manajemen mall 360** | 9 dashboard Command Center. Menu **Pemantauan Event** hanya baca: portofolio semua acara, dampak ke parkir/CCTV/BMS/tenant, Gate & Keamanan → tiket insiden SOP-EVT-03, transaksi |
 | `/checkin` | `app/pages/checkin.html` | Petugas gate (tim pengelola) | Pemindai QR di ponsel + tombol lapor ke Command Center |
 | `/` | `app/pages/beranda.html` | Semua | Halaman pilih path |
