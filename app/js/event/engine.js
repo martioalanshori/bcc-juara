@@ -74,7 +74,7 @@
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
-  const SAMPLE_VER = 5;
+  const SAMPLE_VER = 6;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
@@ -305,19 +305,21 @@
   // Riwayat persetujuan contoh untuk EVT-28: dibuat, dokumen diunggah, diajukan, Divisi Event setuju, kini menunggu
   // Operasional Mall. Ditulis lewat audit() yang sama agar rantai hash-nya valid.
   function seedApproval(e, t) {
-    const H = 3600000, D = 24 * H, eo = { name: 'Sari Wulandari', role: 'Penyelenggara' }, dv = { name: 'Andi Firmansyah', role: 'Divisi Event' };
+    const H = 3600000, D = 24 * H, eo = { name: 'Sari Wulandari', role: 'Tenant/EO' }, dv = { name: 'Andi Firmansyah', role: 'Divisi Event' };
     e.status = 'DRAFT'; e.createdAt = t - 6 * D; e.approval = newApproval();
-    const ap = e.approval;
+    const ap = e.approval, up = t - 6 * D + H;
     audit(e, t - 6 * D, 'BUAT', 'Acara dibuat sebagai draft oleh Komunitas UMKM Gedebage', { who: eo });
-    [['proposal', 'Proposal_Expo_UMKM_v2.pdf', 1840000], ['layout', 'Denah_ExhibitionHall_80stan.pdf', 920000], ['izin', 'Surat_Izin_Keramaian_Polsek.pdf', 410000]].forEach(([id, name, size], i) => {
-      const at = t - 6 * D + (i + 1) * H; ap.docs[id] = { name, size, at, by: eo.name };
-      audit(e, at, 'DOKUMEN', 'Mengunggah ' + lc(DOCS.find((x) => x.id === id).name) + ': ' + name, { who: eo });
-    });
-    const sub = t - 5 * D - 2 * H, ok1 = t - 3 * D + 3 * H;
-    ap.st = 'DIAJUKAN'; ap.round = 1; ap.submittedAt = sub; ap.firstAt = sub;
-    ap.steps = { event: { st: 'SETUJU', since: sub, at: ok1, by: dv.name, note: 'Jadwal tidak bentrok dengan acara mal. Kapasitas 600 per hari sesuai Exhibition Hall.' }, ops: { st: 'MENUNGGU', since: ok1 } };
-    audit(e, sub, 'AJUKAN', 'Pengajuan dikirim ke Divisi Event, 3 dokumen terlampir', { who: eo });
-    audit(e, ok1, 'SETUJU', 'Divisi Event menyetujui setelah ditinjau ' + durTxt(ok1 - sub) + ', diteruskan ke Operasional Mall', { who: dv, note: ap.steps.event.note });
+    [['proposal', 'Proposal_Expo_UMKM.pdf', 1840000], ['layout', 'Denah_ExhibitionHallA_80stan.pdf', 920000], ['legal', 'Legalitas_Komunitas_UMKM.pdf', 360000],
+      ['teknis', 'Kebutuhan_Listrik_Sound.pdf', 210000], ['k3', 'Rencana_Keamanan_K3.pdf', 480000], ['izin', 'Surat_Izin_Keramaian_Polsek.pdf', 410000]].forEach(([id, name, size]) => (ap.docs[id] = { name, size, at: up, by: eo.name }));
+    audit(e, up, 'DOKUMEN', 'Mengunggah 6 dokumen wajib', { who: eo });
+    const sub = t - 5 * D - 2 * H, rev = t - 3 * D + 3 * H, fix = t - D + 2 * H;
+    const note = 'Denah belum menunjukkan jalur evakuasi dan posisi 80 stan. Mohon dilengkapi.';
+    ap.st = 'REVISI'; ap.round = 1; ap.submittedAt = sub; ap.firstAt = sub;
+    ap.steps = { event: { st: 'REVISI', since: sub, at: rev, by: dv.name, note }, ops: { st: 'ANTRE', since: null } };
+    audit(e, sub, 'AJUKAN', 'Pengajuan dikirim ke Divisi Event, 6 dokumen terlampir', { who: eo });
+    audit(e, rev, 'REVISI', 'Divisi Event meminta revisi setelah ditinjau ' + durTxt(rev - sub), { who: dv, note });
+    ap.docs.layout = { name: 'Denah_ExhibitionHallA_80stan_v2.pdf', size: 1010000, at: fix, by: eo.name };
+    audit(e, fix, 'DOKUMEN', 'Mengganti ' + lc(DOCS[1].name) + ': Denah_ExhibitionHallA_80stan_v2.pdf', { who: eo });
   }
   // Contoh "Perlu tindakan" di konsol pengelola yang tidak hilang sendiri (pesanan tertunda & anomali gate kedaluwarsa
   // dalam hitungan menit): laporan gate EVT-01 yang belum ditangani (lebih tua dari 30 menit, jadi jembatan CC tidak
@@ -615,11 +617,15 @@
   // yang diubah atau dihapus diam-diam terdeteksi oleh verifyAudit(). Prototype: hash cyrb53 di browser (produksi:
   // HMAC di server). Dokumen hanya dicatat metadatanya (nama, ukuran), isi file tidak disimpan di state.
   const APPROVERS = [{ id: 'event', name: 'Divisi Event' }, { id: 'ops', name: 'Operasional Mall' }];
+  // Daftar umum untuk demo (bukan formulir resmi mall). by = divisi yang memeriksa dokumen itu.
   const DOCS = [
-    { id: 'proposal', name: 'Proposal & rundown acara', req: true },
-    { id: 'layout', name: 'Denah area & perkiraan jumlah pengunjung', req: true },
-    { id: 'izin', name: 'Surat izin keramaian', req: true },
-    { id: 'k3', name: 'Rencana keamanan & K3', req: false },
+    { id: 'proposal', name: 'Proposal & rundown acara', req: true, by: 'event' },
+    { id: 'layout', name: 'Denah area & dekorasi', req: true, by: 'event' },
+    { id: 'legal', name: 'Identitas & legalitas penyelenggara (KTP PIC, NIB/akta)', req: true, by: 'event' },
+    { id: 'teknis', name: 'Kebutuhan teknis (listrik, sound, bongkar muat)', req: true, by: 'ops' },
+    { id: 'k3', name: 'Rencana keamanan & K3', req: true, by: 'ops' },
+    { id: 'izin', name: 'Surat izin keramaian', req: true, by: 'ops' },
+    { id: 'khusus', name: 'Izin khusus (pajak hiburan, PIRT, royalti musik)', req: false, by: 'ops' },
   ];
   const AP_ST = { DRAFT: 'Belum diajukan', DIAJUKAN: 'Dalam peninjauan', REVISI: 'Perlu revisi', DISETUJUI: 'Disetujui' };
   let actor = { name: 'Pengelola acara', role: 'Penyelenggara' };
@@ -640,6 +646,16 @@
   const lc = (x) => x[0].toLowerCase() + x.slice(1); // 'Surat izin...' -> 'surat izin...' (singkatan seperti K3 tetap)
   const missingDocs = (e) => DOCS.filter((x) => x.req && !(e.approval && e.approval.docs[x.id]));
   const currentStep = (e) => (e.approval && e.approval.st === 'DIAJUKAN' ? APPROVERS.find((x) => (e.approval.steps[x.id] || {}).st !== 'SETUJU') || null : null);
+  // Siapa yang harus bertindak berikutnya. null = acara tanpa persetujuan (data lama) atau sudah terbit.
+  function turn(e) {
+    const ap = e && e.approval;
+    if (!ap || e.status !== 'DRAFT') return null;
+    if (ap.st === 'DRAFT') return { who: 'penyelenggara', label: 'Giliran: penyelenggara mengajukan' };
+    if (ap.st === 'REVISI') return { who: 'penyelenggara', label: 'Giliran: penyelenggara memperbaiki dan mengajukan ulang' };
+    if (ap.st === 'DISETUJUI') return { who: 'publikasi', label: 'Giliran: penyelenggara mempublikasikan' };
+    const c = currentStep(e);
+    return c ? { who: c.id, label: 'Giliran: ' + c.name } : null;
+  }
   const needsApproval = (e) => !!(e && e.approval && e.approval.st !== 'DISETUJUI');
   function durTxt(ms) {
     const m = Math.max(0, Math.round(ms / 60000));
@@ -810,7 +826,8 @@
       });
     },
     // ---- persetujuan acara (lihat blok "persetujuan acara & log jejak")
-    setActor(w) { actor = { name: String((w && w.name) || 'Pengelola acara').slice(0, 60), role: String((w && w.role) || 'Penyelenggara').slice(0, 40) }; },
+    // Pelaku yang tercatat di log. div = divisi persetujuan (event/ops) akun Command Center, org = penyelenggara (tenant).
+    setActor(w) { actor = { name: String((w && w.name) || 'Pengelola acara').slice(0, 60), role: String((w && w.role) || 'Penyelenggara').slice(0, 40), div: (w && w.div) || null, org: (w && w.org) || null }; },
     uploadDoc(evId, docId, file) {
       return tx((d, t) => {
         const e = d.events[evId], doc = DOCS.find((x) => x.id === docId); if (!e || !doc) fail('Dokumen tidak dikenal.');
@@ -850,6 +867,7 @@
         const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
         const ap = e.approval, cur = currentStep(e);
         if (!ap || ap.st !== 'DIAJUKAN' || !cur) fail('Tidak ada pengajuan yang menunggu keputusan.');
+        if (actor.div && actor.div !== stepId) fail('Akun ini bukan ' + ((APPROVERS.find((x) => x.id === stepId) || {}).name || stepId) + '.');
         if (cur.id !== stepId) fail('Menunggu keputusan ' + cur.name + ' lebih dulu.');
         if (!approve && !String(note || '').trim()) fail('Tulis alasan revisi agar penyelenggara tahu apa yang harus diperbaiki.');
         const step = ap.steps[stepId], took = durTxt(t - step.since), who = { name: actor.name, role: cur.name };
@@ -878,7 +896,7 @@
         const id = 'EVT-' + String(n).padStart(2, '0');
         const T = TEMPLATES[info.template] || TEMPLATES.ATRIUM;
         const start = info.start;
-        d.events[id] = { id, name: info.name, tagline: info.tagline || '', cat: info.cat || 'Umum', start, doors: start - 3600000, venue: T.venue, layout: clone(T.layout), desc: info.desc || '', saleStart: t, saleEnd: start - 1800000, status: 'DRAFT', holdMin: 8, maxPerOrder: 4, color: info.color || '#a78bfa', gates: T.gates.slice(), blocked: [], types: clone(T.types), createdAt: t, approval: newApproval() };
+        d.events[id] = { id, name: info.name, tagline: info.tagline || '', cat: info.cat || 'Umum', start, doors: start - 3600000, venue: T.venue, layout: clone(T.layout), desc: info.desc || '', saleStart: t, saleEnd: start - 1800000, status: 'DRAFT', holdMin: 8, maxPerOrder: 4, color: info.color || '#a78bfa', gates: T.gates.slice(), blocked: [], types: clone(T.types), createdAt: t, approval: newApproval(), org: info.org || actor.org || ORG_MALL };
         audit(d.events[id], t, 'BUAT', 'Acara dibuat sebagai draft (templat ' + T.name + ')');
         d.order.push(id); d.seats[id] = {}; d.qholds[id] = [];
         return id;
@@ -1125,7 +1143,7 @@
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
     now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
-    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt,
+    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt, turn, ORG_MALL,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
 })();

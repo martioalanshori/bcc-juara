@@ -394,10 +394,65 @@ test('log jejak: perubahan pengaturan tercatat dengan nilai lama dan baru, entri
   await Evt.saveEvent('EVT-02', { patch: { name: 'Demo Day Baru' } });
   assert.equal(Evt.ev('EVT-02').audit.length, 1, 'simpan tanpa perubahan tidak menambah log');
   const seeded = Evt.ev('EVT-28');
-  assert.equal(seeded.approval.st, 'DIAJUKAN');
-  assert.equal(Evt.currentStep(seeded).id, 'ops');
+  assert.equal(seeded.approval.st, 'REVISI', 'contoh demo: Divisi Event minta revisi denah, tenant tinggal ajukan ulang');
+  assert.equal(seeded.org, 'Komunitas UMKM Gedebage');
+  assert.equal(Evt.missingDocs(seeded).length, 0, 'denah v2 sudah diunggah');
+  assert.equal(Evt.currentStep(seeded), null);
+  assert.ok(seeded.audit.some((x) => x.act === 'REVISI' && x.role === 'Divisi Event' && /denah/i.test(x.note)));
   assert.ok(Evt.verifyAudit(seeded).ok);
   const forged = JSON.parse(JSON.stringify(seeded));
   forged.audit[1].text = 'diubah';
   assert.equal(JSON.stringify(Evt.verifyAudit(forged)), JSON.stringify({ ok: false, n: forged.audit.length, at: 1 }));
+});
+
+// ------------------------------------------------------------------ pelaku ber-divisi & ber-org, giliran persetujuan
+test('dokumen persyaratan: 6 wajib + 1 opsional, masing-masing punya divisi pemeriksa', async () => {
+  const { Evt } = await loadEvt();
+  assert.deepEqual(Array.from(Evt.DOCS, (d) => d.id), ['proposal', 'layout', 'legal', 'teknis', 'k3', 'izin', 'khusus']);
+  assert.equal(Evt.DOCS.filter((d) => d.req).length, 6);
+  assert.ok(Evt.DOCS.every((d) => ['event', 'ops'].includes(d.by)));
+});
+
+test('decide: akun divisi lain ditolak', async () => {
+  const { Evt } = await loadEvt();
+  Evt.setActor({ name: 'Sari', role: 'Tenant/EO', org: 'Komunitas UMKM Gedebage' });
+  await Evt.submitApproval('EVT-28');
+  Evt.setActor({ name: 'Rudi', role: 'Operasional Mall', div: 'ops' });
+  await assert.rejects(Evt.decide('EVT-28', 'event', true), /bukan Divisi Event/);
+});
+
+test('addEvent memakai org pelaku, Tim Event Mall bila tanpa org', async () => {
+  const { Evt, clock } = await loadEvt();
+  Evt.setActor({ name: 'Sari', role: 'Tenant/EO', org: 'Komunitas UMKM Gedebage' });
+  const a = await Evt.addEvent({ name: 'Bazar Tenant', template: 'HALL', start: clock.now + 40 * 86400000 });
+  assert.equal(Evt.ev(a).org, 'Komunitas UMKM Gedebage');
+  Evt.setActor({ name: 'Tim', role: 'Tim Event Mall' });
+  const b = await Evt.addEvent({ name: 'Acara Mall', template: 'HALL', start: clock.now + 41 * 86400000 });
+  assert.equal(Evt.ev(b).org, Evt.ORG_MALL);
+});
+
+test('turn: giliran berurutan dari penyelenggara sampai publikasi', async () => {
+  const { Evt } = await loadEvt();
+  const who = () => Evt.turn(Evt.ev('EVT-28')).who;
+  assert.equal(who(), 'penyelenggara');
+  Evt.setActor({ name: 'Sari', role: 'Tenant/EO', org: 'Komunitas UMKM Gedebage' });
+  await Evt.submitApproval('EVT-28');
+  assert.equal(who(), 'event');
+  assert.match(Evt.turn(Evt.ev('EVT-28')).label, /Divisi Event/);
+  Evt.setActor({ name: 'Andi', role: 'Divisi Event', div: 'event' });
+  await Evt.decide('EVT-28', 'event', true);
+  assert.equal(who(), 'ops');
+  Evt.setActor({ name: 'Rudi', role: 'Operasional Mall', div: 'ops' });
+  await Evt.decide('EVT-28', 'ops', true);
+  assert.equal(who(), 'publikasi');
+  await Evt.updateEvent('EVT-28', { status: 'PUBLISHED' });
+  assert.equal(Evt.turn(Evt.ev('EVT-28')), null);
+  assert.equal(Evt.turn(Evt.ev('EVT-01')), null, 'acara lama tanpa approval');
+});
+
+test('acara lama tanpa data persetujuan tetap bisa dipublikasikan ulang', async () => {
+  const { Evt } = await loadEvt();
+  await Evt.updateEvent('EVT-01', { status: 'DRAFT' });
+  await Evt.updateEvent('EVT-01', { status: 'PUBLISHED' });
+  assert.equal(Evt.ev('EVT-01').status, 'PUBLISHED');
 });
