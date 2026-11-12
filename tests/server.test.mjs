@@ -166,3 +166,78 @@ test('health & API tak dikenal', async () => {
   assert.equal((await req('GET', '/api/tidak-ada')).status, 404);
   assert.equal((await req('POST', '/api/evt/state', { body: undefined })).status, 400);
 });
+
+// ------------------------------------------------------------------ akun tenant & divisi, satu identitas per portal, ganti akun demo
+// Server kedua dengan env bebas (mode demo = tanpa STAFF_PASSWORD).
+async function withServer(env, fn) {
+  const d = mkdtempSync(path.join(tmpdir(), 'smicc-'));
+  const s = http.createServer(createApp({ root: ROOT, store: fileStore(d), auth: createAuth({ dataDir: d, env }), clientIp: () => 'lain' }));
+  await new Promise((r) => s.listen(0, '127.0.0.1', r));
+  const call = (method, p, { body, cookie } = {}) => new Promise((resolve, reject) => {
+    const data = body === undefined ? null : JSON.stringify(body);
+    const r = http.request({ host: '127.0.0.1', port: s.address().port, method, path: p, headers: { ...(cookie ? { Cookie: cookie } : {}), ...(data ? { 'Content-Type': 'application/json' } : {}) } }, (res) => {
+      let t = ''; res.setEncoding('utf8'); res.on('data', (c) => (t += c));
+      res.on('end', () => { let j = null; try { j = JSON.parse(t); } catch (e) { /* bukan JSON */ } resolve({ status: res.statusCode, headers: res.headers, json: j }); });
+    });
+    r.on('error', reject); r.end(data);
+  });
+  try { return await fn(call); } finally { s.close(); rmSync(d, { recursive: true, force: true }); }
+}
+// Cookie jar sederhana: terapkan Set-Cookie (Max-Age=0 menghapus).
+function jarApply(jar, res) {
+  for (const c of [].concat(res.headers['set-cookie'] || [])) {
+    const [kv] = c.split(';'); const i = kv.indexOf('='); const k = kv.slice(0, i), v = kv.slice(i + 1);
+    if (/Max-Age=0/i.test(c) || !v) delete jar[k]; else jar[k] = v;
+  }
+  return jar;
+}
+const jarStr = (jar) => Object.entries(jar).map(([k, v]) => k + '=' + v).join('; ');
+
+test('login tenant menghapus sesi pengelola (satu identitas per portal)', async () => {
+  const jar = {};
+  jarApply(jar, await login('pengelola', PW));
+  const r = await req('POST', '/api/auth/login', { body: { email: 'tenant@example.com', password: PW } });
+  assert.equal(r.status, 200);
+  assert.ok([].concat(r.headers['set-cookie']).some((c) => c.startsWith('smicc_pengelola=;') && /Max-Age=0/.test(c)), 'cookie pengelola dihapus');
+  jarApply(jar, r);
+  const me = (await req('GET', '/api/auth/me', { cookie: jarStr(jar) })).json;
+  assert.equal(me.active['/pengelola'], 'tenant');
+  assert.equal(me.accounts.tenant.org, 'Komunitas UMKM Gedebage');
+  assert.ok(!me.roles.includes('pengelola'));
+});
+
+test('cookie lama pengelola + tenant sekaligus: active memakai pengelola', async () => {
+  const both = sessionOf(await login('pengelola', PW)) + '; ' + sessionOf(await req('POST', '/api/auth/login', { body: { email: 'tenant@example.com', password: PW } }));
+  const me = (await req('GET', '/api/auth/me', { cookie: both })).json;
+  assert.equal(me.active['/pengelola'], 'pengelola');
+});
+
+test('tenant boleh /pengelola, divisi-event boleh /command-center, tenant tidak boleh /command-center', async () => {
+  const t = sessionOf(await req('POST', '/api/auth/login', { body: { email: 'tenant@example.com', password: PW } }));
+  const dv = sessionOf(await req('POST', '/api/auth/login', { body: { email: 'divisi.event@example.com', password: PW } }));
+  assert.equal((await req('GET', '/pengelola', { cookie: t })).status, 200);
+  assert.equal((await req('GET', '/command-center/persetujuan', { cookie: dv })).status, 200);
+  const no = await req('GET', '/command-center', { cookie: t });
+  assert.equal(no.status, 302);
+  assert.match(no.headers.location, /^\/masuk\?/);
+});
+
+test('ganti akun demo: tanpa password, hanya mode demo', async () => {
+  await withServer({}, async (call) => {
+    const r = await call('POST', '/api/auth/demo', { body: { email: 'divisi.ops@example.com', next: '/command-center/persetujuan?ev=EVT-28' } });
+    assert.equal(r.status, 200);
+    assert.equal(r.json.next, '/command-center/persetujuan?ev=EVT-28');
+    const me = (await call('GET', '/api/auth/me', { cookie: jarStr(jarApply({}, r)) })).json;
+    assert.equal(me.demo, true);
+    assert.equal(me.active['/command-center'], 'divisi-ops');
+    assert.ok(Array.isArray(me.demoAccounts) && me.demoAccounts.some((a) => a.email === 'tenant@example.com' && a.group && a.label));
+    assert.ok(me.demoAccounts.every((a) => !('password' in a)));
+    assert.equal((await call('POST', '/api/auth/demo', { body: { email: 'tidakada@example.com' } })).status, 404);
+  });
+  await withServer({ STAFF_PASSWORD: 'x' }, async (call) => {
+    assert.equal((await call('POST', '/api/auth/demo', { body: { email: 'tenant@example.com' } })).status, 403);
+    const me = (await call('GET', '/api/auth/me')).json;
+    assert.equal(me.demo, false);
+    assert.equal(me.demoAccounts, undefined);
+  });
+});

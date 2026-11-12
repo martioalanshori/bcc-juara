@@ -47,7 +47,8 @@ function createAuth({ dataDir = null, env = process.env } = {}) {
       return a.length === b.length && crypto.timingSafeEqual(a, b);
     });
   }
-  return { ready: !!secret, checkLogin, token, roles, cookieName };
+  // demo = memakai password demo (env STAFF_PASSWORD kosong): ganti akun satu klik (/api/auth/demo) diizinkan.
+  return { ready: !!secret, demo: !env.STAFF_PASSWORD, checkLogin, token, roles, cookieName };
 }
 
 module.exports = { createAuth, cookieName };

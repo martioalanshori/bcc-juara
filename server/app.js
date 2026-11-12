@@ -4,13 +4,16 @@
  * API:
  *   GET  /api/health               -> {ok, now, poll}  (503 bila penyimpanan belum diatur -> browser pakai mode lokal)
  *       poll {min, max, hidden} = jadwal tarik state untuk browser (ms), lihat engine.js pollTick.
- *   GET  /api/auth/me              -> {ok, server, roles, labels, accounts: {peran: {name, email}}}
+ *   GET  /api/auth/me              -> {ok, server, roles, labels, accounts: {peran: {name, email, org, div}},
+ *                                      active: {portal: peran}, demo, demoAccounts? (hanya mode demo)}
  *   GET  /api/evt/state[?v=N]      -> {version, now, state?}  (state hanya bila versi berubah)
  *   POST /api/evt/state  {base, state} -> 200 {ok, version} | 409 {ok:false, version, state} | 403 {ok:false, error}
  *       Compare-and-swap berversi: dua pembeli yang mengunci kursi sama bersamaan -> satu commit berhasil,
  *       yang lain 409, membaca ulang, dan mendapati kursi sudah dipegang orang lain (anti double-booking).
  *   POST /api/evt/reset            -> hapus state (sesi pengelola)
  *   POST /api/auth/login {email, password, next} -> {ok, role, name, next} | /api/auth/logout {role}
+ *   POST /api/auth/demo {email, next} -> seperti login tanpa password; 403 bila STAFF_PASSWORD diisi (bukan mode demo)
+ *       Login & demo menghapus sesi peran lain di portal yang sama (satu identitas per portal).
  */
 const fs = require('fs');
 const path = require('path');
@@ -47,6 +50,11 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
   const json = (res, code, obj, extra) => send(res, code, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store', ...extra }, JSON.stringify(obj));
   const redirect = (res, code, to) => send(res, code, { Location: to, 'Cache-Control': 'no-store' }, '');
   const cookie = (role, val, age) => auth.cookieName(role) + '=' + val + '; Path=/; Max-Age=' + age + '; HttpOnly; SameSite=Strict' + (secureCookie ? '; Secure' : '');
+  // Sesi baru untuk satu akun + hapus sesi peran lain di portal yang sama (satu identitas per portal).
+  const signIn = (res, acc, next) => json(res, 200, { ok: true, role: acc.role, name: acc.name, next: safeNext(next, acc.role) },
+    { 'Set-Cookie': [cookie(acc.role, auth.token(acc.role), SESSION_TTL)].concat(Object.keys(ROLES).filter((r) => r !== acc.role && ROLES[r].portal === ROLES[acc.role].portal).map((r) => cookie(r, '', 0))) });
+  // Identitas aktif per portal: peran pertama (urutan ROLES) yang sesinya aktif.
+  const activeByPortal = (roles) => { const out = {}; Object.keys(ROLES).forEach((r) => { if (roles.includes(r) && !out[ROLES[r].portal]) out[ROLES[r].portal] = r; }); return out; };
   // Tujuan setelah login: hanya path lokal yang memang halaman peran itu.
   const safeNext = (next, role) => {
     const n = String(next || '');
@@ -73,7 +81,8 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
     if (req.method === 'GET' || req.method === 'HEAD') {
       if (p === '/api/health') return json(res, store ? 200 : 503, { ok: !!store, now: now(), poll });
       if (p === '/api/auth/me') return json(res, 200, { ok: true, server: true, roles, labels: Object.fromEntries(Object.entries(ROLES).map(([r, c]) => [r, c.label])),
-        accounts: Object.fromEntries(roles.map((r) => { const a = ACCOUNTS.find((x) => x.role === r); return [r, a ? { name: a.name, email: a.email } : null]; })) });
+        accounts: Object.fromEntries(roles.map((r) => { const a = ACCOUNTS.find((x) => x.role === r); return [r, a ? { name: a.name, email: a.email, org: a.org || null, div: a.div || null } : null]; })),
+        active: activeByPortal(roles), demo: auth.demo, ...(auth.demo ? { demoAccounts: ACCOUNTS.map((a) => ({ ...a, home: ROLES[a.role].home })) } : {}) });
       if (p === '/api/evt/state') {
         if (!store) return json(res, 503, { ok: false, error: 'Penyimpanan belum diatur.' });
         const known = url.searchParams.has('v') ? parseInt(url.searchParams.get('v'), 10) : null;
@@ -123,7 +132,14 @@ function createApp({ root, store, auth, secureCookie = false, clientIp = (req) =
         return json(res, 401, { ok: false, error: 'Email atau password salah.' });
       }
       await store.clear(key);
-      return json(res, 200, { ok: true, role: acc.role, name: acc.name, next: safeNext(body.next, acc.role) }, { 'Set-Cookie': cookie(acc.role, auth.token(acc.role), SESSION_TTL) });
+      return signIn(res, acc, body.next);
+    }
+    if (p === '/api/auth/demo') {
+      if (!auth.demo) return json(res, 403, { ok: false, error: 'Ganti akun demo hanya tersedia saat memakai password demo.' });
+      if (!auth.ready) return json(res, 500, { ok: false, error: 'SESSION_SECRET belum diatur.' });
+      const acc = ACCOUNTS.find((a) => a.email === String(body.email || '').trim().toLowerCase());
+      if (!acc) return json(res, 404, { ok: false, error: 'Akun demo tidak dikenal.' });
+      return signIn(res, acc, body.next);
     }
     return json(res, 404, { ok: false });
   }
