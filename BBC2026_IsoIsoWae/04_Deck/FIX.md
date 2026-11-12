@@ -13,7 +13,7 @@ Pegangan untuk merevisi deck di Canva. Disusun dari:
 |---|---|
 | Fokus | **Menyelesaikan masalah yang ada.** Model bisnis tidak dibahas di deck |
 | Sorotan utama | **Pendapatan operasional mall yang hilang** kalau sistem ini tidak dipakai, bukan hanya parkir (slide 4) |
-| Urutan | Demo **di akhir**, dibuka dengan slide *hook*. Setelah demo: **Terima kasih**, lalu **Appendix** untuk menjawab pertanyaan juri |
+| Urutan | Setelah Dampak ada slide **Pengembangan ke depan**. Demo **di akhir** (**1 menit**), dibuka dengan slide *hook*. Setelah demo: **Terima kasih**, lalu **Appendix** untuk menjawab pertanyaan juri |
 | Kalau sistem mati | **SOP-EVT-05** + **manifest cadangan harian** (otomatis pukul 23.00, tersimpan di perangkat gate, bisa diunduh tanpa server). Sudah ada di aplikasi, dibahas di Appendix A2 |
 | Ejaan | **Atrium Cibadag** di deck, aplikasi, dan dokumen |
 
@@ -21,7 +21,7 @@ Pegangan untuk merevisi deck di Canva. Disusun dari:
 
 | Arahan mentor | Diterapkan di deck |
 |---|---|
-| 5 menit, demo ±2 menit | 8 slide cerita (±3 menit) + slide hook dan demo (±2 menit) + terima kasih |
+| 5 menit, demo singkat | 9 slide cerita (±3 menit 40 detik) + slide hook dan demo **1 menit** + terima kasih |
 | Wajib: masalah, target pengguna, solusi | Slide 2, 5, dan 6 |
 | Wajib ada angka bersumber nyata | Setiap angka diberi sumber kecil di pojok kiri bawah. Asumsi ditulis terbuka |
 | Masalah harus terjadi di Summarecon | Data dari Summarecon Mall Bandung: wawancara, foto, ulasan Google Maps, berita event dan target pengunjung |
@@ -29,7 +29,7 @@ Pegangan untuk merevisi deck di Canva. Disusun dari:
 | Bisa dipahami tanpa presenter, sedikit teks | Judul berupa kalimat, maksimal ±20 kata per slide, lebih banyak angka dan visual |
 | Demo langsung ke inti | Lewati login dan pilih peran. Pakai tombol "Lanjut sebagai …" |
 
-**Cara cek:** baca judul slide 1–9 berurutan. Kalau ceritanya sudah tersampaikan dari judul saja, deck sudah benar.
+**Cara cek:** baca judul slide 1–10 berurutan. Kalau ceritanya sudah tersampaikan dari judul saja, deck sudah benar.
 
 ## Rumusan masalah (satu kalimat)
 
@@ -100,11 +100,12 @@ Sebelum Demo Day, lengkapi supaya C bisa dipakai sebagai angka rupiah: foto papa
 | 6 | Solusi | 20 dtk |
 | 7 | Pembeda | 20 dtk |
 | 8 | Dampak | 20 dtk |
-| 9 | **Hook → Demo** | 10 dtk + ±2 menit demo |
-| 10 | Terima kasih | 5 dtk |
+| 9 | **Pengembangan ke depan** | 20 dtk |
+| 10 | **Hook → Demo** | 10 dtk + **1 menit** demo |
+| 11 | Terima kasih | 5 dtk |
 | A1–A7 | Appendix (hanya saat tanya-jawab) | – |
 
-Total di depan juri: ±5 menit.
+Total di depan juri: ±5 menit (slide 1–9 ±3 menit 40 detik, hook + demo ±1 menit 10 detik, terima kasih 5 detik).
 
 ## Outline per slide
 
@@ -203,7 +204,24 @@ Total di depan juri: ±5 menit.
 | **Naskah** | "Dengan data yang tercatat, tim operasional bisa bertindak sebelum parkir dan atrium penuh, sebelum pengunjung memutuskan pulang." |
 | **Dari slide lama** | Ganti slide 14 lama (hapus baris "musim acara") |
 
-### Slide 9 · Hook → Demo (10 detik + ±2 menit)
+### Slide 9 · Pengembangan ke depan (20 detik)
+
+Isinya menjawab masalah riset yang belum sepenuhnya selesai di prototype. Tiap langkah menyebut **siapa yang merasakan** supaya tetap terhubung ke persona.
+
+| | |
+|---|---|
+| **Judul** | Mulai dari satu event, lalu terhubung langsung ke gate parkir dan CCTV |
+| **Isi** | Garis waktu 3 tahap, tiap tahap 1–2 poin pendek: |
+| | **Tahap 1 · Uji coba** (1 event di Atrium Cibadag): check-in QR + Command Center, bandingkan jumlah peserta tercatat dengan hitungan manual |
+| | **Tahap 2 · Parkir terhubung**: **registrasi kendaraan & plat saat beli tiket** (Bu Mei tidak lagi mengetik plat manual) · **integrasi gate parkir & ANPR** sehingga sisa slot terbaca langsung dan peringatan muncul sebelum penuh |
+| | **Tahap 3 · Mall terhubung**: **CCTV penghitung orang** di atrium (Pak Asep tidak hanya mengandalkan mata) · **jadwal kebersihan toilet mengikuti jumlah pengunjung** (keluhan "toiletnya bau") · **analisis ulasan dari X, TikTok, Instagram** (sekarang Google Maps) |
+| **Visual** | Garis waktu horizontal, tahap 1 diberi tanda "siap sekarang", tahap 2–3 abu-abu. Ikon kecil persona di poin yang menjawab keluhannya |
+| **Sumber kecil** | Kebutuhan dari wawancara Pak Ade, Pak Asep, Bu Mei, 12 Nov 2026 |
+| **Naskah** | "Kami mulai dari satu event. Setelah itu, kendaraan didaftarkan saat beli tiket dan terhubung ke gate parkir, jadi peringatan muncul sebelum penuh. Lalu CCTV ikut menghitung orang di atrium dan jadwal kebersihan mengikuti jumlah pengunjung." |
+| **Jangan tulis** | Klaim yang terdengar sudah jadi. Semua poin tahap 2–3 adalah rencana dan harus terlihat sebagai rencana |
+| **Dari slide lama** | Baru. Ganti poin "pengembangan" yang dulu ada di panduan |
+
+### Slide 10 · Hook → Demo (10 detik + 1 menit)
 
 Tujuannya membuat juri penasaran sebelum demo, lalu demo menjawab pertanyaan itu.
 
@@ -211,14 +229,14 @@ Tujuannya membuat juri penasaran sebelum demo, lalu demo menjawab pertanyaan itu
 |---|---|
 | **Judul (hook)** | Bagaimana kalau Pak Ade tahu parkir akan penuh, tiga hari sebelum event? |
 | **Isi** | Satu kalimat besar di tengah. Di bawahnya kecil: "Live demo · smiccts.vercel.app" + QR. Latar: tangkapan layar Command Center yang diburamkan |
-| **Naskah (hook)** | "Kami tunjukkan langsung. Dalam dua menit: dari acara diajukan, sampai Command Center tahu berapa orang dan kendaraan yang akan datang." |
+| **Naskah (hook)** | "Kami tunjukkan langsung. Dalam satu menit: dari acara disetujui, sampai Command Center tahu berapa orang dan kendaraan yang akan datang." |
 | **Lalu** | Pindah ke aplikasi, ikuti [Naskah demo](#naskah-demo-2-menit). Demo berakhir di Command Center yang menjawab hook |
 | **Cadangan** | Video demo disimpan di laptop (bukan hanya link). Kalau internet bermasalah, jalankan `node server.js` di laptop (bisa tanpa internet) atau putar video |
 | **Dari slide lama** | Baru |
 
 Pilihan hook lain kalau tim lebih suka: "Rp25 juta per hari. Bisa dicegah dari satu layar ini." (mengulang angka slide 4).
 
-### Slide 10 · Terima kasih (5 detik, tampil selama tanya-jawab)
+### Slide 11 · Terima kasih (5 detik, tampil selama tanya-jawab)
 
 | | |
 |---|---|
@@ -238,7 +256,7 @@ Setiap appendix satu slide, judulnya berupa pertanyaan juri supaya mudah dicari 
 | A1 | Rp25 juta per hari itu dari mana? | Tabel kebocoran A–F di [Pendapatan operasional mall yang hilang](#pendapatan-operasional-mall-yang-hilang-tanpa-smicc-ts), lengkap dengan rumus, sumber, dan catatan "batas bawah" | Bisnis.com, Jatim Times, Snapcart, Journal Arta, Bu Mei |
 | A2 | Kalau sistem mati saat event? | **SOP-EVT-05**: gate pindah ke mode cadangan ≤ 5 menit · **manifest harian** otomatis pukul 23.00, tersimpan di perangkat gate, bisa diunduh tanpa server · cocokkan kode booking + nama, centang manual, pasang gelang · data manual dimasukkan ulang H+1 · sistem bisa jalan di laptop tanpa internet. Tangkapan layar kartu "Cadangan kalau sistem mati" | Aplikasi, `/checkin` |
 | A3 | Kalau ribuan orang membeli bersamaan? | Uji 25 pembeli serentak pada 1 kursi → 1 berhasil, 24 ditolak · QR yang sama di 2 gate → 1 diterima · kursi ditahan 8 menit, batas bayar 15 menit · pembayaran ganda tidak menerbitkan tiket dua kali | Slide 9 lama (judul diganti) |
-| A4 | Siapa yang mengoperasikan, dan mulai dari mana? | Tim operasional mall di Command Center · Divisi Event & Operasional Mall menyetujui pengajuan · Tenant/EO mengelola acaranya · Tahapan: 1 event di Atrium Cibadag → semua event Summarecon → event tenant & EO | Baru. ⚠️ Konfirmasi ke Pak Ade |
+| A4 | Siapa yang mengoperasikan? | Tim operasional mall di Command Center · Divisi Event & Operasional Mall menyetujui pengajuan · Tenant/EO mengelola acaranya · Petugas gate memindai di ponsel. Tahapan pengembangan ada di slide 9 | Baru. ⚠️ Konfirmasi ke Pak Ade |
 | A5 | Apa kata pengunjung? | Menu Analisis Sentimen: 2.300 ulasan Google Maps, 125 keluhan, 72 soal parkir, keluhan saat FKB & Roeang Kita, rekomendasi untuk mall dan event | Scraping Google Maps |
 | A6 | Bagaimana data dan akses dijaga? | Akun terpisah per peran, login dikunci sementara setelah 5 kali salah, server menolak perubahan dari peran yang tidak berhak, log aktivitas berantai | Slide 13 lama (dikoreksi) |
 | A7 | Bagaimana riset dilakukan? | Log kunjungan Kamis 12 Nov 2026: Pak Asep 09.00–09.30, Pak Ade 09.50–10.30, Bu Mei 11.00–11.30 · foto wawancara · scraping 2.300 ulasan · berita FKB & Roeang Kita | [RISET_LAPANGAN.md](../01_Riset/RISET_LAPANGAN.md) |
@@ -251,29 +269,29 @@ Setiap appendix satu slide, judulnya berupa pertanyaan juri supaya mudah dicari 
 | 4 · Siapa dirugikan | Kutipan dan foto tidak dari Summarecon. Diganti slide 4 baru dengan angka bersumber |
 | 7 · Validasi 3 masalah | Menjawab masalah yang dibuang. Klaim "QR berubah tiap 10 menit" tidak ada di aplikasi |
 | 10 · Mindmap 6 pilar | Berisi fitur yang tidak ada (HVAC otomatis, CRM, naming rights, P&L harian) |
-| 11 · Command Center (foto stok) | Diganti tangkapan layar asli di slide 6 dan 9 |
+| 11 · Command Center (foto stok) | Diganti tangkapan layar asli di slide 6 dan 10 |
 | 12 · Mengapa SMICC-TS | Mengulang slide lain |
 | 13 · 8 keunggulan | Terlalu teknis untuk slide utama, pindah ke A6 |
 
 ---
 
-## Naskah demo (2 menit)
+## Naskah demo (1 menit)
 
-Siapkan sebelum naik panggung:
-- Buka aplikasi, login **Tim Event Mall**, tekan **Ctrl+K → Reset data contoh**.
-- Siapkan tab-tab yang dibutuhkan supaya tidak ada login di depan juri.
+Hanya tiga layar. Yang memakan waktu dikerjakan **sebelum naik panggung**:
+1. Login **Tim Event Mall**, tekan **Ctrl+K → Reset data contoh**.
+2. Akun **Tenant/EO**: EVT-28 → Persetujuan → **Ajukan ulang** → **Lanjut sebagai Divisi Event** → **Setujui**. Berhenti di sini. EVT-28 sekarang menunggu Operasional Mall.
+3. Beli 1 tiket **EVT-01** di `/pengunjung` dan simpan QR-nya di ponsel. EVT-01 dipakai untuk check-in karena sudah punya peserta dan data gate.
+4. Buka 3 tab berurutan: **Command Center → Persetujuan Acara** (akun Operasional Mall, EVT-28), **/checkin** (EVT-01), **Command Center → Pemantauan Event** (EVT-01).
 
-Demo mengikuti cerita hook: acara diajukan → tiket terjual → orang masuk → Command Center tahu lebih dulu.
+Demo mengikuti cerita hook: acara disetujui → orang masuk tercatat → Command Center tahu lebih dulu.
 
 | Detik | Layar | Yang dilakukan | Ucapan |
 |---|---|---|---|
-| 0–30 | Konsol pengelola, akun **Tenant/EO**, EVT-28 → Persetujuan | Tunjukkan area Exhibition Hall A dan dokumen → **Ajukan ulang** → **Lanjut sebagai Divisi Event** → Setujui → **Lanjut sebagai Operasional Mall** → Setujui | "Pengajuan acara yang dulu lewat berkas dan dua divisi, sekarang di sistem. Area dan lahan parkir dicek sejak awal." |
-| 30–45 | Kembali ke Tenant/EO | **Publikasikan** → buka `/pengunjung`, acara langsung tampil | "Begitu disetujui, acara langsung bisa dijual." |
-| 45–70 | Portal pengunjung (ponsel) | Pilih kategori → pilih kursi → bayar sandbox → e-ticket QR | "Pengunjung beli tiket dan langsung dapat QR." |
-| 70–90 | Halaman **Check-in** | Pindai QR → VALID. Pindai lagi → SUDAH DIGUNAKAN | "Setiap orang yang masuk tercatat. QR yang sama tidak bisa dipakai dua kali." |
-| 90–120 | Command Center → **Pemantauan Event**, lalu **Tiket & Insiden** | Tunjukkan peserta yang sudah masuk dan **perkiraan tambahan kendaraan**, lalu Tiket & Insiden yang berjalan | **Penutup hook:** "Ini jawabannya. Dari tiket yang terjual, Pak Ade sudah tahu berapa orang dan kendaraan yang akan datang, jauh sebelum parkir penuh. Dan setiap kejadian di lapangan langsung tercatat di sini." |
+| 0–15 | Tab 1: **Persetujuan Acara**, akun Operasional Mall, EVT-28 | Tunjuk cek area & lahan parkir, lalu **Setujui** | "Pengajuan acara yang dulu lewat berkas dan dua divisi, sekarang di sistem. Area dan lahan parkir dicek sejak awal." |
+| 15–30 | Tab 2: **Check-in** | Pindai QR dari ponsel → VALID. Pindai lagi → SUDAH DIGUNAKAN | "Setiap orang yang masuk tercatat, dan QR yang sama tidak bisa dipakai dua kali." |
+| 30–60 | Tab 3: **Pemantauan Event** | Tunjuk jumlah peserta yang sudah masuk dan **perkiraan tambahan kendaraan** | **Penutup hook:** "Ini jawabannya. Dari tiket yang terjual, Pak Ade sudah tahu berapa orang dan kendaraan yang akan datang, jauh sebelum parkir penuh." |
 
-Kalau waktu mepet, lewati detik 45–70 dan pakai QR yang sudah dibeli sebelumnya.
+Kalau ada sisa waktu, buka **Tiket & Insiden** yang sedang berjalan sebagai penutup visual. Kalau waktu mepet, lewati detik 15–30.
 
 ---
 
@@ -296,9 +314,9 @@ Kalau waktu mepet, lewati detik 45–70 dan pakai QR yang sudah dibeli sebelumny
 | Bagian | Slide | Durasi | Presenter |
 |---|---|---|---|
 | Pembuka, masalah, bukti, kerugian | 1–4 | ±1 menit 20 detik | Dima (Hustler) |
-| Pengguna, solusi, pembeda, dampak | 5–8 | ±1 menit 20 detik | Martio (Hipster) |
-| Hook + demo | 9 | ±2 menit 10 detik | Martio membawakan hook, Adnan (Hacker) mengoperasikan demo |
-| Terima kasih + tanya-jawab | 10, appendix | – | Semua, sesuai bagian masing-masing |
+| Pengguna, solusi, pembeda, dampak, pengembangan | 5–9 | ±1 menit 40 detik | Martio (Hipster) |
+| Hook + demo | 10 | ±1 menit 10 detik | Martio membawakan hook, Adnan (Hacker) mengoperasikan demo |
+| Terima kasih + tanya-jawab | 11, appendix | – | Semua, sesuai bagian masing-masing |
 
 Usulan pembagian ini mengikuti peran di slide tim. Ubah kalau tim punya rencana lain. Kalau latihan lewat 5 menit, gabungkan slide 7 ke slide 8.
 
@@ -312,10 +330,10 @@ Usulan pembagian ini mengikuti peran di slide tim. Ubah kalau tim punya rencana 
 | Tangkapan layar Persetujuan (tenant) | `/pengelola/e/EVT-28/persetujuan` | Slide 6 langkah 1 |
 | Tangkapan layar portal pengunjung (ponsel) | `/pengunjung`, halaman pilih kursi | Slide 6 langkah 2 |
 | Tangkapan layar Check-in VALID | `/checkin` (dari menu Check-in & gate → Versi ponsel) | Slide 6 langkah 3 |
-| Tangkapan layar Command Center | `/command-center/event` (perkiraan kendaraan) | Slide 6 langkah 4, latar slide 9 |
+| Tangkapan layar Command Center | `/command-center/event` (perkiraan kendaraan) | Slide 6 langkah 4, latar slide 10 |
 | Tangkapan layar kartu "Cadangan kalau sistem mati" | `/checkin`, gulir ke bawah pemindai | A2 |
-| QR ke smiccts.vercel.app | Generator QR | Slide 9, 10 |
-| Video demo cadangan | Rekam layar alur demo di atas | Slide 9 |
+| QR ke smiccts.vercel.app | Generator QR | Slide 10, 11 |
+| Video demo cadangan | Rekam layar alur demo di atas | Slide 10 |
 
 Ambil tangkapan layar **setelah** Reset data contoh, dengan mode terang supaya warnanya cocok dengan deck.
 
@@ -328,8 +346,9 @@ Ambil tangkapan layar **setelah** Reset data contoh, dengan mode terang supaya w
 - [ ] Slide 5 memakai foto dan kutipan narasumber asli
 - [ ] Tidak ada klaim yang tidak ada di aplikasi (QR berubah, HVAC otomatis, CRM, P&L harian)
 - [ ] Tidak ada model bisnis di deck
-- [ ] Demo di akhir, dibuka slide hook, ditutup jawaban hook di Command Center
-- [ ] Terima kasih setelah demo, appendix A1–A7 setelah terima kasih
+- [ ] Slide 9 Pengembangan ke depan: 3 tahap, tahap 2–3 jelas terlihat sebagai rencana
+- [ ] Demo 1 menit di akhir, dibuka slide hook, ditutup jawaban hook di Command Center; persiapan demo dikerjakan sebelum naik panggung
+- [ ] Terima kasih (slide 11) setelah demo, appendix A1–A7 setelah terima kasih
 - [ ] Ejaan **Cibadag** di semua slide
 - [ ] Judul tiap slide berupa kalimat. Dibaca berurutan, sudah bercerita
 - [ ] Nomor slide urut (appendix bernomor A1–A7)
