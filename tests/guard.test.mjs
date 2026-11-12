@@ -122,3 +122,61 @@ test('guard + engine: tenant ajukan, divisi-event dan divisi-ops memutuskan, ten
   as({ name: 'Sari', role: 'Tenant/EO', org: ORG });
   check(await step(Evt, () => Evt.updateEvent(id, { status: 'PUBLISHED' })), ['tenant'], T, ['divisi-ops']);
 });
+
+// Review akhir: tenant tidak boleh lolos persetujuan lewat status lain, menyisipkan markup, atau mengubah jadwal yang ditinjau.
+async function tenantDraft() {
+  const { Evt, clock } = await loadEvt();
+  const ORG = 'Komunitas UMKM Gedebage', T = { org: ORG };
+  const id = await Evt.addEvent({ name: 'Expo Uji', template: 'HALL', start: clock.now + 30 * 86400000 });
+  await Evt.updateEvent(id, { org: ORG });
+  Evt.setActor({ name: 'Sari', role: 'Tenant/EO', org: ORG });
+  return { Evt, clock, ORG, T, id };
+}
+const mut = (s, id, fn) => { const n = structuredClone(s); fn(n.events[id], n); return n; };
+
+test('guard: tenant tidak bisa publikasi tanpa persetujuan lewat CLOSED atau CANCELLED', async () => {
+  const { Evt, T, id } = await tenantDraft();
+  const s0 = snap(Evt);
+  for (const st of ['CLOSED', 'PUBLISHED', 'CANCELLED']) {
+    const n = mut(s0, id, (e) => (e.status = st));
+    if (st === 'CANCELLED') assert.equal(guard(s0, n, ['tenant'], undefined, T), null, 'membatalkan draft sendiri boleh');
+    else assert.ok(typeof guard(s0, n, ['tenant'], undefined, T) === 'string', 'DRAFT → ' + st + ' harus ditolak');
+  }
+  const closed = mut(s0, id, (e) => (e.status = 'CLOSED')), cancelled = mut(s0, id, (e) => (e.status = 'CANCELLED'));
+  assert.ok(typeof guard(closed, mut(closed, id, (e) => (e.status = 'PUBLISHED')), ['tenant'], undefined, T) === 'string', 'CLOSED → PUBLISHED tanpa persetujuan');
+  assert.ok(typeof guard(cancelled, mut(cancelled, id, (e) => (e.status = 'PUBLISHED')), ['tenant'], undefined, T) === 'string', 'CANCELLED → PUBLISHED');
+  assert.ok(typeof guard(cancelled, mut(cancelled, id, (e) => (e.status = 'DRAFT')), ['tenant'], undefined, T) === 'string', 'CANCELLED → DRAFT');
+});
+
+test('engine: acara belum disetujui tidak bisa dibuka lewat CLOSED, acara batal tidak bisa diaktifkan', async () => {
+  const { Evt, id } = await tenantDraft();
+  await assert.rejects(Evt.updateEvent(id, { status: 'CLOSED' }), /disetujui/);
+  await Evt.cancelEvent(id, 'uji');
+  await assert.rejects(Evt.updateEvent(id, { status: 'PUBLISHED' }), /dibatalkan/);
+});
+
+test('guard: tenant tidak bisa menyisipkan markup lewat warna, id, atau teks acara', async () => {
+  const { Evt, T, id } = await tenantDraft();
+  const s0 = snap(Evt);
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.color = 'red"><img src=x onerror=alert(1)>')), ['tenant'], undefined, T) === 'string', 'warna');
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.name = '<img src=x onerror=alert(1)>')), ['tenant'], undefined, T) === 'string', 'nama');
+  assert.equal(guard(s0, mut(s0, id, (e) => (e.color = '#22c55e')), ['tenant'], undefined, T), null, 'warna hex boleh');
+  const bad = 'EVT-9"><b>';
+  const n = mut(s0, id, (e, all) => { all.events[bad] = Object.assign(structuredClone(e), { id: bad, audit: [] }); all.order.push(bad); });
+  assert.ok(typeof guard(s0, n, ['tenant'], undefined, T) === 'string', 'id acara baru');
+});
+
+test('guard + engine: jadwal dan area dikunci selama ditinjau dan setelah disetujui untuk tenant', async () => {
+  const { Evt, T, id } = await tenantDraft();
+  for (const d of Evt.DOCS.filter((x) => x.req)) await Evt.uploadDoc(id, d.id, { name: d.id + '.pdf', size: 10 });
+  await Evt.submitApproval(id);
+  const s0 = snap(Evt), e0 = s0.events[id];
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.start += 86400000)), ['tenant'], undefined, T) === 'string', 'jadwal saat DIAJUKAN');
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.area = e.area === 'ciunik' ? 'cibadak' : 'ciunik')), ['tenant'], undefined, T) === 'string', 'area saat DIAJUKAN');
+  assert.ok(typeof guard(s0, mut(s0, id, (e) => (e.approval.docs.proposal.name = 'lain.pdf')), ['tenant'], undefined, T) === 'string', 'dokumen saat DIAJUKAN');
+  assert.equal(guard(s0, mut(s0, id, (e) => (e.tagline = 'Tagline baru')), ['tenant'], undefined, T), null, 'teks lain boleh');
+  await assert.rejects(Evt.saveEvent(id, { patch: { start: e0.start + 86400000, end: (e0.end || e0.start) + 86400000 } }), /dikunci|ditinjau/);
+  // Simpan Pengaturan tanpa mengubah jadwal (nilai dari input menit, tanpa detik) tetap boleh.
+  await Evt.saveEvent(id, { patch: { tagline: 'Baru', start: Math.floor(e0.start / 60000) * 60000 } });
+  assert.equal(Evt.ev(id).start, e0.start);
+});

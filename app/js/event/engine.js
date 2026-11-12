@@ -806,7 +806,8 @@
       return tx((d, t) => {
         const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
         const prev = e.status, next = patch.status;
-        if (next === 'PUBLISHED' && prev === 'DRAFT' && needsApproval(e)) fail('Acara belum disetujui Divisi Event dan Operasional Mall. Ajukan lewat menu Persetujuan.');
+        if (prev === 'CANCELLED' && next && next !== prev) fail('Acara yang dibatalkan tidak bisa diaktifkan lagi.');
+        if ((next === 'PUBLISHED' || next === 'CLOSED') && next !== prev && needsApproval(e)) fail('Acara belum disetujui Divisi Event dan Operasional Mall. Ajukan lewat menu Persetujuan.');
         const before = clone(e);
         Object.assign(e, patch);
         if (next && next !== prev) {
@@ -825,7 +826,12 @@
         const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
         if (e.status === 'CANCELLED') fail('Acara yang dibatalkan tidak bisa diubah.');
         const before = clone(e);
-        if (patch && patch.area && patch.area !== e.area && e.approval && ['DIAJUKAN', 'DISETUJUI'].includes(e.approval.st)) fail('Area dikunci setelah diajukan.');
+        patch = Object.assign({}, patch || {});
+        // Input Pengaturan hanya sampai menit: nilai di menit yang sama dianggap tidak berubah (detik tidak ditimpa).
+        ['start', 'end', 'doors'].forEach((k) => { if (patch[k] != null && e[k] != null && Math.floor(patch[k] / 60000) === Math.floor(e[k] / 60000)) delete patch[k]; });
+        if (patch.area && patch.area !== e.area && e.approval && ['DIAJUKAN', 'DISETUJUI'].includes(e.approval.st)) fail('Area dikunci setelah diajukan.');
+        const reviewed = e.approval && (e.approval.st === 'DIAJUKAN' || (e.approval.st === 'DISETUJUI' && actor.org && actor.org !== ORG_MALL));
+        if (reviewed && ['start', 'end', 'doors'].some((k) => patch[k] != null && patch[k] !== e[k])) fail(e.approval.st === 'DIAJUKAN' ? 'Jadwal dikunci selama ditinjau.' : 'Jadwal sudah disetujui dan dikunci. Hubungi Tim Event Mall untuk mengubahnya.');
         Object.assign(e, patch || {});
         if (patch && (patch.area || patch.start || patch.end)) {
           const A = areaById(e.area); if (!A && e.area) fail('Area tidak dikenal.');

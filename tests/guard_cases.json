@@ -1150,8 +1150,8 @@
        "rent": 1
       }
      },
-     "T": {
-      "id": "T",
+     "EVT-29": {
+      "id": "EVT-29",
       "org": "Komunitas UMKM Gedebage",
       "status": "DRAFT",
       "name": "Expo",
@@ -1175,7 +1175,7 @@
     },
     "order": [
      "E",
-     "T"
+     "EVT-29"
     ],
     "seats": {
      "E": {

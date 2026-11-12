@@ -31,6 +31,16 @@ const ARRS = ['order', 'scans', 'outbox', 'waitlist', 'reports'], OBJS = ['event
 const okUntil = (u, lim) => typeof u === 'number' && u <= lim;
 const STEPS = ['event', 'ops']; // urutan persetujuan: Divisi Event lalu Operasional Mall
 const DIV = { 'divisi-event': 'event', 'divisi-ops': 'ops' };
+// Tulisan tenant tampil di konsol Tim Event Mall dan portal pengunjung: tolak markup di semua teks (kecuali log,
+// yang selalu di-escape), warna harus hex, id acara baru harus EVT-angka.
+const HEX = /^#[0-9a-f]{3,8}$/i, EVID = /^EVT-\d{1,6}$/;
+function markup(x, k) {
+  if (k === 'audit') return false;
+  if (typeof x === 'string') return /[<>"]/.test(x);
+  if (x && typeof x === 'object') return Object.keys(x).some((j) => markup(x[j], j));
+  return false;
+}
+const LOCK = ['area', 'start', 'end', 'doors']; // jadwal & area yang diperiksa divisi
 // Log aktivitas acara hanya boleh ditambah: entri lama harus tetap sama dan berurutan.
 function appendOnly(a, b) {
   const o = (a && Array.isArray(a.audit) && a.audit) || [], n = (b && b.audit) || [];
@@ -70,12 +80,20 @@ function tenantRule(old, next, oe, ne, changed, orderSame, ctx) {
       const p0 = a && a.approval, p1 = b.approval;
       if (!isObj(p1)) return 'Data persetujuan acara tidak boleh dihapus.';
       if (!a && b.status !== 'DRAFT') return 'Acara baru dibuat sebagai draft.';
+      if (!a && (!EVID.test(id) || b.id !== id)) return 'ID acara tidak valid.';
+      if (b.color !== undefined && !HEX.test(String(b.color))) return 'Warna acara tidak valid.';
+      if (markup(b)) return 'Teks acara tidak boleh memuat tanda < > atau ".';
+      if (a && a.status === 'CANCELLED' && b.status !== 'CANCELLED') return 'Acara yang dibatalkan tidak bisa diaktifkan lagi.';
+      if (p0 && ['DIAJUKAN', 'DISETUJUI'].includes(p0.st)) {
+        if (LOCK.some((k) => !same(a[k], b[k]))) return 'Jadwal dan area dikunci selama ditinjau dan setelah disetujui. Hubungi Tim Event Mall.';
+        if (!same(p0, p1)) return 'Data pengajuan terkunci selama ditinjau.';
+      }
       if (['DISETUJUI', 'REVISI'].includes(p1.st) && !(p0 && p0.st === p1.st)) return 'Keputusan persetujuan hanya dari Command Center.';
       for (const k of Object.keys(p1.steps || {})) {
         const s1 = p1.steps[k], s0 = p0 && p0.steps && p0.steps[k];
         if (isObj(s1) && ['SETUJU', 'REVISI'].includes(s1.st) && !same(s0, s1)) return 'Keputusan persetujuan hanya dari Command Center.';
       }
-      if (a && a.status === 'DRAFT' && b.status === 'PUBLISHED' && !(p0 && p0.st === 'DISETUJUI')) return 'Acara belum disetujui Divisi Event dan Operasional Mall.';
+      if (['PUBLISHED', 'CLOSED'].includes(b.status) && !(a && a.status === b.status) && !(p0 && p0.st === 'DISETUJUI')) return 'Acara belum disetujui Divisi Event dan Operasional Mall.';
     }
     return null;
   }
