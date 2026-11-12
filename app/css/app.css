@@ -846,8 +846,7 @@ body:not(.has-bnav)[data-view="tiket"] main.pv-wrap, body:not(.has-bnav)[data-vi
 
 /* ================================================================ pilih peran (/) & masuk staf (/masuk) — token tema, terang & gelap */
 .roles-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
-@media (min-width: 640px) { .roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1200px) { .roles-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .roles-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .auth-card { display: flex; flex-direction: column; gap: 20px; padding: 24px; }
 @media (max-width: 479px) { .auth-card { padding: 20px 16px; } }
 .auth-role-ic { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgb(var(--primary) / .12); color: rgb(var(--primary)); }

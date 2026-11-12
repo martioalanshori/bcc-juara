@@ -68,3 +68,15 @@ Script dan cara pakai: [scraping/](scraping/README.md). Hasil analisis akan ters
 | Data | Status |
 |---|---|
 | Ulasan Google Maps Summarecon Mall Bandung | Belum dijalankan (perlu login Google sekali) |
+
+## 5. Data pendukung hitungan kerugian mall
+
+Dipakai di [04_Deck/FIX.md](../04_Deck/FIX.md) (slide 4 dan Appendix A1). Diambil 12 Nov 2026.
+
+| Data | Nilai | Sumber |
+|---|---|---|
+| Target pengunjung Summarecon Mall Bandung | 25.000–30.000/hari kerja, 30.000–40.000/akhir pekan, 8 juta kunjungan/tahun (target 2024) | [Bisnis.com, 19 Jan 2024](https://ekonomi.bisnis.com/read/20240119/47/1733865/smra-bidik-8-juta-pengunjung-summarecon-mall-bandung-hingga-akhir-tahun) |
+| Belanja rata-rata per pengunjung mal | Turun dari ±Rp250 ribu menjadi Rp100–150 ribu per orang (pernyataan Ketua APPBI Malang Raya, bukan survei) | [Jatim Times, 23 Jul 2025](https://jatimtimes.com/baca/342220/20250723/190800/fenomena-rojali-rombongan-jarang-beli-di-mal-mal-kota-besar-bagaimana-dengan-malang-raya) |
+| Pengunjung event offline yang berbelanja | 82% (18% tidak belanja); 32% belanja Rp100–500 ribu, 25% di bawah Rp100 ribu. Survei Snapcart, 1.507 responden, Agustus 2026 | [Databoks, 14 Sep 2026](https://databoks.katadata.co.id/produk-konsumen/statistik/6aa3c5fd1930a/rata-rata-pengeluaran-pengunjung-acara-offline-di-indonesia-agustus-2026) |
+| Pendapatan mal & ritel Summarecon Agung 2025 | Rp2,06 triliun (semua mal, naik 5,21%) | [EmitenNews](https://www.emitennews.com/news/smra-timbun-utang-demi-lahan-sinyal-bahaya-atau-pintu-cuan) |
+| Tarif parkir Summarecon Mall Bandung | Tidak ditemukan online. Perlu foto papan tarif saat kunjungan ulang | – |
