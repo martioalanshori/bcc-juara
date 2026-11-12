@@ -1655,3 +1655,19 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 @media (max-width: 767px) { #cc-id-chip span { display: none; } }
 /* Header Command Center: chip identitas memakan tempat, ringkasan angka hanya di layar sangat lebar */
 @media (max-width: 1679px) { .cc-hstats { display: none !important; } }
+
+/* Mode demo: kartu langkah berikutnya & menu ganti akun */
+.ap-next { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; border: 1px dashed rgb(var(--primary) / .6); background: rgb(var(--primary) / .06); font-size: 13px; line-height: 18px; }
+.ap-next > .material-symbols-outlined { color: rgb(var(--primary)); }
+.ap-next b { display: block; font-size: 14px; font-weight: 600; }
+.ap-next span { color: rgb(var(--on-surface-variant)); }
+.ap-next .btn span, .ap-next .btn .material-symbols-outlined { color: inherit; }
+.pg-sw { border-top: 1px solid rgb(var(--outline-variant)); padding-top: 6px; margin-top: 4px; }
+.pg-sw-h { padding: 4px 12px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgb(var(--on-surface-variant)); }
+.pg-sw button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 12px; border-radius: 8px; text-align: left; }
+.pg-sw button:hover { background: rgb(var(--on-surface) / .06); }
+.pg-sw b { display: block; font-size: 13px; font-weight: 500; }
+.pg-sw small { display: block; font-size: 11.5px; color: rgb(var(--on-surface-variant)); }
+.auth-demo-g { margin: 10px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgb(var(--on-surface-variant)); }
+.auth-demo-ic { position: relative; }
+.auth-step { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgb(var(--primary)); color: rgb(var(--on-primary)); font-size: 11px; font-style: normal; font-weight: 700; }

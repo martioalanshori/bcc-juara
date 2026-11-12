@@ -241,3 +241,10 @@ test('ganti akun demo: tanpa password, hanya mode demo', async () => {
     assert.equal(me.demoAccounts, undefined);
   });
 });
+
+test('halaman masuk memakai daftar akun dari server (bukan salinan di HTML)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const html = readFileSync(new URL('../app/pages/masuk.html', import.meta.url), 'utf8');
+  for (const em of ['pengelola@example.com', 'tenant@example.com', 'cc@example.com', 'gate@example.com']) assert.ok(!html.includes(em), 'masuk.html tidak boleh menyimpan daftar akun sendiri: ' + em);
+  assert.ok(html.includes('demoAccounts'), 'kartu akun demo dibangun dari /api/auth/me');
+});

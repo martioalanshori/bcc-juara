@@ -5,13 +5,13 @@
   window.Views = window.Views || {};
   const { esc, icon, num } = UI;
   const DIV_ROLE = { 'divisi-event': ['event', 'Divisi Event', 'approval'], 'divisi-ops': ['ops', 'Operasional Mall', 'engineering'] };
-  const cc = { role: null, div: null, label: 'Operator', name: 'Operator Command Center' }; // akun yang login di portal ini
+  const cc = { role: null, div: null, label: 'Operator', name: 'Operator Command Center', me: null }; // akun yang login di portal ini
   const active = () => window.Shell && Shell.current && Shell.current.route === 'persetujuan';
 
   // Identitas akun dari server: chip di header, nama di menu profil, hak memutuskan.
   // core/auth.js dimuat setelah file ini: ambil identitas setelah semua skrip siap.
   document.addEventListener('DOMContentLoaded', () => window.SMAuth && SMAuth.me().then((m) => {
-    const r = m && m.active && m.active['/command-center'], a = r && m.accounts[r]; if (!a) return;
+    cc.me = m; const r = m && m.active && m.active['/command-center'], a = r && m.accounts[r]; if (!a) return;
     const d = DIV_ROLE[r]; Object.assign(cc, { role: r, div: d ? d[0] : null, label: d ? d[1] : 'Operator', name: a.name });
     const ch = document.getElementById('cc-id-chip');
     if (ch) { ch.hidden = false; ch.className = 'id-chip ' + (cc.div || 'cc'); ch.innerHTML = icon(d ? d[2] : 'hub', 'text-[18px]') + '<span><b>' + esc(cc.label) + '</b>' + (d ? ' · ' + esc(a.name) : '') + '</span>'; }
@@ -53,7 +53,7 @@
         <div class="font-label-sm text-label-sm text-on-surface-variant">${esc(e.id)} · ${esc(e.org || '-')}</div>
         <h3 class="font-headline-md text-headline-md mb-1">${esc(e.name)}</h3>
         <div class="apr-facts"><span>${icon('event', 'text-[16px]')}${Evt.fmtDT(e.start)} sampai ${Evt.fmtDT(end)}</span><span>${icon('place', 'text-[16px]')}${esc((e.venue || '').split('·')[0].trim())}</span><span>${icon('confirmation_number', 'text-[16px]')}Kapasitas tiket ${num(cap)}</span></div>
-        ${A.areaLine(e)}${A.turnBar(e)}${A.steps(e)}${box}${why}
+        ${A.areaLine(e)}${A.turnBar(e)}${A.steps(e)}${box}${why}${A.nextStepCard(e, cc.me, cc.role)}
       </section>
       <section class="card p-5">${UI.h('Dokumen persyaratan', 'Diunggah penyelenggara. Divisi memeriksa dokumen sesuai bagiannya', '', 'folder_open')}${A.docs(e, { editable: false })}</section>
       <section class="card p-5">${UI.h('Log aktivitas acara', 'Siapa melakukan apa dan kapan', A.integrity(e), 'history')}${A.log(e)}</section>`;

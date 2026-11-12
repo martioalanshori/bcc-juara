@@ -43,8 +43,18 @@ function eventsGuard(old, next, roles, ctx) {
   const changed = Array.from(new Set(Object.keys(oe).concat(Object.keys(ne)))).filter((id) => !same(oe[id], ne[id]));
   const orderSame = same(old.order, next.order);
   if (!changed.length && orderSame) return null;
-  const div = roles.map((r) => DIV[r]).find(Boolean);
-  if (roles.includes('tenant') && ctx && ctx.org) {
+  // Satu browser bisa punya sesi beberapa portal sekaligus (mis. tenant di /pengelola + divisi di /command-center).
+  // Perubahan boleh bila salah satu peran yang aktif mengizinkannya; bila semua menolak, pesan pertama dipakai.
+  const rules = [];
+  if (roles.includes('tenant') && ctx && ctx.org) rules.push(() => tenantRule(old, next, oe, ne, changed, orderSame, ctx));
+  roles.map((r) => DIV[r]).filter(Boolean).forEach((div) => rules.push(() => divRule(oe, ne, changed, orderSame, div)));
+  if (!rules.length) return 'Perubahan data acara hanya untuk pengelola.';
+  let first = null;
+  for (const rule of rules) { const err = rule(); if (!err) return null; if (!first) first = err; }
+  return first;
+}
+function tenantRule(old, next, oe, ne, changed, orderSame, ctx) {
+  {
     const mine = (e) => isObj(e) && e.org === ctx.org;
     if (!orderSame) {
       const o = new Set(old.order || []), n = new Set(next.order || []);
@@ -69,7 +79,9 @@ function eventsGuard(old, next, roles, ctx) {
     }
     return null;
   }
-  if (div) {
+}
+function divRule(oe, ne, changed, orderSame, div) {
+  {
     if (!orderSame) return 'Perubahan data acara hanya untuk penyelenggara.';
     const strip = (e) => { const c = Object.assign({}, e); delete c.approval; delete c.audit; return c; };
     const rest = (p) => { const c = Object.assign({}, p); delete c.steps; delete c.st; delete c.approvedAt; return c; };
@@ -96,7 +108,6 @@ function eventsGuard(old, next, roles, ctx) {
     }
     return null;
   }
-  return 'Perubahan data acara hanya untuk pengelola.';
 }
 
 function guard(old, next, roles, now, ctx) {

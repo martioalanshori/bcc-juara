@@ -132,7 +132,7 @@
   let acct = null; // akun yang login (dari /api/auth/me)
   // Akun konsol: 'tenant' (penyelenggara eksternal, hanya acara org-nya) atau 'pengelola' (Tim Event Mall, semua acara).
   // null = belum diketahui atau mode lokal tanpa server (diperlakukan sebagai Tim Event Mall).
-  let acctRole = null;
+  let acctRole = null, meInfo = null; // meInfo = /api/auth/me (mode demo, daftar akun demo)
   const who = () => (ROLE === 'mall' ? 'mall' : acctRole || 'pengelola');
   const seen = (e) => !!e && (who() !== 'tenant' || !acct || e.org === acct.org);
   const visEvs = () => Evt.s.order.map(Evt.ev).filter(seen); // acara yang boleh dilihat akun ini
@@ -1422,7 +1422,7 @@
   }
   function persetujuan(e) {
     const A = EvtApproval, ap = e.approval, miss = ap ? Evt.missingDocs(e).length : 0;
-    const flow = ap ? A.turnBar(e) + A.areaLine(e) + A.steps(e) + apActions(e) : '<p class="font-body-sm text-body-sm text-on-surface-variant">Acara ini dipublikasikan sebelum persetujuan digital dipakai, jadi tidak punya riwayat persetujuan. Acara baru selalu melewati Divisi Event lalu Operasional Mall.</p>';
+    const flow = ap ? A.turnBar(e) + A.areaLine(e) + A.steps(e) + apActions(e) + (isMgr() ? A.nextStepCard(e, meInfo, acctRole) : '') : '<p class="font-body-sm text-body-sm text-on-surface-variant">Acara ini dipublikasikan sebelum persetujuan digital dipakai, jadi tidak punya riwayat persetujuan. Acara baru selalu melewati Divisi Event lalu Operasional Mall.</p>';
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
       <div class="2xl:col-span-5 flex flex-col gap-5">
         <section class="card p-5">${UI.h('Alur persetujuan', 'Penyelenggara mengajukan, Divisi Event lalu Operasional Mall memutuskan di Command Center', '', 'approval')}${flow}</section>
@@ -1645,7 +1645,7 @@
     document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return; if (document.body.classList.contains('pg-open')) drawer(false); closeMenus(); });
     document.addEventListener('click', (ev) => { if (!ev.target.closest('.pg-more')) closeMenus(); });
     window.matchMedia('(max-width: 1023px)').addEventListener('change', () => drawer(false));
-    if (window.SMAuth) SMAuth.me().then((m) => { const r = m && m.active && m.active['/pengelola'], a = r && m.accounts[r]; if (a) { acct = a; acctRole = r; renderProfile(); redraw(); } });
+    if (window.SMAuth) SMAuth.me().then((m) => { meInfo = m; const r = m && m.active && m.active['/pengelola'], a = r && m.accounts[r]; if (a) { acct = a; acctRole = r; renderProfile(); redraw(); } });
   }
   function mount(root, role) {
     ROLE = role === 'pengelola' ? 'pengelola' : 'mall'; host = root;

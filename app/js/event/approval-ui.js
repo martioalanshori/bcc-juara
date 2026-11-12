@@ -106,7 +106,19 @@
       if (r) UI.toast(r === 'REVISI' ? 'Revisi diminta dan tercatat di log' : r === 'NEXT' ? c.name + ' menyetujui, diteruskan ke tahap berikutnya' : 'Persetujuan lengkap, acara siap dipublikasikan', 'P4');
     }));
   }
+  // Mode demo: setelah tiap langkah, tombol untuk pindah ke akun yang gilirannya berikutnya (satu klik, tanpa login ulang).
+  // me = hasil /api/auth/me; current = peran yang sedang dipakai di halaman ini. Kosong bila bukan mode demo atau giliran = akun ini.
+  function nextStepCard(e, me, current) {
+    const t = Evt.turn(e); if (!t || !me || !me.demo || !me.demoAccounts) return '';
+    const acc = (role) => me.demoAccounts.find((a) => a.role === role);
+    const tenant = acc('tenant');
+    const target = t.who === 'event' ? acc('divisi-event') : t.who === 'ops' ? acc('divisi-ops') : tenant && e.org === tenant.org ? tenant : acc('pengelola');
+    if (!target || target.role === current) return '';
+    const next = target.role.startsWith('divisi') ? '/command-center/persetujuan?ev=' + encodeURIComponent(e.id) : '/pengelola/e/' + encodeURIComponent(e.id) + '/persetujuan';
+    const lbl = target.role.startsWith('divisi') ? 'Lanjut sebagai ' + target.label : 'Kembali ke ' + target.label;
+    return `<div class="ap-next">${icon('play_circle', 'text-[22px]')}<div class="min-w-0 flex-1"><b>Langkah demo berikutnya</b><span>${esc(t.label)}. Pindah akun tanpa login ulang.</span></div><button type="button" class="btn" data-switch-email="${esc(target.email)}" data-switch-next="${esc(next)}">${esc(lbl)} ${icon('arrow_forward', 'text-[18px]')}</button></div>`;
+  }
   function bindCsv(root) { root.querySelectorAll('[data-csv-audit]').forEach((b) => b.addEventListener('click', () => csv(b.dataset.csvAudit))); }
 
-  window.EvtApproval = { turnBar, steps, areaLine, docs, bindDocs, log, integrity, csv, bindCsv, decideBox, bindDecide, ACT, AP_CHIP, SLOW_MS, DIV_NAME };
+  window.EvtApproval = { nextStepCard, turnBar, steps, areaLine, docs, bindDocs, log, integrity, csv, bindCsv, decideBox, bindDecide, ACT, AP_CHIP, SLOW_MS, DIV_NAME };
 })();

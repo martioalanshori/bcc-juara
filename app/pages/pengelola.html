@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Konsol Pengelola Acara · Summarecon Mall Bandung</title>
   <!-- Path 2 · Pengelola / Event Organizer. Rute: /pengelola/acara, /pengelola/e/EVT-01/<menu> (app/js/event/admin.js). -->
-  <script src="/app/js/core/theme.js?v=72"></script>
-  <script src="/app/js/core/router.js?v=72"></script>
+  <script src="/app/js/core/theme.js?v=73"></script>
+  <script src="/app/js/core/router.js?v=73"></script>
   <script>try { if (localStorage.getItem('smicc-pengelola-nav') === 'mini' || (localStorage.getItem('smicc-pengelola-nav') == null && innerWidth < 1280)) document.documentElement.classList.add('pg-mini'); } catch (e) { /* tanpa storage */ }</script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=72" />
-  <link rel="stylesheet" href="/app/css/app.css?v=72" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=73" />
+  <link rel="stylesheet" href="/app/css/app.css?v=73" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased pg-body">
   <a href="#view" class="pg-skip">Lewati ke konten</a>
@@ -37,6 +37,7 @@
           <div class="pg-prof-menu" id="pg-prof-menu" hidden>
             <div class="pg-prof-head"><b id="pg-prof-n2">Pengelola acara</b><small id="pg-prof-sub"></small></div>
             <button type="button" id="pg-prof-edit"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
+            <div class="pg-sw" data-demo-switch hidden></div>
             <button type="button" data-logout="pengelola tenant" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
           </div>
         </div>
@@ -49,16 +50,16 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-4 sm:right-6 z-[90] flex flex-col gap-2 items-end pg-toasts"></div>
 
-  <script src="/app/vendor/qrcode.js?v=72"></script>
-  <script src="/app/vendor/jsQR.js?v=72"></script>
-  <script src="/app/js/command-center/sop-data.js?v=72"></script>
-  <script src="/app/js/core/ui.js?v=72"></script>
-  <script src="/app/js/core/pdf.js?v=72"></script>
-  <script src="/app/js/core/auth.js?v=72"></script>
-  <script src="/app/js/event/engine.js?v=72"></script>
-  <script src="/app/js/event/approval-ui.js?v=72"></script>
-  <script src="/app/js/event/checkin-ui.js?v=72"></script>
-  <script src="/app/js/event/admin.js?v=72"></script>
+  <script src="/app/vendor/qrcode.js?v=73"></script>
+  <script src="/app/vendor/jsQR.js?v=73"></script>
+  <script src="/app/js/command-center/sop-data.js?v=73"></script>
+  <script src="/app/js/core/ui.js?v=73"></script>
+  <script src="/app/js/core/pdf.js?v=73"></script>
+  <script src="/app/js/core/auth.js?v=73"></script>
+  <script src="/app/js/event/engine.js?v=73"></script>
+  <script src="/app/js/event/approval-ui.js?v=73"></script>
+  <script src="/app/js/event/checkin-ui.js?v=73"></script>
+  <script src="/app/js/event/admin.js?v=73"></script>
   <script>EvtAdmin.mount(document.getElementById('view'), 'pengelola');</script>
 </body>
 </html>

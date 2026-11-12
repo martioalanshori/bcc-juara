@@ -8,10 +8,10 @@
   <meta name="robots" content="noindex" />
   <title>Masuk staf · Summarecon Mall Bandung</title>
   <!-- Login staf (pengelola, petugas gate, Command Center) dengan email & password. Verifikasi di server (server/auth.js). -->
-  <script src="/app/js/core/theme.js?v=72"></script>
+  <script src="/app/js/core/theme.js?v=73"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=72" />
-  <link rel="stylesheet" href="/app/css/app.css?v=72" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=73" />
+  <link rel="stylesheet" href="/app/css/app.css?v=73" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex justify-center px-4 py-8 sm:items-center">
   <main class="w-full max-w-md">
@@ -32,9 +32,9 @@
         <button class="btn justify-center auth-go" id="go"><span class="material-symbols-outlined text-[18px]">login</span>Masuk</button>
       </form>
 
-      <div class="auth-demo">
+      <div class="auth-demo" id="demo-box" hidden>
         <p class="auth-demo-h"><span>Akun demo</span></p>
-        <p class="font-label-sm text-label-sm text-on-surface-variant">Klik untuk mengisi email &amp; password, lalu tekan Masuk.</p>
+        <p class="font-label-sm text-label-sm text-on-surface-variant">Klik untuk mengisi email &amp; password, lalu tekan Masuk. Nomor = urutan cerita demo persetujuan acara.</p>
         <div class="auth-demo-list" id="demo"></div>
         <p class="font-label-sm text-label-sm text-on-surface-variant">Password semua akun demo: <code class="auth-code">smicc-demo-2026</code></p>
       </div>
@@ -46,34 +46,39 @@
     (function () {
       // Akun demo (data contoh, domain example.com). Daftar akun & peran yang sebenarnya ada di server/config.js.
       const DEMO_PASS = 'smicc-demo-2026';
-      const ACCOUNTS = [
-        { role: 'pengelola', email: 'pengelola@example.com', label: 'Pengelola acara', icon: 'admin_panel_settings', text: 'Buat & jual acara, peserta, keuangan' },
-        { role: 'gate', email: 'gate@example.com', label: 'Petugas gate', icon: 'qr_code_scanner', text: 'Pindai e-ticket & lapor kejadian di gate' },
-        { role: 'command-center', email: 'cc@example.com', label: 'Command Center', icon: 'hub', text: 'Pantau acara, insiden & operasional mal' },
-      ];
+      // Peran yang bisa membuka tiap portal (sama dengan PAGES di server/config.js) untuk menandai kartu "Portal ini".
+      const PORTAL = { pengelola: ['pengelola', 'tenant'], tenant: ['pengelola', 'tenant'], gate: ['gate', 'pengelola'], 'command-center': ['command-center', 'divisi-event', 'divisi-ops'] };
+      const PORTAL_LABEL = { pengelola: ['Konsol Pengelola Acara', 'admin_panel_settings'], tenant: ['Konsol Pengelola Acara', 'storefront'], gate: ['Check-in Gate', 'qr_code_scanner'], 'command-center': ['Command Center', 'hub'] };
       const q = new URLSearchParams(location.search);
-      const want = ACCOUNTS.find((a) => a.role === q.get('role'));
+      const want = q.get('role') && PORTAL[q.get('role')] ? q.get('role') : null;
       // hanya path lokal; server memvalidasi ulang tujuan sesuai peran akun
       let next = q.get('next') || '';
       if (!next.startsWith('/') || next.startsWith('//')) next = '';
       if (want) {
-        document.getElementById('role-label').textContent = 'Untuk membuka portal ' + want.label;
-        document.querySelector('#role-icon span').textContent = want.icon;
-        document.title = 'Masuk · ' + want.label;
+        document.getElementById('role-label').textContent = 'Untuk membuka portal ' + PORTAL_LABEL[want][0];
+        document.querySelector('#role-icon span').textContent = PORTAL_LABEL[want][1];
+        document.title = 'Masuk · ' + PORTAL_LABEL[want][0];
       }
       const f = document.getElementById('f-login'), em = document.getElementById('email'), pw = document.getElementById('password');
       const msg = document.getElementById('msg'), go = document.getElementById('go'), list = document.getElementById('demo');
       const say = (t, ok) => { msg.hidden = !t; msg.className = 'auth-msg' + (ok ? ' ok' : ''); msg.textContent = t || ''; };
-      // Kartu akun demo: yang sesuai portal tujuan diletakkan paling atas.
-      const order = want ? [want].concat(ACCOUNTS.filter((a) => a !== want)) : ACCOUNTS;
-      list.innerHTML = order.map((a) => '<button type="button" class="auth-demo-card' + (a === want ? ' is-target' : '') + '" data-email="' + a.email + '">'
-        + '<span class="auth-demo-ic"><span class="material-symbols-outlined text-[22px]">' + a.icon + '</span></span>'
-        + '<span class="auth-demo-txt"><b>' + a.label + (a === want ? ' <small class="auth-tag">Portal ini</small>' : '') + '</b><span>' + a.email + '</span><small>' + a.text + '</small></span></button>').join('');
-      list.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', () => {
-        em.value = b.dataset.email; pw.value = DEMO_PASS; say('');
-        list.querySelectorAll('[data-email]').forEach((x) => x.classList.toggle('on', x === b));
-        go.focus();
-      }));
+      const escH = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      // Kartu akun demo dari server (me.demoAccounts, satu sumber dengan ACCOUNTS di server/config.js), dikelompokkan.
+      // Tanpa mode demo (STAFF_PASSWORD diisi) atau tanpa server: hanya formulir.
+      fetch('/api/auth/me', { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null).then((m) => {
+        const accs = (m && m.demo && m.demoAccounts) || []; if (!accs.length) return;
+        const target = (a) => want && PORTAL[want].includes(a.role);
+        const groups = []; accs.forEach((a) => { let g = groups.find((x) => x[0] === a.group); if (!g) groups.push((g = [a.group, []])); g[1].push(a); });
+        list.innerHTML = groups.map(([g, as]) => '<p class="auth-demo-g">' + escH(g) + '</p>' + as.map((a) => '<button type="button" class="auth-demo-card' + (target(a) ? ' is-target' : '') + '" data-email="' + escH(a.email) + '">'
+          + '<span class="auth-demo-ic"><span class="material-symbols-outlined text-[22px]">' + escH(a.icon) + '</span>' + (a.step ? '<i class="auth-step">' + a.step + '</i>' : '') + '</span>'
+          + '<span class="auth-demo-txt"><b>' + escH(a.label) + (target(a) ? ' <small class="auth-tag">Portal ini</small>' : '') + '</b><span>' + escH(a.name) + (a.org && a.role === 'tenant' ? ', ' + escH(a.org) : '') + '</span><small>' + escH(a.text) + '</small></span></button>').join('')).join('');
+        document.getElementById('demo-box').hidden = false;
+        list.querySelectorAll('[data-email]').forEach((b) => b.addEventListener('click', () => {
+          em.value = b.dataset.email; pw.value = DEMO_PASS; say('');
+          list.querySelectorAll('[data-email]').forEach((x) => x.classList.toggle('on', x === b));
+          go.focus();
+        }));
+      });
       document.getElementById('eye').addEventListener('click', (ev) => {
         const b = ev.currentTarget, show = pw.type === 'password'; pw.type = show ? 'text' : 'password';
         b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
