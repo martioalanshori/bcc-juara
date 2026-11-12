@@ -38,7 +38,7 @@
   const recolor = (e, html) => (isMgr() ? e.types.reduce((h, ty) => h.split(ty.color).join(tc(e, ty)), html) : html);
   const money = (n) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); // uang: 0 ditulis 'Rp 0' ("Gratis" hanya untuk harga tiket)
   const redraw = () => draw(host);
-  async function act(p, ok) { try { if (isMgr()) { const pf = profile(); Evt.setActor({ name: pf.name, role: pf.title }); } // pelaku di log aktivitas
+  async function act(p, ok) { try { if (isMgr()) Evt.setActor(actorOf()); // pelaku di log aktivitas
      const r = await p(); if (ok) UI.toast(ok, 'P4'); return r; } catch (e) { UI.toast(esc(e.message), 'P2'); return null; } }
 
   // ------------------------------------------------------------------ konsol pengelola: rute, kesiapan, "perlu tindakan"
@@ -57,7 +57,7 @@
     ui.tab = 'gdash';
     if (seg[0] === 'e' && seg[1]) {
       const id = decodeURIComponent(seg[1]), sub = seg[2] === 'denah' ? 'kursi' : seg[2] || 'ringkasan';
-      if (Evt.ev(id)) { if (id !== ui.ev) ui.seatSel = null; ui.ev = id; ui.tab = ETABS.some((x) => x[0] === sub) ? sub : 'ringkasan'; }
+      if (seen(Evt.ev(id))) { if (id !== ui.ev) ui.seatSel = null; ui.ev = id; ui.tab = ETABS.some((x) => x[0] === sub) ? sub : 'ringkasan'; }
       else UI.toast('Acara ' + esc(id) + ' tidak ditemukan atau sudah dihapus', 'P3');
     } else if (seg[0]) { const g = GTABS.find((x) => x[3] === seg[0]); if (g) ui.tab = g[0]; }
   }
@@ -130,6 +130,14 @@
 
   // ------------------------------------------------------------------ sidebar, bar bawah ponsel, header acara
   let acct = null; // akun yang login (dari /api/auth/me)
+  // Akun konsol: 'tenant' (penyelenggara eksternal, hanya acara org-nya) atau 'pengelola' (Tim Event Mall, semua acara).
+  // null = belum diketahui atau mode lokal tanpa server (diperlakukan sebagai Tim Event Mall).
+  let acctRole = null;
+  const who = () => (ROLE === 'mall' ? 'mall' : acctRole || 'pengelola');
+  const seen = (e) => !!e && (who() !== 'tenant' || !acct || e.org === acct.org);
+  const visEvs = () => Evt.s.order.map(Evt.ev).filter(seen); // acara yang boleh dilihat akun ini
+  const can = (a) => who() !== 'tenant' || !['refund', 'reset', 'demo'].includes(a); // hak yang tidak dimiliki tenant
+  const actorOf = () => { const pf = profile(); return { name: pf.name, role: who() === 'tenant' ? 'Tenant/EO' : 'Tim Event Mall', org: (acct && acct.org) || null }; };
   // Profil tampilan (nama, jabatan, WhatsApp) disimpan di browser ini; email & password akun diatur di server/config.js.
   const PROF_KEY = 'smicc-pengelola-profil';
   const loadProf = () => { try { return JSON.parse(localStorage.getItem(PROF_KEY)) || {}; } catch (err) { return {}; } };
@@ -141,6 +149,8 @@
     $('pg-av').textContent = initialsOf(p.name); $('pg-prof-name').textContent = p.name;
     $('pg-prof-n2').textContent = p.name; $('pg-prof-sub').textContent = p.email ? p.title + ', ' + p.email : p.title + ' (mode lokal)';
     $('pg-prof-btn').setAttribute('aria-label', 'Menu profil ' + p.name);
+    const ch = $('pg-id-chip');
+    if (ch && acct) { const t = who() === 'tenant'; ch.hidden = false; ch.className = 'id-chip ' + (t ? 'tenant' : 'mall'); ch.innerHTML = icon(t ? 'storefront' : 'admin_panel_settings', 'text-[18px]') + '<span><b>' + (t ? 'Tenant/EO' : 'Tim Event Mall') + '</b> · ' + esc(t ? acct.org : acct.name) + '</span>'; }
   }
   function profMenu(open) {
     const m = document.getElementById('pg-prof-menu'), b = document.getElementById('pg-prof-btn'); if (!m) return;
@@ -177,7 +187,7 @@
     const item = (tab, label, ic, badge) => `<a href="${href(ui.ev, tab)}" class="pg-nav-item${ui.tab === tab ? ' on' : ''}"${ui.tab === tab ? ' aria-current="page"' : ''} title="${esc(label)}">${icon(ic, 'text-[20px]')}<span class="pg-lbl">${esc(label)}</span>${badge || ''}</a>`;
     const pick = e
       ? `${plate(e)}<span class="pg-lbl pg-pick-txt"><b>${esc(e.name)}</b><small>${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span>`
-      : `<span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="pg-lbl pg-pick-txt"><b>Semua acara</b><small>${Evt.s.order.length} acara</small></span>`;
+      : `<span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="pg-lbl pg-pick-txt"><b>Semua acara</b><small>${visEvs().length} acara</small></span>`;
     return `<div class="pg-brand"><a href="${Router.href('/dasbor')}" class="pg-brand-link" title="Konsol Pengelola Acara"><span class="pg-brand-ic">${icon('event_available', 'text-[18px]')}</span><span class="pg-lbl flex flex-col leading-tight min-w-0"><b>Konsol Pengelola</b><small>Summarecon Mall Bandung</small></span></a>
         <button type="button" class="pg-collapse" data-collapse aria-label="Ciutkan sidebar" title="Ciutkan atau lebarkan sidebar">${icon('left_panel_close', 'text-[20px]')}</button>
         <button type="button" class="pg-close" data-drawer-close aria-label="Tutup menu">${icon('close', 'text-[20px]')}</button></div>
@@ -232,8 +242,8 @@
   }
   function pickModal() {
     drawer(false);
-    const rows = (q) => Evt.s.order.map(Evt.ev).filter((e) => !q || (e.name + ' ' + e.id + ' ' + e.cat).toLowerCase().includes(q)).map((e) => `<a href="${href(e.id, isG(ui.tab) ? 'ringkasan' : ui.tab)}" class="pg-pick-row${e.id === ui.ev ? ' on' : ''}" data-pick-ev="${e.id}" style="--c:${e.color}">${plate(e)}<span class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${e.id}, ${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-2">Tidak ada acara yang cocok.</p>';
-    const allRow = `<a href="${Router.href('/dasbor')}" class="pg-pick-row${isG(ui.tab) ? ' on' : ''}" data-pick-all><span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="min-w-0 flex-1"><b>Semua acara</b><small>${Evt.s.order.length} acara</small></span></a>`;
+    const rows = (q) => visEvs().filter((e) => !q || (e.name + ' ' + e.id + ' ' + e.cat).toLowerCase().includes(q)).map((e) => `<a href="${href(e.id, isG(ui.tab) ? 'ringkasan' : ui.tab)}" class="pg-pick-row${e.id === ui.ev ? ' on' : ''}" data-pick-ev="${e.id}" style="--c:${e.color}">${plate(e)}<span class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${e.id}, ${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-2">Tidak ada acara yang cocok.</p>';
+    const allRow = `<a href="${Router.href('/dasbor')}" class="pg-pick-row${isG(ui.tab) ? ' on' : ''}" data-pick-all><span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="min-w-0 flex-1"><b>Semua acara</b><small>${visEvs().length} acara</small></span></a>`;
     const root = UI.modal('Pilih acara', `<label class="sr-only" for="pick-q">Cari acara</label><input class="inp w-full mb-3" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off"><div class="pg-pick-list" id="pick-list">${allRow}${rows('')}</div>`, { small: true });
     const q = root.querySelector('#pick-q'), list = root.querySelector('#pick-list');
     q.addEventListener('input', () => (list.innerHTML = (q.value.trim() ? '' : allRow) + rows(q.value.trim().toLowerCase())));
@@ -250,7 +260,7 @@
       <button type="button" data-report-ev="${e.id}">${icon('picture_as_pdf', 'text-[18px]')} Unduh laporan PDF</button>
       ${e.status === 'DRAFT' && !Evt.needsApproval(e) ? `<button type="button" data-status="PUBLISHED" data-ev-id="${e.id}">${icon('publish', 'text-[18px]')} Publikasikan</button>` : ''}
       ${e.status === 'DRAFT' ? `<a href="${href(e.id, 'persetujuan')}">${icon('approval', 'text-[18px]')} Persetujuan</a>` : ''}
-      ${e.status !== 'CANCELLED' && e.status !== 'DRAFT' ? `<button type="button" class="warn" data-cancel-ev="${e.id}">${icon('event_busy', 'text-[18px]')} Batalkan acara</button>` : ''}
+      ${e.status !== 'CANCELLED' && e.status !== 'DRAFT' ? (who() === 'tenant' && live ? `<button type="button" class="warn" disabled>${icon('event_busy', 'text-[18px]')} Batalkan acara<small>Sudah ada transaksi, hubungi Tim Event Mall</small></button>` : `<button type="button" class="warn" data-cancel-ev="${e.id}">${icon('event_busy', 'text-[18px]')} Batalkan acara</button>`) : ''}
       <button type="button" class="danger" data-del-ev="${e.id}" ${live ? `disabled title="Ada ${live} pesanan aktif. Batalkan acara dulu agar peserta di-refund."` : ''}>${icon('delete', 'text-[18px]')} Hapus acara${live ? `<small>Ada ${live} pesanan aktif</small>` : ''}</button></div></details>`;
   }
   const DOT = { DRAFT: 'rgb(var(--on-surface) / .4)', PUBLISHED: 'rgb(var(--primary))', CLOSED: '#FFC72C', CANCELLED: 'rgb(var(--error))' };
@@ -276,7 +286,7 @@
 
   // ------------------------------------------------------------------ Semua acara: dasbor, transaksi, check-in & keuangan lintas acara
   const PRI = '#2F6FDB'; // primary-container, dipakai grafik SVG (atribut tidak bisa membaca var())
-  const liveEvs = () => Evt.s.order.map(Evt.ev).filter((e) => e.status !== 'CANCELLED' && phase(e) !== 'DONE');
+  const liveEvs = () => visEvs().filter((e) => e.status !== 'CANCELLED' && phase(e) !== 'DONE');
   function attentionAll() {
     const rank = { crit: 0, warn: 1, info: 2 };
     return liveEvs().flatMap((e) => attention(e).map((x) => Object.assign({ e }, x))).sort((a, b) => rank[a.sev] - rank[b.sev]);
@@ -292,14 +302,14 @@
     return `<section class="card pg-attn" aria-labelledby="attn-all-h"><h3 id="attn-all-h">Perlu tindakan <span>${a.length}</span></h3><ul>${shown.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(x.e.name)}</b> ${esc(x.text)}</span><a class="btn-ghost !py-1.5" href="${href(x.e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}${x.focus ? ` data-attn-focus="${x.focus}"` : ''}>${x.btn}</a></li>`).join('')}</ul>${a.length > shown.length ? `<p class="pg-mnote">Dan ${a.length - shown.length} hal lain. Buka acaranya untuk melihat semua.</p>` : ''}</section>`;
   }
   function globalHead() {
-    const all = Evt.s.order.map(Evt.ev);
+    const all = visEvs();
     return `<section class="pg-sign pg-sign-all"><span class="pg-sign-plate">${icon('apps', 'text-[22px]')}</span>
       <div class="pg-sign-main"><div class="pg-sign-kick"><span>Summarecon Mall Bandung</span></div><h2 class="pg-sign-h">Semua acara</h2>
         <div class="pg-sign-meta"><span>${all.length} acara</span><span>${all.filter((e) => phaseTxt(e) === 'Dijual').length} sedang dijual</span><span>${all.filter((e) => e.status === 'DRAFT').length} draft</span></div></div>
       <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-all title="Unduh laporan semua acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button><button type="button" class="pg-sign-btn main" data-new-ev>${icon('add', 'text-[18px]')}<span>Acara baru</span></button></div></section>`;
   }
   function gdash() {
-    const all = Evt.s.order.map(Evt.ev), t = Evt.now(), D = 86400000;
+    const all = visEvs(), t = Evt.now(), D = 86400000;
     const days = Array.from({ length: 14 }, (_, i) => { const x = new Date(t - (13 - i) * D); x.setHours(0, 0, 0, 0); return x.getTime(); });
     const paid = all.flatMap((e) => Evt.stats(e.id).paid);
     const perDay = days.map((d) => paid.filter((o) => o.paidAt >= d && o.paidAt < d + D).reduce((a, o) => a + o.items.length, 0));
@@ -315,13 +325,13 @@
   const gStOf = (o) => (o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status);
   function gtrxTable() {
     const q = ui.gq.trim().toLowerCase();
-    const list = Object.values(Evt.s.orders).filter((o) => Evt.ev(o.ev) && (ui.gst === 'ALL' || gStOf(o) === ui.gst) && (!q || [o.id, o.name, o.email, o.phone, Evt.ev(o.ev).name].join(' ').toLowerCase().includes(q))).sort((a, b) => b.createdAt - a.createdAt);
+    const list = Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && (ui.gst === 'ALL' || gStOf(o) === ui.gst) && (!q || [o.id, o.name, o.email, o.phone, Evt.ev(o.ev).name].join(' ').toLowerCase().includes(q))).sort((a, b) => b.createdAt - a.createdAt);
     return `<div class="font-label-md text-label-md text-on-surface-variant mb-2">${num(list.length)} transaksi</div><div class="overflow-x-auto"><table class="tbl min-w-[760px]"><thead><tr><th>Booking</th><th>Acara</th><th>Pemesan</th><th class="text-right">Tiket</th><th class="text-right">Total</th><th>Status</th><th>Dibuat</th></tr></thead><tbody>
       ${list.slice(0, 150).map((o) => { const e = Evt.ev(o.ev); return `<tr class="row" data-order="${o.id}"><td class="font-label-lg text-label-lg">${o.id}</td><td><div class="font-body-sm text-body-sm">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}</div></td><td><div class="font-body-sm text-body-sm">${esc(o.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.email)}</div></td><td class="text-right">${o.items.length}</td><td class="text-right whitespace-nowrap">${rp(o.total)}</td><td>${oChip(o)}</td><td class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">${Evt.fmtDT(o.createdAt)}</td></tr>`; }).join('') || '<tr><td colspan="7" class="text-on-surface-variant">Tidak ada transaksi yang cocok.</td></tr>'}
       </tbody></table></div>${list.length > 150 ? '<p class="pg-mnote">Menampilkan 150 transaksi terbaru. Pakai pencarian atau unduh CSV untuk semuanya.</p>' : ''}`;
   }
   function gtrx() {
-    const all = Object.values(Evt.s.orders).filter((o) => Evt.ev(o.ev)), c = {}; all.forEach((o) => { const s = gStOf(o); c[s] = (c[s] || 0) + 1; });
+    const all = Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))), c = {}; all.forEach((o) => { const s = gStOf(o); c[s] = (c[s] || 0) + 1; });
     const sts = [['ALL', 'Semua', all.length], ['PAID', 'Lunas'], ['PENDING', 'Menunggu bayar'], ['EXPIRED', 'Kedaluwarsa'], ['CANCELLED', 'Batal'], ['REFUNDED', 'Refund']];
     return `<section class="card p-5">${UI.h('Transaksi semua acara', 'Klik baris untuk melihat detail, mengubah data peserta, atau refund', `<button class="btn-ghost" id="g-csv">${icon('download', 'text-[16px]')} Unduh CSV</button>`, 'receipt_long')}
       <div class="pg-filter"><label class="pg-search">${icon('search', 'text-[18px]')}<span class="sr-only">Cari transaksi</span><input id="gq" class="inp" type="search" placeholder="Cari booking, nama, email, atau acara" value="${esc(ui.gq)}" autocomplete="off"></label>
@@ -340,7 +350,7 @@
         </tbody></table></div></section>`;
   }
   function gfin() {
-    const rows = Evt.s.order.map(Evt.ev).map((e) => ({ e, f: Evt.finance(e.id) })).filter((r) => r.f.totals.orders > 0);
+    const rows = visEvs().map((e) => ({ e, f: Evt.finance(e.id) })).filter((r) => r.f.totals.orders > 0);
     const T = rows.reduce((a, r) => { const x = r.f.totals; a.gross += x.gross; a.ref += x.refunded; a.net += x.net; a.fee += x.fee; a.mm += r.f.mismatches.length; a.share += r.f.roi.share; return a; }, { gross: 0, ref: 0, net: 0, fee: 0, mm: 0, share: 0 });
     const by = {}; rows.forEach((r) => r.f.byMethod.forEach((m) => { const b = by[m.method] || (by[m.method] = { orders: 0, net: 0 }); b.orders += m.orders; b.net += m.net; }));
     const methods = Object.entries(by).sort((a, b) => b[1].net - a[1].net);
@@ -364,12 +374,12 @@
     el.querySelectorAll('[data-gst]').forEach((b) => b.addEventListener('click', () => { ui.gst = b.dataset.gst; el.querySelectorAll('[data-gst]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); regt(); }));
     const csv = el.querySelector('#g-csv'); if (csv) csv.addEventListener('click', () => {
       const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Jumlah Tiket', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar']];
-      Object.values(Evt.s.orders).filter((o) => Evt.ev(o.ev)).forEach((o) => rows.push([o.id, Evt.ev(o.ev).name, o.name, o.email, o.phone, o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
+      Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))).forEach((o) => rows.push([o.id, Evt.ev(o.ev).name, o.name, o.email, o.phone, o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
       Evt.csv('transaksi_semua_acara.csv', rows);
     });
     const cf = el.querySelector('#g-csv-fin'); if (cf) cf.addEventListener('click', () => {
       const rows = [['ID', 'Acara', 'Transaksi', 'Bruto', 'Refund', 'Neto', 'Biaya Layanan', 'Bagi Hasil Mall', 'ROI Mall', 'Selisih']];
-      Evt.s.order.map(Evt.ev).forEach((e) => { const f = Evt.finance(e.id), x = f.totals; rows.push([e.id, e.name, x.orders, x.gross, x.refunded, x.net, x.fee, Math.round(f.roi.share), f.roi.roi == null ? '' : (f.roi.roi * 100).toFixed(1) + '%', f.mismatches.length]); });
+      visEvs().forEach((e) => { const f = Evt.finance(e.id), x = f.totals; rows.push([e.id, e.name, x.orders, x.gross, x.refunded, x.net, x.fee, Math.round(f.roi.share), f.roi.roi == null ? '' : (f.roi.roi * 100).toFixed(1) + '%', f.mismatches.length]); });
       Evt.csv('keuangan_semua_acara.csv', rows);
     });
   }
@@ -378,7 +388,7 @@
   function reportAllPdf() {
     if (!window.MiniPDF) return UI.toast('Modul PDF belum dimuat. Muat ulang halaman.', 'P2');
     const d = MiniPDF.doc(), M = 40, W = d.W - 2 * M, INK = '#1B2333', MUT = '#5B6577', LINE = '#D5DAE1', SOFT = '#F3F4F6', t = Evt.now();
-    const all = Evt.s.order.map(Evt.ev), rows = all.map((e) => { const s = Evt.stats(e.id), f = Evt.finance(e.id); return { e, s, f, cap: s.total - s.blocked }; });
+    const all = visEvs(), rows = all.map((e) => { const s = Evt.stats(e.id), f = Evt.finance(e.id); return { e, s, f, cap: s.total - s.blocked }; });
     const fit = (str, w, size, bold) => { let x = String(str); if (d.width(x, size, bold) <= w) return x; while (x.length > 1 && d.width(x + '…', size, bold) > w) x = x.slice(0, -1); return x + '…'; };
     const pc = (x) => (x * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%';
     let y = 0;
@@ -617,7 +627,7 @@
   const firstName = (n) => esc(String(n || 'Pengunjung').trim().split(/\s+/)[0]);
   function feed(evId) {
     const t = Evt.now(), since = t - 3 * DAY, out = [];
-    const evs = evId ? [Evt.ev(evId)].filter(Boolean) : Evt.s.order.map(Evt.ev);
+    const evs = evId ? [Evt.ev(evId)].filter(Boolean) : visEvs();
     const evName = (e) => (evId ? '' : esc(e.name.length > 34 ? e.name.slice(0, 34) + '…' : e.name));
     evs.forEach((e) => {
       Evt.stats(e.id).orders.forEach((o) => {
@@ -665,7 +675,7 @@
   const qtyOf = (orders) => orders.reduce((a, o) => a + o.items.length, 0);
   const sumOf = (orders) => orders.reduce((a, o) => a + o.total, 0);
   function kpiModal(key) {
-    const all = Evt.s.order.map(Evt.ev), e = Evt.ev(ui.ev), t = Evt.now();
+    const all = visEvs(), e = Evt.ev(ui.ev), t = Evt.now();
     const today = new Date(t); today.setHours(0, 0, 0, 0); const T0 = today.getTime();
     let title = '', html = '', links = [];
     if (key === 'all:events') {
@@ -785,10 +795,10 @@
     // Nama acara cukup di judul grup, tidak diulang di setiap baris menu.
     if (e) ETABS.forEach(([k, l, i]) => push('Menu · ' + e.name, { icon: i, label: l, kw: 'buka menu ' + e.id + ' ' + e.name, run: () => goTab(k) }));
     GTABS.forEach(([k, l, i]) => push('Semua acara', { icon: i, label: l, kw: 'menu global semua acara', run: () => goTab(k) }));
-    const evs = Evt.s.order.map(Evt.ev);
+    const evs = visEvs();
     evs.filter((x) => !words.length || hit(x.name + ' ' + x.id + ' ' + x.cat + ' ' + (x.org || '') + ' ' + place(x))).slice(0, words.length ? 8 : 5)
       .forEach((x) => out.push({ group: 'Acara', plate: plateOf(x), label: x.name, sub: x.id + ', ' + Evt.fmtShort(x.start) + ', ' + phaseTxt(x).toLowerCase(), run: () => goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, x.id) }));
-    if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => hit([o.id, o.name, o.email].join(' '))).slice(0, 5)
+    if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && hit([o.id, o.name, o.email].join(' '))).slice(0, 5)
       .forEach((o) => out.push({ group: 'Pesanan', icon: 'receipt_long', label: o.id + ', ' + o.name, sub: Evt.ev(o.ev) ? Evt.ev(o.ev).name : o.ev, run: () => { goTab('peserta', o.ev); orderModal(o.id); } }));
     push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: newEventModal });
     push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF semua acara', kw: 'report cetak export', run: reportAllPdf });
@@ -803,7 +813,7 @@
       push('Alat demo', { icon: 'qr_code_scanner', label: 'Uji check-in di 2 gate', sub: 'Satu QR dipindai dua gate bersamaan', kw: 'uji demo gate', run: () => demo('dual') });
     }
     push('Alat demo', { icon: 'restart_alt', label: 'Reset data contoh', sub: 'Berlaku untuk semua perangkat', kw: 'uji demo', run: resetDemo });
-    return out;
+    return out.filter((it) => it.group !== 'Alat demo' || can('demo'));
   }
   function palette() {
     if (document.getElementById('pg-cmdk')) return;
@@ -986,6 +996,16 @@
       <label class="f">Kuota<input class="inp" type="number" min="1" name="${k}quota" placeholder="100" required></label>
       <label class="f">Dijual<select class="inp" name="${k}onSale"><option value="1">Ya</option><option value="0">Tidak (undangan)</option></select></label>
       <label class="f col-span-2">Benefit<input class="inp" name="${k}perks" maxlength="80" placeholder="Opsional"></label></div>`; };
+  // Pilihan area + ketersediaan untuk rentang waktu (Pengaturan dan panel Acara baru). Area yang dipakai acara lain nonaktif.
+  function areaOptions(start, end, sel, exceptId) {
+    const opt = (a) => { const c = start > 0 && end > start ? Evt.areaClash(a.id, start, end, exceptId) : [], off = c.length && a.id !== sel;
+      return `<option value="${a.id}"${a.id === sel ? ' selected' : ''}${off ? ' disabled' : ''}>${esc(a.name)}${a.floor ? ' (' + a.floor + ')' : ''}, ${c.length ? 'dipakai ' + esc(c[0].name) + ' ' + Evt.fmtShort(c[0].start) : 'tersedia'}</option>`; };
+    return `<optgroup label="Indoor">${Evt.AREAS.filter((a) => a.kind === 'Indoor').map(opt).join('')}</optgroup><optgroup label="Outdoor & semi-outdoor">${Evt.AREAS.filter((a) => a.kind !== 'Indoor').map(opt).join('')}</optgroup>`;
+  }
+  function areaInfo(id) {
+    const a = Evt.AREAS.find((x) => x.id === id); if (!a) return '';
+    return `<div class="area-info">${icon(a.parking ? 'local_parking' : 'place', 'text-[20px]')}<div class="min-w-0"><b>${esc(a.name)}</b><span>${a.floor ? 'Lantai ' + a.floor : 'Luar gedung'}, ${a.kind.toLowerCase()}${a.size ? ', ' + a.size : ''}. Cocok untuk ${esc(a.fit.toLowerCase())}.</span>${a.parking ? '<p>Memakai lahan parkir. Kapasitas parkir berkurang selama acara, diperiksa Operasional Mall.</p>' : ''}</div></div>`;
+  }
   function kelola(e) {
     ui.dirty = false;
     if (e.status === 'CANCELLED') return `<section class="card p-8 crit-left">${UI.h('Acara dibatalkan', 'Dibatalkan ' + Evt.fmtDT(e.cancelledAt) + (e.cancelReason ? ' (' + esc(e.cancelReason) + ')' : ''), '', 'event_busy')}<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Semua pesanan lunas sudah di-refund dan peserta sudah dikabari. Data acara tidak bisa diubah lagi. Bila tidak diperlukan, hapus acara lewat menu ⋯ di atas.</p><button class="btn-ghost" data-tab="acara">${icon('event_note', 'text-[16px]')} Ke Semua acara</button></section>`;
@@ -1010,10 +1030,11 @@
           <label class="f">Kategori<select class="inp" name="cat">${catOptions(e.cat)}</select></label>
           <div class="f">Status<div class="inp pg-ro flex items-center gap-2">${evChip(e)}<span class="font-label-sm text-label-sm text-on-surface-variant">ubah lewat tombol di atas</span></div></div>
           <label class="f">Mulai acara<input class="inp" type="datetime-local" name="start" value="${dtl(e.start)}" required></label>
+          <label class="f">Selesai acara<input class="inp" type="datetime-local" name="end" value="${dtl(e.end || e.start + 3 * 3600000)}" required></label>
           <label class="f">Gate dibuka<input class="inp" type="datetime-local" name="doors" value="${dtl(e.doors)}" required></label>
           <label class="f">Penjualan dibuka<input class="inp" type="datetime-local" name="saleStart" value="${dtl(e.saleStart)}" required></label>
           <label class="f">Penjualan ditutup<input class="inp" type="datetime-local" name="saleEnd" value="${dtl(e.saleEnd)}" required></label>
-          <label class="f col-span-2">Lokasi / venue<input class="inp" name="venue" value="${esc(e.venue)}"></label>
+          ${(() => { const locked = e.approval && ['DIAJUKAN', 'DISETUJUI'].includes(e.approval.st); return `<label class="f col-span-2">Area<select class="inp" name="area" id="ev-area"${locked ? ' disabled' : ''}>${areaOptions(e.start, e.end || e.start + 3 * 3600000, e.area, e.id)}</select>${locked ? '<small class="font-label-sm text-label-sm text-on-surface-variant">Area dikunci setelah diajukan</small>' : ''}</label><div class="col-span-2" id="ev-area-info">${areaInfo(e.area)}</div>`; })()}
           <label class="f">Durasi hold kursi (menit)<input class="inp" type="number" min="2" max="30" name="holdMin" value="${e.holdMin}"></label>
           <label class="f">Maks tiket per pesanan<input class="inp" type="number" min="1" max="10" name="maxPerOrder" value="${e.maxPerOrder}"></label>
           <label class="f col-span-2">Gate check-in (pisahkan dengan koma)<input class="inp" name="gates" value="${esc(e.gates.join(', '))}"></label>
@@ -1051,6 +1072,10 @@
     const st = fe.querySelector('#save-state'), save = fe.querySelector('#ev-save'), reset = fe.querySelector('#ev-reset');
     const dirty = () => { if (ui.dirty) return; ui.dirty = true; st.textContent = 'Ada perubahan yang belum disimpan'; fe.querySelector('#savebar').classList.add('on'); save.disabled = false; reset.disabled = false; };
     fe.addEventListener('input', dirty); fe.addEventListener('change', (ev) => { if (ev.target.id !== 'poster-file') dirty(); });
+    // Area: ketersediaan diperbarui saat tanggal atau area berubah
+    const ar = fe.querySelector('#ev-area');
+    const updArea = () => { if (!ar || ar.disabled) return; const v = ar.value; ar.innerHTML = areaOptions(new Date(fe.elements.start.value).getTime(), new Date(fe.elements.end.value).getTime(), v, e.id); ar.value = v; fe.querySelector('#ev-area-info').innerHTML = areaInfo(v); };
+    ['start', 'end', 'area'].forEach((n) => fe.elements[n] && fe.elements[n].addEventListener('change', updArea));
     // format uang saat diketik
     fe.addEventListener('input', (ev) => { const x = ev.target; if (!x.matches('[data-rp]')) return; const d = String(x.value).replace(/\D/g, ''); x.value = d ? rpFmt(+d) : ''; });
     fe.addEventListener('focusout', (ev) => { const x = ev.target; if (x.matches('[data-rp]') && !x.value) x.value = rpFmt(0); });
@@ -1081,9 +1106,10 @@
       const bad = (name, text) => { const x = fe.querySelector(`[name="${name}"]`); if (x) { x.focus(); x.setAttribute('aria-invalid', 'true'); } UI.toast(text, 'P2'); return null; };
       fe.querySelectorAll('[aria-invalid]').forEach((x) => x.removeAttribute('aria-invalid'));
       if (!f.name.trim()) return bad('name', 'Nama acara wajib diisi.');
-      const patch = { name: f.name.trim(), tagline: f.tagline.trim(), cat: f.cat, venue: f.venue.trim(), desc: f.desc.trim(), img: f.img || '', start: new Date(f.start).getTime(), doors: new Date(f.doors).getTime(), saleStart: new Date(f.saleStart).getTime(), saleEnd: new Date(f.saleEnd).getTime(), holdMin: Math.min(30, Math.max(2, +f.holdMin || 8)), maxPerOrder: Math.min(10, Math.max(1, +f.maxPerOrder || 4)), gates: f.gates.split(',').map((x) => x.trim()).filter(Boolean),
+      const patch = { name: f.name.trim(), tagline: f.tagline.trim(), cat: f.cat, ...(f.area ? { area: f.area } : {}), desc: f.desc.trim(), img: f.img || '', start: new Date(f.start).getTime(), end: new Date(f.end).getTime(), doors: new Date(f.doors).getTime(), saleStart: new Date(f.saleStart).getTime(), saleEnd: new Date(f.saleEnd).getTime(), holdMin: Math.min(30, Math.max(2, +f.holdMin || 8)), maxPerOrder: Math.min(10, Math.max(1, +f.maxPerOrder || 4)), gates: f.gates.split(',').map((x) => x.trim()).filter(Boolean),
         fin: { rent: rpVal(f.finRent), revShare: Math.min(100, Math.max(0, +f.finShare || 0)) / 100, cost: rpVal(f.finCost), spend: rpVal(f.finSpend) } };
       if (!(patch.start > 0) || !(patch.doors > 0) || !(patch.saleStart > 0) || !(patch.saleEnd > 0)) return bad('start', 'Lengkapi semua tanggal dan jam.');
+      if (!(patch.end > patch.start)) return bad('end', 'Acara harus selesai setelah mulai.');
       if (patch.doors > patch.start) return bad('doors', 'Jam gate dibuka harus sebelum acara mulai.');
       if (patch.saleEnd <= patch.saleStart) return bad('saleEnd', 'Penjualan ditutup harus setelah penjualan dibuka.');
       if (!patch.gates.length) return bad('gates', 'Isi minimal satu gate check-in.');
@@ -1205,7 +1231,7 @@
         <div class="flex flex-col gap-3"><div class="inner p-3 font-body-sm text-body-sm"><b>${esc(e.name)}</b><br>${o.items.map((i) => esc(Evt.typeById(e, i.type).name) + (i.seat ? ' · ' + i.seat : '')).join('<br>')}<div class="mt-2 flex justify-between"><span>Total</span><b>${rp(o.total)}</b></div></div>
           ${o.tickets.length ? `<div class="flex flex-col gap-2">${o.tickets.map((tid) => { const t = Evt.s.tickets[tid]; return `<div class="inner p-2 flex items-center gap-3"><div class="bg-white p-1 rounded">${Evt.qrSvg(Evt.qrText(t), 64)}</div><div class="font-label-md text-label-md">${t.id}<br><span class="${t.status === 'VOID' ? 'text-rose-300' : t.checkedInAt ? 'text-emerald-300' : 'text-on-surface-variant'}">${t.status === 'VOID' ? 'VOID' : t.checkedInAt ? 'Check-in ' + Evt.fmtTime(t.checkedInAt) + ' · ' + esc(t.gate) : 'Belum check-in'}</span></div></div>`; }).join('')}</div>` : ''}
           <div class="lbl mt-1">Riwayat</div><div class="flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">${(o.log || []).map((l) => `<div>${Evt.fmtDT(l.ts)} · ${esc(l.text)}</div>`).join('') || '-'}</div>
-          <div class="flex flex-wrap gap-2 mt-2">${!isMgr() ? '' : o.status === 'PAID' ? `<button class="btn-ghost" id="o-resend">${icon('forward_to_inbox', 'text-[16px]')} Kirim ulang e-ticket</button><button class="btn-danger" id="o-refund">${icon('currency_exchange', 'text-[16px]')} Refund</button>` : ''}${o.status === 'PENDING' && o.until > Evt.now() ? `<button class="btn-ghost" id="o-cancel">${icon('cancel', 'text-[16px]')} Batalkan pesanan</button>` : ''}</div></div></div>`, { wide: true });
+          <div class="flex flex-wrap gap-2 mt-2">${!isMgr() ? '' : o.status === 'PAID' ? `<button class="btn-ghost" id="o-resend">${icon('forward_to_inbox', 'text-[16px]')} Kirim ulang e-ticket</button>${can('refund') ? `<button class="btn-danger" id="o-refund">${icon('currency_exchange', 'text-[16px]')} Refund</button>` : ''}` : ''}${o.status === 'PENDING' && o.until > Evt.now() ? `<button class="btn-ghost" id="o-cancel">${icon('cancel', 'text-[16px]')} Batalkan pesanan</button>` : ''}</div></div></div>`, { wide: true });
     if (!isMgr()) return;
     root.querySelector('#f-contact').addEventListener('submit', async (ev) => { ev.preventDefault(); const f = Object.fromEntries(new FormData(ev.target)); const holders = o.tickets.map((_, i) => f['h' + i]); if (await act(() => Evt.updateContact(id, { name: f.name, email: f.email, phone: f.phone, holders }), 'Data peserta ' + id + ' diperbarui')) UI.closeModal(); });
     const rs = root.querySelector('#o-resend'); if (rs) rs.addEventListener('click', () => act(() => Evt.resend(id), 'E-ticket dikirim ulang (simulasi)'));
@@ -1255,12 +1281,12 @@
   }
   function acaraList() {
     const q = ui.aq.trim().toLowerCase();
-    const evs = Evt.s.order.map(Evt.ev).filter((e) => (ui.ast === 'ALL' || phase(e) === ui.ast) && (!q || [e.name, e.id, e.cat, e.org || '', e.venue].join(' ').toLowerCase().includes(q)));
+    const evs = visEvs().filter((e) => (ui.ast === 'ALL' || phase(e) === ui.ast) && (!q || [e.name, e.id, e.cat, e.org || '', e.venue].join(' ').toLowerCase().includes(q)));
     return evs.length ? evs.map(acaraRow).join('')
-      : `<div class="pg-empty">${icon('search_off', 'text-[28px]')}<p>${Evt.s.order.length ? 'Tidak ada acara yang cocok dengan saringan.' : 'Belum ada acara. Klik <b>Acara baru</b> untuk membuat.'}</p>${q || ui.ast !== 'ALL' ? '<button type="button" class="btn-ghost" data-clear-filter>Hapus saringan</button>' : ''}</div>`;
+      : `<div class="pg-empty">${icon('search_off', 'text-[28px]')}<p>${visEvs().length ? 'Tidak ada acara yang cocok dengan saringan.' : 'Belum ada acara. Klik <b>Acara baru</b> untuk membuat.'}</p>${q || ui.ast !== 'ALL' ? '<button type="button" class="btn-ghost" data-clear-filter>Hapus saringan</button>' : ''}</div>`;
   }
   function acaraKpi() {
-    const evs = Evt.s.order.map(Evt.ev);
+    const evs = visEvs();
     const tot = evs.reduce((a, e) => { const s = Evt.stats(e.id); a.sold += s.sold; a.rev += s.revenue; return a; }, { sold: 0, rev: 0 });
     return `${UI.kpi({ key: K('all:events'), label: 'Total acara', icon: 'event_note', value: evs.length, foot: evs.filter((e) => phase(e) === 'PUBLISHED').length + ' dijual, ' + evs.filter((e) => e.status === 'DRAFT').length + ' draft' })}
       ${UI.kpi({ key: K('all:sold'), label: 'Tiket terjual', icon: 'confirmation_number', value: num(tot.sold), foot: 'semua acara' })}
@@ -1268,7 +1294,7 @@
       ${(() => { const d0 = new Date(Evt.now()); d0.setHours(0, 0, 0, 0); const n = Object.values(Evt.s.tickets).filter((k) => k.checkedInAt >= d0.getTime()).length; return UI.kpi({ key: K('all:ck'), label: 'Check-in hari ini', icon: 'how_to_reg', value: num(n), foot: 'pengunjung masuk lewat gate' }); })()}`;
   }
   function acara() {
-    const all = Evt.s.order.map(Evt.ev), c = {}; all.forEach((e) => { const p = phase(e); c[p] = (c[p] || 0) + 1; });
+    const all = visEvs(), c = {}; all.forEach((e) => { const p = phase(e); c[p] = (c[p] || 0) + 1; });
     return `
     <section class="card p-4 sm:p-5">
       <div class="pg-list-head"><div class="min-w-0"><h2 class="font-headline-sm text-headline-sm">Acara di Summarecon Mall Bandung</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Acara yang dipublikasikan langsung tampil di portal pengunjung dan Command Center.</p></div><button type="button" class="btn shrink-0" id="new-ev">${icon('add')} Acara baru</button></div>
@@ -1299,14 +1325,14 @@
   // ------------------------------------------------------------------ tab Command Center: portofolio event 360 (hanya baca)
   function portofolio() {
     const t = Evt.now(), D = 86400000; const d0 = new Date(t); d0.setHours(0, 0, 0, 0);
-    const evs = Evt.s.order.map(Evt.ev).filter((e) => e.status !== 'DRAFT');
+    const evs = visEvs().filter((e) => e.status !== 'DRAFT');
     const st = evs.map((e) => ({ e, s: Evt.stats(e.id), an: EvtCheckin.anomalies(e.id).length, rep: Evt.s.reports.filter((r) => r.ev === e.id && !r.ticketId).length }));
     const active = st.filter((x) => x.e.status !== 'CANCELLED' && x.e.start > t - 6 * 3600000);
     const ckToday = Object.values(Evt.s.tickets).filter((k) => k.checkedInAt >= d0.getTime()).length;
     const sum = (f) => st.reduce((a, x) => a + f(x), 0);
     const anomN = sum((x) => x.an), repN = sum((x) => x.rep);
     const up = active.filter((x) => x.e.start < t + 30 * D).sort((a, b) => a.e.start - b.e.start);
-    const draft = Evt.s.order.map(Evt.ev).filter((e) => e.status === 'DRAFT').length;
+    const draft = visEvs().filter((e) => e.status === 'DRAFT').length;
     return `<div class="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-5">
       ${UI.kpi({ label: 'Acara aktif', icon: 'event_available', value: active.length, foot: draft + ' draft disiapkan pengelola' })}
       ${UI.kpi({ label: 'Tiket terjual', icon: 'confirmation_number', value: num(sum((x) => x.s.sold)), foot: 'seluruh acara dipublikasikan' })}
@@ -1388,7 +1414,7 @@
     return { ringkasan, kursi, kelola, pengaturan: kelola, persetujuan, peserta, keuangan, checkin, notif, komunikasi: notif, gate }[ui.tab](e, s);
   }
   function staleBanner() {
-    return isMgr() && Evt.demoStale() ? `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-stale-banner>${icon('history', 'text-amber-300 text-[20px]')}<span class="flex-1 min-w-[220px]"><b class="text-amber-300">Data contoh dibuat ${Evt.fmtDT(Evt.s.seededAt)}.</b> ${Evt.demoOld() ? 'Aplikasi sudah punya data contoh yang lebih baru (lebih banyak acara dan foto). Reset agar beranda pengunjung menampilkannya.' : 'Jadwal acara contoh sudah lewat, jadi penjualan dan uji tekan bisa ditolak. Reset data sebelum demo.'}</span><button class="btn-ghost" data-stale-reset>${icon('restart_alt', 'text-[16px]')} Reset sekarang</button></div>` : '';
+    return isMgr() && can('reset') && Evt.demoStale() ? `<div class="card p-3 mb-4 border border-amber-500/30 bg-amber-500/10 font-body-sm text-body-sm flex flex-wrap items-center gap-2" data-stale-banner>${icon('history', 'text-amber-300 text-[20px]')}<span class="flex-1 min-w-[220px]"><b class="text-amber-300">Data contoh dibuat ${Evt.fmtDT(Evt.s.seededAt)}.</b> ${Evt.demoOld() ? 'Aplikasi sudah punya data contoh yang lebih baru (lebih banyak acara dan foto). Reset agar beranda pengunjung menampilkannya.' : 'Jadwal acara contoh sudah lewat, jadi penjualan dan uji tekan bisa ditolak. Reset data sebelum demo.'}</span><button class="btn-ghost" data-stale-reset>${icon('restart_alt', 'text-[16px]')} Reset sekarang</button></div>` : '';
   }
   function header() {
     const tabs = TABS[ROLE]; const global = GLOBAL_TABS.includes(ui.tab);
@@ -1405,7 +1431,7 @@
       <div class="pagebar-row" role="tablist">${tabs.map(([k, l, i]) => `<button class="chip-btn !py-2 !px-3 ${ui.tab === k ? 'on' : ''}" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${icon(i, 'text-[16px]')} ${l}</button>`).join('')}</div></section>`;
     if (global) return h;
     const e = Evt.ev(ui.ev); const sale = Evt.saleState(e);
-    h += `<div class="flex flex-wrap gap-2 mb-3">${Evt.s.order.filter((id) => isMgr() || Evt.ev(id).status !== 'DRAFT').map((id) => { const x = Evt.ev(id); return `<button class="chip-btn ${id === ui.ev ? 'on' : ''}" data-ev="${id}" title="${esc(x.name)}">${id} · ${esc(x.name.length > 28 ? x.name.slice(0, 28) + '…' : x.name)}${x.status === 'CANCELLED' ? ' (batal)' : x.status === 'DRAFT' ? ' (draft)' : ''}</button>`; }).join('')}</div>
+    h += `<div class="flex flex-wrap gap-2 mb-3">${Evt.s.order.filter((id) => seen(Evt.ev(id)) && (isMgr() || Evt.ev(id).status !== 'DRAFT')).map((id) => { const x = Evt.ev(id); return `<button class="chip-btn ${id === ui.ev ? 'on' : ''}" data-ev="${id}" title="${esc(x.name)}">${id} · ${esc(x.name.length > 28 ? x.name.slice(0, 28) + '…' : x.name)}${x.status === 'CANCELLED' ? ' (batal)' : x.status === 'DRAFT' ? ' (draft)' : ''}</button>`; }).join('')}</div>
     <section class="card p-5 mb-5 flex flex-wrap items-center gap-5" style="background:linear-gradient(110deg, ${e.color}22, rgb(var(--surface-container)) 55%)">
       <div class="flex-1 min-w-[280px]"><div class="font-label-sm text-label-sm text-secondary">${esc(e.cat)} · ${e.id}</div><h2 class="font-headline-lg text-headline-lg">${esc(e.name)}</h2><div class="font-body-sm text-body-sm text-on-surface-variant">${Evt.fmtDate(e.start)} · ${Evt.fmtTime(e.start)} WIB · gate ${Evt.fmtTime(e.doors)} · ${esc(e.venue)}</div></div>
       <div class="flex flex-col items-end gap-1"><div class="flex gap-2">${evChip(e)}${UI.chip(esc(sale.label), sale.open ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/20 text-slate-300')}</div><span class="font-label-sm text-label-sm text-on-surface-variant">Jual ${Evt.fmtDT(e.saleStart)} sampai ${Evt.fmtDT(e.saleEnd)}, hold ${e.holdMin} mnt, maks ${e.maxPerOrder}/pesanan</span></div></section>`;
@@ -1415,7 +1441,7 @@
     const tabs = TABS[ROLE].map((x) => x[0]);
     if (!tabs.includes(ui.tab)) ui.tab = tabs[0];
     if (isMgr() && !isG(ui.tab) && !Evt.ev(ui.ev)) { ui.tab = 'gdash'; ui.ev = null; } // acara dihapus (di perangkat lain)
-    const pool = Evt.s.order.filter((id) => isMgr() || Evt.ev(id).status !== 'DRAFT');
+    const pool = Evt.s.order.filter((id) => seen(Evt.ev(id)) && (isMgr() || Evt.ev(id).status !== 'DRAFT'));
     if (!pool.includes(ui.ev)) ui.ev = pool[0] || null;
     if (!ui.ev && !isG(ui.tab)) ui.tab = tabs[0]; // tidak ada acara → hanya tab lintas acara
   }
@@ -1425,7 +1451,7 @@
     normalize();
     if (ui.tab !== 'pengaturan') ui.dirty = false; // form Pengaturan tidak tampil lagi: tidak ada yang perlu dijaga
     if (isMgr()) {
-      const pf = profile(); Evt.setActor({ name: pf.name, role: pf.title }); // pelaku yang tercatat di log aktivitas
+      Evt.setActor(actorOf()); // pelaku yang tercatat di log aktivitas
       const canon = evUrl(ui.ev, ui.tab); if (Router.path() !== canon) Router.replace(canon);
       shell(true);
       lastHead = isG(ui.tab) ? globalHead() : mgrHead(Evt.ev(ui.ev));
@@ -1573,7 +1599,7 @@
     document.addEventListener('keydown', (ev) => { if (ev.key !== 'Escape') return; if (document.body.classList.contains('pg-open')) drawer(false); closeMenus(); });
     document.addEventListener('click', (ev) => { if (!ev.target.closest('.pg-more')) closeMenus(); });
     window.matchMedia('(max-width: 1023px)').addEventListener('change', () => drawer(false));
-    if (window.SMAuth) SMAuth.me().then((m) => { const a = m && m.accounts && m.accounts.pengelola; if (a) { acct = a; renderProfile(); } });
+    if (window.SMAuth) SMAuth.me().then((m) => { const r = m && m.active && m.active['/pengelola'], a = r && m.accounts[r]; if (a) { acct = a; acctRole = r; renderProfile(); redraw(); } });
   }
   function mount(root, role) {
     ROLE = role === 'pengelola' ? 'pengelola' : 'mall'; host = root;

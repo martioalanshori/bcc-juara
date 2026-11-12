@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Konsol Pengelola Acara · Summarecon Mall Bandung</title>
   <!-- Path 2 · Pengelola / Event Organizer. Rute: /pengelola/acara, /pengelola/e/EVT-01/<menu> (app/js/event/admin.js). -->
-  <script src="/app/js/core/theme.js?v=67"></script>
-  <script src="/app/js/core/router.js?v=67"></script>
+  <script src="/app/js/core/theme.js?v=68"></script>
+  <script src="/app/js/core/router.js?v=68"></script>
   <script>try { if (localStorage.getItem('smicc-pengelola-nav') === 'mini' || (localStorage.getItem('smicc-pengelola-nav') == null && innerWidth < 1280)) document.documentElement.classList.add('pg-mini'); } catch (e) { /* tanpa storage */ }</script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=67" />
-  <link rel="stylesheet" href="/app/css/app.css?v=67" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=68" />
+  <link rel="stylesheet" href="/app/css/app.css?v=68" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased pg-body">
   <a href="#view" class="pg-skip">Lewati ke konten</a>
@@ -28,13 +28,14 @@
       </div>
       <button type="button" class="pg-search-btn" id="pg-cmdk-btn" aria-keyshortcuts="Control+K Meta+K" aria-haspopup="dialog" title="Cari acara, menu, atau kode booking"><span class="material-symbols-outlined text-[20px]">search</span><span class="pg-search-txt">Cari</span><kbd data-kbd>Ctrl K</kbd></button>
       <div class="flex items-center gap-1 shrink-0">
+        <span class="id-chip" id="pg-id-chip" hidden></span>
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
         <div class="pg-prof" id="pg-prof">
           <button type="button" class="pg-prof-btn" id="pg-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="pg-prof-menu"><span class="pg-av" id="pg-av">EO</span><span class="pg-prof-name" id="pg-prof-name">Pengelola acara</span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
           <div class="pg-prof-menu" id="pg-prof-menu" hidden>
             <div class="pg-prof-head"><b id="pg-prof-n2">Pengelola acara</b><small id="pg-prof-sub"></small></div>
             <button type="button" id="pg-prof-edit"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
-            <button type="button" data-logout="pengelola" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
+            <button type="button" data-logout="pengelola tenant" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
           </div>
         </div>
       </div>
@@ -46,16 +47,16 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-4 sm:right-6 z-[90] flex flex-col gap-2 items-end pg-toasts"></div>
 
-  <script src="/app/vendor/qrcode.js?v=67"></script>
-  <script src="/app/vendor/jsQR.js?v=67"></script>
-  <script src="/app/js/command-center/sop-data.js?v=67"></script>
-  <script src="/app/js/core/ui.js?v=67"></script>
-  <script src="/app/js/core/pdf.js?v=67"></script>
-  <script src="/app/js/core/auth.js?v=67"></script>
-  <script src="/app/js/event/engine.js?v=67"></script>
-  <script src="/app/js/event/approval-ui.js?v=67"></script>
-  <script src="/app/js/event/checkin-ui.js?v=67"></script>
-  <script src="/app/js/event/admin.js?v=67"></script>
+  <script src="/app/vendor/qrcode.js?v=68"></script>
+  <script src="/app/vendor/jsQR.js?v=68"></script>
+  <script src="/app/js/command-center/sop-data.js?v=68"></script>
+  <script src="/app/js/core/ui.js?v=68"></script>
+  <script src="/app/js/core/pdf.js?v=68"></script>
+  <script src="/app/js/core/auth.js?v=68"></script>
+  <script src="/app/js/event/engine.js?v=68"></script>
+  <script src="/app/js/event/approval-ui.js?v=68"></script>
+  <script src="/app/js/event/checkin-ui.js?v=68"></script>
+  <script src="/app/js/event/admin.js?v=68"></script>
   <script>EvtAdmin.mount(document.getElementById('view'), 'pengelola');</script>
 </body>
 </html>

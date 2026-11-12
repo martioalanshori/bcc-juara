@@ -1592,3 +1592,22 @@ html[data-theme="dark"] .pv-logo img { mix-blend-mode: normal; }
 .snt-tag { padding: 1px 7px; border-radius: 999px; border: 1px solid rgb(var(--outline-variant)); }
 @media (max-width: 1023px) { .snt-src { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 479px) { .snt-src { grid-template-columns: minmax(0, 1fr); } }
+
+/* Chip identitas akun di header (konsol pengelola & Command Center) */
+.id-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 320px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; line-height: 16px; border: 1px solid rgb(var(--outline-variant)); background: rgb(var(--surface-container)); color: rgb(var(--on-surface)); }
+.id-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.id-chip b { font-weight: 600; }
+.id-chip.tenant { border-color: rgb(16 185 129 / .45); background: rgb(16 185 129 / .1); }
+.id-chip.tenant .material-symbols-outlined { color: #059669; }
+.id-chip.mall .material-symbols-outlined, .id-chip.cc .material-symbols-outlined { color: rgb(var(--primary)); }
+.id-chip.event { border-color: rgb(var(--primary) / .45); background: rgb(var(--primary) / .1); }
+.id-chip.ops { border-color: rgb(245 158 11 / .5); background: rgb(245 158 11 / .12); }
+.id-chip.event .material-symbols-outlined { color: rgb(var(--primary)); }
+.id-chip.ops .material-symbols-outlined { color: #b7791f; }
+@media (max-width: 767px) { .id-chip span { display: none; } .id-chip { padding: 6px; } }
+/* Info area di form acara */
+.area-info { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgb(var(--outline-variant)); background: rgb(var(--on-surface) / .025); font-size: 13px; line-height: 18px; }
+.area-info > .material-symbols-outlined { color: rgb(var(--primary)); }
+.area-info b { display: block; font-weight: 600; }
+.area-info span { display: block; color: rgb(var(--on-surface-variant)); }
+.area-info p { margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: rgb(245 158 11 / .12); color: rgb(var(--on-surface)); }
