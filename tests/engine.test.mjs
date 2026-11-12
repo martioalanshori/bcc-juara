@@ -311,11 +311,11 @@ test('denah terkunci kategori: kursi kategori lain disabled, kursi milik sendiri
   assert.ok(!/ disabled/.test(Evt.seatMap('EVT-01', { only: a.id })), 'tanpa lock (konsol pengelola): hanya disorot, tidak dikunci');
 });
 
-test('data contoh: 27 acara di 5 area mal, foto demo ada di disk, beberapa hampir habis', async () => {
+test('data contoh: 28 acara di 5 area mal, foto demo ada di disk, beberapa hampir habis', async () => {
   const { existsSync } = await import('node:fs');
   const { Evt } = await loadEvt();
   const evs = Evt.s.order.map(Evt.ev);
-  assert.equal(evs.length, 27);
+  assert.equal(evs.length, 28);
   assert.equal(new Set(evs.map((e) => e.venue.split(',')[0])).size, 5, 'tersebar di 5 area');
   for (const e of evs) {
     assert.ok(e.img, e.id + ' punya foto');
@@ -348,4 +348,56 @@ test('saveEvent: kuota di bawah tiket terjual ditolak dan tidak ada yang tersimp
   await assert.rejects(Evt.saveEvent('EVT-01', { patch: { tagline: 'Tidak boleh tersimpan' }, types: { FES: { quota: sold - 1 } } }), /Kuota/);
   assert.notEqual(Evt.ev('EVT-01').tagline, 'Tidak boleh tersimpan');
   await assert.rejects(Evt.saveEvent('EVT-01', { add: [{ name: '', quota: 10 }] }), /nama dan kuota/);
+});
+
+// ------------------------------------------------------------------ persetujuan acara & log jejak
+test('persetujuan: acara baru tidak bisa dipublikasikan sebelum Divisi Event dan Operasional Mall setuju', async () => {
+  const { Evt, clock } = await loadEvt();
+  Evt.setActor({ name: 'Sari', role: 'Penyelenggara' });
+  const id = await Evt.addEvent({ name: 'Expo Uji', template: 'HALL', start: clock.now + 20 * 86400000 });
+  await assert.rejects(Evt.updateEvent(id, { status: 'PUBLISHED' }), /belum disetujui/);
+  await assert.rejects(Evt.submitApproval(id), /Lengkapi dokumen/);
+  for (const d of Evt.DOCS.filter((x) => x.req)) await Evt.uploadDoc(id, d.id, { name: d.id + '.pdf', size: 1000 });
+  await Evt.submitApproval(id, 'Mohon ditinjau');
+  await assert.rejects(Evt.uploadDoc(id, 'k3', { name: 'k3.pdf' }), /terkunci/);
+  await assert.rejects(Evt.decide(id, 'ops', true), /Divisi Event lebih dulu/);
+  await assert.rejects(Evt.decide(id, 'event', false, ''), /alasan revisi/);
+  clock.now += 2 * 3600000;
+  Evt.setActor({ name: 'Andi', role: 'Divisi Event' });
+  assert.equal(await Evt.decide(id, 'event', false, 'Lampirkan rencana K3'), 'REVISI');
+  assert.equal(Evt.ev(id).approval.st, 'REVISI');
+  Evt.setActor({ name: 'Sari', role: 'Penyelenggara' });
+  await Evt.uploadDoc(id, 'k3', { name: 'k3.pdf', size: 500 });
+  await Evt.submitApproval(id);
+  assert.equal(Evt.ev(id).approval.round, 2);
+  Evt.setActor({ name: 'Andi', role: 'Divisi Event' });
+  assert.equal(await Evt.decide(id, 'event', true), 'NEXT');
+  clock.now += 26 * 3600000;
+  Evt.setActor({ name: 'Budi', role: 'Operasional Mall' });
+  assert.equal(await Evt.decide(id, 'ops', true, 'Parkir aman'), 'DONE');
+  await Evt.updateEvent(id, { status: 'PUBLISHED' });
+  const log = Evt.ev(id).audit, acts = log.map((x) => x.act);
+  for (const a of ['BUAT', 'DOKUMEN', 'AJUKAN', 'REVISI', 'SETUJU', 'DISETUJUI', 'STATUS']) assert.ok(acts.includes(a), 'log memuat ' + a);
+  const ops = log.find((x) => x.act === 'SETUJU' && x.role === 'Operasional Mall');
+  assert.equal(ops.by, 'Budi'); assert.equal(ops.note, 'Parkir aman'); assert.match(ops.text, /1 hari 2 jam/);
+  assert.equal(JSON.stringify(Evt.verifyAudit(Evt.ev(id))), JSON.stringify({ ok: true, n: log.length }));
+});
+
+test('log jejak: perubahan pengaturan tercatat dengan nilai lama dan baru, entri yang diubah diam-diam terdeteksi', async () => {
+  const { Evt } = await loadEvt();
+  const e = Evt.ev('EVT-02'), ty = e.types[0];
+  await Evt.saveEvent('EVT-02', { patch: { name: 'Demo Day Baru' }, types: { [ty.id]: { price: ty.price + 10000 } } });
+  const last = Evt.ev('EVT-02').audit.at(-1);
+  assert.equal(last.act, 'UBAH');
+  assert.match(last.text, /nama \(.+ → Demo Day Baru\)/);
+  assert.match(last.text, new RegExp('harga ' + ty.name));
+  await Evt.saveEvent('EVT-02', { patch: { name: 'Demo Day Baru' } });
+  assert.equal(Evt.ev('EVT-02').audit.length, 1, 'simpan tanpa perubahan tidak menambah log');
+  const seeded = Evt.ev('EVT-28');
+  assert.equal(seeded.approval.st, 'DIAJUKAN');
+  assert.equal(Evt.currentStep(seeded).id, 'ops');
+  assert.ok(Evt.verifyAudit(seeded).ok);
+  const forged = JSON.parse(JSON.stringify(seeded));
+  forged.audit[1].text = 'diubah';
+  assert.equal(JSON.stringify(Evt.verifyAudit(forged)), JSON.stringify({ ok: false, n: forged.audit.length, at: 1 }));
 });

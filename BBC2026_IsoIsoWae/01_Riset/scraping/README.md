@@ -21,18 +21,22 @@ Jalankan dari folder `scraping/` (Windows, Git Bash / PowerShell):
 python -m venv .venv
 .venv/Scripts/python -m pip install playwright
 
-# 2. Ambil ulasan (browser Chrome akan terbuka)
-.venv/Scripts/python scrape_gmaps.py --max 500
+# 2. Ambil SEMUA ulasan (Chrome asli akan terbuka)
+.venv/Scripts/python scrape_gmaps.py
+#    --max 500 kalau mau dibatasi.
 #    Pertama kali: Google Maps menyembunyikan ulasan kalau belum login.
 #    Login Google di jendela Chrome yang terbuka, lalu tekan Enter di terminal.
+#    Chrome ini dibuka sebagai Chrome biasa (bukan otomatisasi), jadi login tidak
+#    ditolak "Browser atau aplikasi ini mungkin tidak aman".
 #    Sesi login disimpan di .chrome-profile/ (sudah di .gitignore, JANGAN di-commit).
+#    Berikutnya boleh pakai --headless.
 
 # 3. Analisis
 .venv/Scripts/python analisis.py data/ulasan_gmaps.csv
 ```
 
 Hasil:
-- `data/ulasan_gmaps.csv`: data mentah (nama, rating, tanggal, teks)
+- `data/ulasan_gmaps.csv`: data mentah (nama, rating, tanggal, teks, balasan pengelola). Disimpan bertahap tiap 25 halaman, jadi kalau terputus data yang sudah terambil tidak hilang.
 - `data/hasil_analisis.md`: ringkasan angka per topik, keluhan saat periode event, contoh kutipan, dan kalimat siap pakai untuk deck
 - `data/hasil_berlabel.csv`: semua data dengan label topik, bisa dicek manual di Excel
 
@@ -51,8 +55,11 @@ Platform ini butuh login, jadi kumpulkan manual:
 
 ## Catatan
 
-- **Tanggal Google Maps hanya perkiraan.** Google menampilkan "2 bulan lalu", bukan tanggal pasti, jadi kolom `tanggal` dihitung mundur dari hari scraping.
+- **Cara kerja.** Script membuka Chrome asli dengan port debug 9222 dan profil `.chrome-profile`, lalu memanggil API internal Maps (`listugcposts`) dari tab yang sudah login, 20 ulasan per permintaan sampai habis (7.000 ulasan sekitar 5-10 menit). Kalau formatnya berubah, script otomatis kembali ke cara scroll (lebih lambat). Paksa cara scroll dengan `--scroll`.
+- **Chrome utama tidak bisa dipakai langsung.** Sejak Chrome 136, port debug diabaikan untuk profil Chrome bawaan, jadi dipakai profil terpisah yang cukup login sekali. Kalau Anda sudah membuka Chrome sendiri dengan `--remote-debugging-port=9222 --user-data-dir=...`, sambungkan dengan `--cdp http://127.0.0.1:9222`.
+- **Tanggal.** Lewat API, kolom `tanggal` adalah tanggal pasti dari Google. Lewat cara scroll hanya perkiraan dari teks "2 bulan lalu".
+- **Jumlah bisa kurang dari angka di Google.** Angka ulasan di Maps ikut menghitung ulasan yang disembunyikan Google. Ulasan hanya-rating tetap masuk CSV dengan teks kosong (analisis hanya memakai yang ada teksnya).
 - **Label otomatis berbasis kata kunci.** Cek ulang `hasil_berlabel.csv` sebelum angkanya dipakai di deck. Kata kunci bisa ditambah di `TOPIK` dan `NEGATIF` di `analisis.py`.
 - **Kalau script berhenti** (Google mengubah tampilan, muncul captcha), jalankan tanpa `--headless` dan selesaikan di jendela browser.
-- Ambil secukupnya untuk riset (ratusan, bukan puluhan ribu) dan jangan publikasikan nama pengulas di deck.
+- Jangan publikasikan nama pengulas di deck.
 - Catat tanggal scraping di `05_Log` sebagai bukti proses riset.

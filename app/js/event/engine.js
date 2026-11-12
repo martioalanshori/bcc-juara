@@ -74,7 +74,7 @@
   function prng(seed) { return () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
   // Versi data contoh. Naikkan saat seed() / seedMore() berubah agar Konsol Pengelola menyarankan Reset pada data lama.
-  const SAMPLE_VER = 4;
+  const SAMPLE_VER = 5;
   function seed() {
     const t = Date.now();
     const H = 3600000, D = 24 * H;
@@ -261,6 +261,10 @@
       open({ id: 'EVT-27', name: 'Kelas Fotografi Ponsel', tagline: 'Komposisi, cahaya, dan edit cepat di ponsel', cat: 'Workshop', area: 'expo', img: 'ev-foto', color: '#2563eb', start: day(2, 16), max: 2, org: 'Kelas Foto Gedebage',
         desc: 'Kelas 2 jam: teori singkat lalu praktik memotret di sekitar mal. Bawa ponsel dengan baterai penuh.',
         types: [fes('KLS', 'Peserta Kelas', 95000, 30, 'Materi & sertifikat digital', '#2563eb')] }),
+      // EVT-28: draft dari penyelenggara eksternal yang masih menunggu persetujuan Operasional Mall (contoh alur approval)
+      open({ id: 'EVT-28', name: 'Expo UMKM Gedebage Berdaya', tagline: '80 stan UMKM kriya, fesyen, dan kuliner Bandung Timur', cat: 'Pameran', area: 'expo', img: 'ev-batik', color: '#0891b2', start: day(12, 10), saleStart: day(2, 10), max: 4, org: 'Komunitas UMKM Gedebage',
+        desc: 'Pameran dan bazar UMKM tiga hari di Exhibition Hall. Masuk gratis dengan registrasi agar jumlah pengunjung tercatat.',
+        types: [fes('RGS', 'Registrasi Gratis', 0, 600, 'Akses pameran, satu tiket satu orang', '#0891b2')] }),
     ];
     evs.forEach((e) => { s.events[e.id] = e; s.order.push(e.id); s.seats[e.id] = {}; s.qholds[e.id] = []; });
     Object.assign(s.events['EVT-01'], { img: IMG('ev-akustik'), org: ORG_MALL });
@@ -293,9 +297,27 @@
     sell(E('EVT-24'), 'KLS', 10);
     sell(E('EVT-26'), 'PST', 6);
     sell(E('EVT-27'), 'KLS', 8);
+    seedApproval(s.events['EVT-28'], t);
     mkOrder(E('EVT-01'), [{ type: 'FES' }, { type: 'FES' }], { who: DEMO_VISITOR, paidAt: t - 2 * D });
     mkOrder(E('EVT-19'), [{ type: 'RGS' }], { who: DEMO_VISITOR, paidAt: t - 5 * H });
     demoFollowUps(s, t);
+  }
+  // Riwayat persetujuan contoh untuk EVT-28: dibuat, dokumen diunggah, diajukan, Divisi Event setuju, kini menunggu
+  // Operasional Mall. Ditulis lewat audit() yang sama agar rantai hash-nya valid.
+  function seedApproval(e, t) {
+    const H = 3600000, D = 24 * H, eo = { name: 'Sari Wulandari', role: 'Penyelenggara' }, dv = { name: 'Andi Firmansyah', role: 'Divisi Event' };
+    e.status = 'DRAFT'; e.createdAt = t - 6 * D; e.approval = newApproval();
+    const ap = e.approval;
+    audit(e, t - 6 * D, 'BUAT', 'Acara dibuat sebagai draft oleh Komunitas UMKM Gedebage', { who: eo });
+    [['proposal', 'Proposal_Expo_UMKM_v2.pdf', 1840000], ['layout', 'Denah_ExhibitionHall_80stan.pdf', 920000], ['izin', 'Surat_Izin_Keramaian_Polsek.pdf', 410000]].forEach(([id, name, size], i) => {
+      const at = t - 6 * D + (i + 1) * H; ap.docs[id] = { name, size, at, by: eo.name };
+      audit(e, at, 'DOKUMEN', 'Mengunggah ' + lc(DOCS.find((x) => x.id === id).name) + ': ' + name, { who: eo });
+    });
+    const sub = t - 5 * D - 2 * H, ok1 = t - 3 * D + 3 * H;
+    ap.st = 'DIAJUKAN'; ap.round = 1; ap.submittedAt = sub; ap.firstAt = sub;
+    ap.steps = { event: { st: 'SETUJU', since: sub, at: ok1, by: dv.name, note: 'Jadwal tidak bentrok dengan acara mal. Kapasitas 600 per hari sesuai Exhibition Hall.' }, ops: { st: 'MENUNGGU', since: ok1 } };
+    audit(e, sub, 'AJUKAN', 'Pengajuan dikirim ke Divisi Event, 3 dokumen terlampir', { who: eo });
+    audit(e, ok1, 'SETUJU', 'Divisi Event menyetujui setelah ditinjau ' + durTxt(ok1 - sub) + ', diteruskan ke Operasional Mall', { who: dv, note: ap.steps.event.note });
   }
   // Contoh "Perlu tindakan" di konsol pengelola yang tidak hilang sendiri (pesanan tertunda & anomali gate kedaluwarsa
   // dalam hitungan menit): laporan gate EVT-01 yang belum ditangani (lebih tua dari 30 menit, jadi jembatan CC tidak
@@ -586,6 +608,56 @@
       ${serverHint ? '<button class="btn-ghost !py-1" onclick="location.reload()">Muat ulang</button>' : ''}</div>`;
   }
 
+  // ------------------------------------------------------------------ persetujuan acara & log jejak (audit trail)
+  // Alur dari wawancara PIC Event (12 Nov 2026): penyelenggara mengajukan dan mengunggah dokumen -> Divisi Event ->
+  // Operasional Mall -> baru boleh dipublikasikan. Semua langkah (dan perubahan penting lain pada acara) dicatat di
+  // e.audit: hanya ditambah, tidak pernah diubah. Tiap entri menyimpan hash entri sebelumnya (rantai hash), jadi entri
+  // yang diubah atau dihapus diam-diam terdeteksi oleh verifyAudit(). Prototype: hash cyrb53 di browser (produksi:
+  // HMAC di server). Dokumen hanya dicatat metadatanya (nama, ukuran), isi file tidak disimpan di state.
+  const APPROVERS = [{ id: 'event', name: 'Divisi Event' }, { id: 'ops', name: 'Operasional Mall' }];
+  const DOCS = [
+    { id: 'proposal', name: 'Proposal & rundown acara', req: true },
+    { id: 'layout', name: 'Denah area & perkiraan jumlah pengunjung', req: true },
+    { id: 'izin', name: 'Surat izin keramaian', req: true },
+    { id: 'k3', name: 'Rencana keamanan & K3', req: false },
+  ];
+  const AP_ST = { DRAFT: 'Belum diajukan', DIAJUKAN: 'Dalam peninjauan', REVISI: 'Perlu revisi', DISETUJUI: 'Disetujui' };
+  let actor = { name: 'Pengelola acara', role: 'Penyelenggara' };
+  const newApproval = () => ({ st: 'DRAFT', round: 0, steps: {}, docs: {} });
+  const auditHash = (prev, x) => hash([prev, x.ts, x.by, x.role, x.act, x.text, x.note || ''].join('|'));
+  function audit(e, t, act, text, opts) {
+    const w = (opts && opts.who) || actor, log = e.audit || (e.audit = []);
+    const x = { ts: t, by: w.name, role: w.role, act, text };
+    if (opts && opts.note) x.note = String(opts.note).slice(0, 300);
+    x.h = auditHash(log.length ? log[log.length - 1].h : '-', x);
+    log.push(x);
+  }
+  function verifyAudit(e) {
+    const log = (e && e.audit) || []; let prev = '-';
+    for (let i = 0; i < log.length; i++) { if (log[i].h !== auditHash(prev, log[i])) return { ok: false, n: log.length, at: i }; prev = log[i].h; }
+    return { ok: true, n: log.length };
+  }
+  const lc = (x) => x[0].toLowerCase() + x.slice(1); // 'Surat izin...' -> 'surat izin...' (singkatan seperti K3 tetap)
+  const missingDocs = (e) => DOCS.filter((x) => x.req && !(e.approval && e.approval.docs[x.id]));
+  const currentStep = (e) => (e.approval && e.approval.st === 'DIAJUKAN' ? APPROVERS.find((x) => (e.approval.steps[x.id] || {}).st !== 'SETUJU') || null : null);
+  const needsApproval = (e) => !!(e && e.approval && e.approval.st !== 'DISETUJUI');
+  function durTxt(ms) {
+    const m = Math.max(0, Math.round(ms / 60000));
+    if (m < 60) return m + ' menit';
+    const h = Math.floor(m / 60), d = Math.floor(h / 24);
+    return d ? d + ' hari' + (h % 24 ? ' ' + (h % 24) + ' jam' : '') : h + ' jam' + (m % 60 ? ' ' + (m % 60) + ' menit' : '');
+  }
+  // Label perubahan untuk log (nilai lama -> baru bila singkat)
+  const FIELD_TXT = { name: 'nama', tagline: 'tagline', cat: 'kategori', start: 'jadwal mulai', doors: 'jam gate dibuka', venue: 'lokasi', desc: 'deskripsi', img: 'poster', saleStart: 'mulai penjualan', saleEnd: 'akhir penjualan', holdMin: 'batas hold', maxPerOrder: 'maks tiket per pesanan', gates: 'gate', color: 'warna', fin: 'asumsi keuangan', layout: 'denah', org: 'penyelenggara' };
+  const TIME_F = ['start', 'doors', 'saleStart', 'saleEnd'];
+  function diffTxt(before, after, keys) {
+    return keys.filter((k) => JSON.stringify(before[k]) !== JSON.stringify(after[k])).map((k) => {
+      const v = (x) => (TIME_F.includes(k) ? fmtDT(x) : x);
+      const short = typeof after[k] !== 'object' && k !== 'desc' && k !== 'img' && String(after[k]).length <= 40;
+      return (FIELD_TXT[k] || k) + (short && before[k] != null ? ' (' + v(before[k]) + ' → ' + v(after[k]) + ')' : '');
+    });
+  }
+
   // ------------------------------------------------------------------ aksi publik
   const A = {
     holdSeat(evId, seat, cart, opts) {
@@ -673,6 +745,7 @@
         o.log.push({ ts: t, text: 'Refund ' + rp(o.total) + ' diproses (sandbox): ' + o.refundReason + '. E-ticket dinonaktifkan, kursi kembali tersedia.' });
         notify(d, o, 'Refund ' + o.id, `Refund ${rp(o.total)} untuk ${o.id} diproses ke metode ${o.method}. E-ticket tidak berlaku lagi.`, t);
         wakeWaitlist(d, o, 'refund', t);
+        audit(d.events[o.ev], t, 'REFUND', 'Refund ' + o.id + ' ' + rp(o.total) + ', ' + o.tickets.length + ' e-ticket dinonaktifkan', { note: o.refundReason });
       });
     },
     updateContact(orderId, patch) { return tx((d, t) => { const o = d.orders[orderId]; if (!o) fail('Pesanan tidak ditemukan.'); ['name', 'email', 'phone'].forEach((k) => { if (patch[k]) o[k] = patch[k]; }); (patch.holders || []).forEach((h, i) => { const tk = d.tickets[o.tickets[i]]; if (tk && h) tk.holder = h; }); o.log.push({ ts: t, text: 'Data peserta diperbarui panitia' }); }); },
@@ -687,7 +760,21 @@
         return res;
       });
     },
-    updateEvent(evId, patch) { return tx((d) => { Object.assign(d.events[evId], patch); }); },
+    updateEvent(evId, patch) {
+      return tx((d, t) => {
+        const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
+        const prev = e.status, next = patch.status;
+        if (next === 'PUBLISHED' && prev === 'DRAFT' && needsApproval(e)) fail('Acara belum disetujui Divisi Event dan Operasional Mall. Ajukan lewat menu Persetujuan.');
+        const before = clone(e);
+        Object.assign(e, patch);
+        if (next && next !== prev) {
+          const TXT = { PUBLISHED: prev === 'CLOSED' ? 'Penjualan dibuka lagi' : 'Acara dipublikasikan ke portal pengunjung', CLOSED: 'Penjualan ditutup', DRAFT: 'Acara dikembalikan ke draft' };
+          audit(e, t, 'STATUS', TXT[next] || 'Status diubah ke ' + next);
+        }
+        const ch = diffTxt(before, e, Object.keys(patch).filter((k) => k !== 'status'));
+        if (ch.length) audit(e, t, 'UBAH', 'Data acara diubah: ' + ch.join(', '));
+      });
+    },
     updateType(evId, typeId, patch) { return tx((d) => { const ty = d.events[evId].types.find((x) => x.id === typeId); Object.assign(ty, patch); }); },
     // Simpan seluruh halaman Pengaturan dalam satu transaksi: data acara, perubahan jenis tiket, dan jenis tiket
     // baru (kuota tanpa kursi bernomor). Kuota tidak boleh di bawah tiket yang sudah terjual/dipegang.
@@ -695,6 +782,7 @@
       return tx((d, t) => {
         const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
         if (e.status === 'CANCELLED') fail('Acara yang dibatalkan tidak bisa diubah.');
+        const before = clone(e);
         Object.assign(e, patch || {});
         Object.entries(types || {}).forEach(([id, p]) => {
           const ty = e.types.find((x) => x.id === id); if (!ty) return;
@@ -708,6 +796,71 @@
           const used = new Set(e.types.map((x) => x.color));
           e.types.push({ id, name: a.name, price: Math.max(0, a.price || 0), color: COLORS.find((c) => !used.has(c)) || COLORS[e.types.length % COLORS.length], seated: false, onSale: a.onSale !== false, quota: a.quota, perks: a.perks || '' });
         });
+        const ch = diffTxt(before, e, Object.keys(patch || {}));
+        e.types.forEach((ty) => {
+          const old = before.types.find((x) => x.id === ty.id);
+          if (!old) { ch.push('jenis tiket baru ' + ty.name + ' (' + rp(ty.price) + ', kuota ' + ty.quota + ')'); return; }
+          if (old.price !== ty.price) ch.push('harga ' + ty.name + ' (' + rp(old.price) + ' → ' + rp(ty.price) + ')');
+          if (old.quota !== ty.quota && ty.quota != null) ch.push('kuota ' + ty.name + ' (' + old.quota + ' → ' + ty.quota + ')');
+          if (old.onSale !== ty.onSale) ch.push(ty.name + (ty.onSale ? ' mulai dijual' : ' tidak dijual'));
+          if (old.name !== ty.name) ch.push('nama tiket ' + old.name + ' → ' + ty.name);
+          if (old.perks !== ty.perks) ch.push('benefit ' + ty.name);
+        });
+        if (ch.length) audit(e, t, 'UBAH', 'Pengaturan disimpan: ' + ch.join(', '));
+      });
+    },
+    // ---- persetujuan acara (lihat blok "persetujuan acara & log jejak")
+    setActor(w) { actor = { name: String((w && w.name) || 'Pengelola acara').slice(0, 60), role: String((w && w.role) || 'Penyelenggara').slice(0, 40) }; },
+    uploadDoc(evId, docId, file) {
+      return tx((d, t) => {
+        const e = d.events[evId], doc = DOCS.find((x) => x.id === docId); if (!e || !doc) fail('Dokumen tidak dikenal.');
+        const ap = e.approval || (e.approval = newApproval());
+        if (ap.st === 'DIAJUKAN') fail('Dokumen terkunci selama peninjauan. Tunggu keputusan atau permintaan revisi.');
+        if (ap.st === 'DISETUJUI') fail('Acara sudah disetujui. Dokumen tidak bisa diganti.');
+        const name = String((file && file.name) || 'dokumen').slice(0, 120), old = ap.docs[docId];
+        ap.docs[docId] = { name, size: Math.max(0, (file && file.size) | 0), at: t, by: actor.name };
+        audit(e, t, 'DOKUMEN', (old ? 'Mengganti ' : 'Mengunggah ') + lc(doc.name) + ': ' + name);
+      });
+    },
+    removeDoc(evId, docId) {
+      return tx((d, t) => {
+        const e = d.events[evId], ap = e && e.approval, doc = DOCS.find((x) => x.id === docId);
+        if (!ap || !doc || !ap.docs[docId]) return NOOP;
+        if (ap.st === 'DIAJUKAN' || ap.st === 'DISETUJUI') fail('Dokumen tidak bisa dihapus setelah diajukan.');
+        const name = ap.docs[docId].name; delete ap.docs[docId];
+        audit(e, t, 'DOKUMEN', 'Menghapus ' + lc(doc.name) + ': ' + name);
+      });
+    },
+    submitApproval(evId, note) {
+      return tx((d, t) => {
+        const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
+        const ap = e.approval || (e.approval = newApproval());
+        if (e.status !== 'DRAFT') fail('Hanya acara draft yang bisa diajukan.');
+        if (ap.st === 'DIAJUKAN') fail('Pengajuan sedang ditinjau.');
+        if (ap.st === 'DISETUJUI') fail('Acara sudah disetujui.');
+        const miss = missingDocs(e); if (miss.length) fail('Lengkapi dokumen: ' + miss.map((x) => lc(x.name)).join(', ') + '.');
+        ap.st = 'DIAJUKAN'; ap.round = (ap.round || 0) + 1; ap.submittedAt = t; ap.firstAt = ap.firstAt || t; ap.steps = {};
+        APPROVERS.forEach((x, i) => (ap.steps[x.id] = { st: i ? 'ANTRE' : 'MENUNGGU', since: i ? null : t }));
+        audit(e, t, 'AJUKAN', (ap.round > 1 ? 'Pengajuan ulang (putaran ' + ap.round + ')' : 'Pengajuan') + ' dikirim ke ' + APPROVERS[0].name + ', ' + Object.keys(ap.docs).length + ' dokumen terlampir', { note });
+      });
+    },
+    // Keputusan satu divisi. Urut: Divisi Event dulu, lalu Operasional Mall. Revisi wajib beralasan.
+    decide(evId, stepId, approve, note) {
+      return tx((d, t) => {
+        const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');
+        const ap = e.approval, cur = currentStep(e);
+        if (!ap || ap.st !== 'DIAJUKAN' || !cur) fail('Tidak ada pengajuan yang menunggu keputusan.');
+        if (cur.id !== stepId) fail('Menunggu keputusan ' + cur.name + ' lebih dulu.');
+        if (!approve && !String(note || '').trim()) fail('Tulis alasan revisi agar penyelenggara tahu apa yang harus diperbaiki.');
+        const step = ap.steps[stepId], took = durTxt(t - step.since), who = { name: actor.name, role: cur.name };
+        Object.assign(step, { st: approve ? 'SETUJU' : 'REVISI', at: t, by: actor.name }, note ? { note: String(note).slice(0, 300) } : {});
+        if (!approve) { ap.st = 'REVISI'; audit(e, t, 'REVISI', cur.name + ' meminta revisi setelah ditinjau ' + took, { who, note }); return 'REVISI'; }
+        const nx = APPROVERS[APPROVERS.indexOf(cur) + 1];
+        audit(e, t, 'SETUJU', cur.name + ' menyetujui setelah ditinjau ' + took + (nx ? ', diteruskan ke ' + nx.name : ''), { who, note });
+        if (nx) { Object.assign(ap.steps[nx.id], { st: 'MENUNGGU', since: t }); return 'NEXT'; }
+        ap.st = 'DISETUJUI'; ap.approvedAt = t;
+        audit(e, t, 'DISETUJUI', 'Persetujuan lengkap ' + durTxt(t - (ap.firstAt || ap.submittedAt)) + ' sejak pengajuan pertama' + (ap.round > 1 ? ' (' + ap.round + ' putaran)' : '') + '. Acara siap dipublikasikan', { who: { name: 'Sistem', role: 'Sistem' } });
+        return 'DONE';
       });
     },
     toggleBlock(evId, seat) {
@@ -725,7 +878,8 @@
         const id = 'EVT-' + String(n).padStart(2, '0');
         const T = TEMPLATES[info.template] || TEMPLATES.ATRIUM;
         const start = info.start;
-        d.events[id] = { id, name: info.name, tagline: info.tagline || '', cat: info.cat || 'Umum', start, doors: start - 3600000, venue: T.venue, layout: clone(T.layout), desc: info.desc || '', saleStart: t, saleEnd: start - 1800000, status: 'DRAFT', holdMin: 8, maxPerOrder: 4, color: info.color || '#a78bfa', gates: T.gates.slice(), blocked: [], types: clone(T.types), createdAt: t };
+        d.events[id] = { id, name: info.name, tagline: info.tagline || '', cat: info.cat || 'Umum', start, doors: start - 3600000, venue: T.venue, layout: clone(T.layout), desc: info.desc || '', saleStart: t, saleEnd: start - 1800000, status: 'DRAFT', holdMin: 8, maxPerOrder: 4, color: info.color || '#a78bfa', gates: T.gates.slice(), blocked: [], types: clone(T.types), createdAt: t, approval: newApproval() };
+        audit(d.events[id], t, 'BUAT', 'Acara dibuat sebagai draft (templat ' + T.name + ')');
         d.order.push(id); d.seats[id] = {}; d.qholds[id] = [];
         return id;
       });
@@ -764,6 +918,7 @@
         });
         d.seats[evId] = {}; d.qholds[evId] = [];
         e.status = 'CANCELLED'; e.cancelReason = reason || ''; e.cancelledAt = t;
+        audit(e, t, 'BATAL', 'Acara dibatalkan: ' + refunded + ' pesanan di-refund (' + rp(total) + '), ' + cancelled + ' pesanan menunggu bayar dibatalkan', { note: reason });
         d.waitlist.filter((w) => w.ev === evId && !w.notified).forEach((w) => { w.notified = t; w.reason = 'acara-batal'; waitMsg(d, w, 'Acara dibatalkan · ' + e.name, `Mohon maaf, ${e.name} dibatalkan. Pendaftaran daftar tunggu Anda kami tutup.`, t); });
         return { refunded, cancelled, total };
       });
@@ -772,6 +927,7 @@
       return tx((d, t) => {
         const e = d.events[evId]; let n = 0;
         Object.values(d.orders).filter((o) => o.ev === evId && o.status === 'PAID').forEach((o) => { n++; notify(d, o, 'Pengingat: ' + e.name, `Halo ${o.name}, ${e.name} dimulai ${fmtDT(e.start)} di ${e.venue}. Gate dibuka ${fmtTime(e.doors)}. Siapkan QR e-ticket (${o.tickets.length} tiket).`, t); });
+        if (n) audit(e, t, 'PESAN', 'Pengingat acara dikirim ke ' + n + ' pemesan (email dan WhatsApp)');
         return n;
       });
     },
@@ -780,6 +936,7 @@
       return tx((d, t) => {
         const e = d.events[evId]; let n = 0;
         d.waitlist.filter((w) => w.ev === evId && !w.notified).forEach((w) => { w.notified = t; w.reason = 'manual'; n++; waitMsg(d, w, 'Kursi tersedia · ' + e.name, `Halo ${w.name}, ada kursi ${typeById(e, w.type).name} yang kembali tersedia. Segera pesan sebelum habis.`, t); });
+        if (n) audit(e, t, 'PESAN', n + ' orang di daftar tunggu dikabari');
         return n;
       });
     },
@@ -968,6 +1125,7 @@
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
     now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
+    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt,
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
 })();

@@ -88,6 +88,23 @@ Saat kehadiran event melewati ambang tertentu, buat tugas otomatis untuk tim keb
 
 **Menjawab:** keluhan "toiletnya bau" dari Pak Ade.
 
+### 8b. Persetujuan acara + log aktivitas ✅ (sudah dibuat)
+
+Menu **Persetujuan** di konsol pengelola (`/pengelola/e/<id>/persetujuan`):
+
+| Bagian | Isi |
+|---|---|
+| Alur | Penyelenggara unggah dokumen dan mengajukan → **Divisi Event** → **Operasional Mall** → baru bisa dipublikasikan. Minta revisi wajib beralasan |
+| Dokumen | Proposal & rundown, denah & perkiraan pengunjung, **surat izin keramaian** (wajib), rencana K3 (opsional) |
+| Waktu | Lama tiap divisi meninjau, total sejak pengajuan pertama. Menunggu lebih dari 2 hari ditandai di "Perlu tindakan" |
+| Log aktivitas | Siapa, kapan, apa, catatan. Hanya bisa ditambah; rantai hash mendeteksi entri yang diubah diam-diam ("Log utuh, N entri"). Ekspor CSV |
+
+Contoh demo: **EVT-28 Expo UMKM Gedebage Berdaya**, sudah disetujui Divisi Event, menunggu Operasional Mall hampir 3 hari. Data lama perlu **Reset data contoh** di konsol supaya EVT-28 muncul.
+
+**Menjawab:** "approval-nya lama" dari Pak Ade. Masih perlu angka asli dari beliau (berapa hari, berapa dokumen) untuk slide.
+
+**Kalimat demo:** "Setiap pengajuan tercatat: siapa menyetujui, kapan, dan berapa lama menunggu di tiap divisi."
+
 ### 9. Foto asli
 
 Ganti foto demo Wikimedia (`app/img/demo/`) dengan foto Summarecon Mall Bandung bila ada, terutama untuk area atrium. Perbarui `CREDITS.md`.
@@ -98,7 +115,7 @@ Ganti foto demo Wikimedia (`app/img/demo/`) dengan foto Summarecon Mall Bandung 
 
 | Fitur | Menjawab | Bentuk di deck |
 |---|---|---|
-| **Approval event digital**: pengajuan → divisi event → operasional mall → disetujui, unggah dokumen (surat izin keramaian), status terlihat semua pihak | Approval lama (Pak Ade) | Satu slide "Rencana" dengan alur sederhana |
+| Approval event lanjutan: akun terpisah per divisi, unggah file sungguhan, notifikasi WhatsApp ke peninjau, tampil di Command Center | Approval lama (Pak Ade) | Versi dasar sudah ada (item 8b), sisanya satu baris di slide rencana |
 | Integrasi ke gate parkir sungguhan | Gate manual (Bu Mei) | Satu baris di slide rencana |
 | Registrasi kendaraan saat beli tiket (jenis + plat, opsional) | Perkiraan parkir lebih akurat, motor tanpa plat | Satu baris di slide rencana |
 | Ganti loket.com untuk semua event Summarecon dan tenant | Data peserta milik Summarecon | Model bisnis |
@@ -122,5 +139,6 @@ Ganti foto demo Wikimedia (`app/img/demo/`) dengan foto Summarecon Mall Bandung 
 - [ ] 6. Peringatan kapasitas area event
 - [ ] 7. Event memakai lahan parkir mengurangi kapasitas
 - [ ] 8. Tugas kebersihan toilet otomatis
+- [x] 8b. Persetujuan acara + log aktivitas
 - [ ] 9. Foto asli
 - [ ] Rekam ulang video demo

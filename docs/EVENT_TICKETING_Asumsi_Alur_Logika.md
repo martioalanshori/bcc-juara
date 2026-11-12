@@ -35,7 +35,13 @@ Akses: `/pengelola` dan `/checkin` memakai PIN pengelola, `/command-center` mema
 ## 3. Alur pengelola acara (`/pengelola`, `/checkin`)
 - **Daftar acara**:
   - **Acara baru**: nama, kategori, tagline, jadwal, templat venue (Main Atrium 178 kursi + festival 200, atau Summarecon Hall 112 kursi). Acara dibuat sebagai Draft dan belum tampil di portal.
-  - **Publikasikan** untuk menampilkan acara di portal pengunjung.
+  - **Publikasikan** untuk menampilkan acara di portal pengunjung. Acara baru (punya `e.approval`) baru bisa dipublikasikan setelah **disetujui** (lihat Persetujuan). Acara contoh lama tanpa `approval` tidak terkena aturan ini.
+- **Persetujuan** (menu per acara, dari wawancara PIC Event: approval lewat 2 divisi dan banyak dokumen, prosesnya lama):
+  - Alur berurutan: penyelenggara mengunggah dokumen wajib (`Evt.DOCS`: proposal & rundown, denah & perkiraan pengunjung, surat izin keramaian; rencana K3 opsional) lalu **Ajukan** (`submitApproval`) → **Divisi Event** → **Operasional Mall** (`decide(evId, step, setuju, catatan)`) → status `DISETUJUI`, baru boleh **Publikasikan**. `updateEvent` menolak DRAFT → PUBLISHED selama `needsApproval(e)`.
+  - Operasional Mall tidak bisa memutuskan sebelum Divisi Event. **Minta revisi** wajib beralasan, mengembalikan ke penyelenggara (`REVISI`), dan pengajuan ulang menaikkan `round`. Dokumen terkunci selama peninjauan dan setelah disetujui.
+  - Waktu tunggu per divisi dan total sejak pengajuan pertama (`firstAt`) ditampilkan. Menunggu lebih dari 2 hari ditandai di "Perlu tindakan".
+  - Prototype: satu akun pengelola bisa bertindak sebagai divisi mana pun (ditandai "Simulasi"). Dokumen hanya dicatat nama dan ukurannya, isi file tidak disimpan.
+- **Log aktivitas** (`e.audit`, tampil di menu Persetujuan, ekspor CSV): setiap perubahan penting pada acara dicatat dengan waktu, pelaku (`Evt.setActor`, dari profil konsol), peran, aksi, dan catatan: dibuat, dokumen, diajukan, disetujui, revisi, status (publikasi, tutup, buka lagi), pengaturan yang diubah (nilai lama → baru), refund, pembatalan, pengingat, kabar daftar tunggu. Log hanya ditambah. Tiap entri menyimpan hash entri sebelumnya (`h`, rantai cyrb53), dan `verifyAudit(e)` menunjukkan entri pertama yang tidak cocok bila log diubah atau dihapus diam-diam. Prototype: hash dihitung di browser (produksi: HMAC di server).
   - **Batalkan acara**: semua pesanan lunas di-refund otomatis (e-ticket VOID), pesanan menunggu bayar dibatalkan, kursi dilepas, dan peserta dikabari.
   - **Hapus**: hanya untuk acara tanpa transaksi lunas atau menunggu bayar (draft atau salah input). Acara yang sudah terjual harus dibatalkan dulu.
 - **Ringkasan**: tiket terjual/kapasitas, pendapatan, pendaftar unik, kehadiran, kursi sedang dipesan, menunggu bayar, komposisi per kategori, tren penjualan & arus check-in.
