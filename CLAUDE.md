@@ -53,7 +53,7 @@ UI changes still have to be checked by running `node server.js` and opening the 
 - `app/js/core/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=78`; `fonts.css`
+- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=79`; `fonts.css`
   has its own, `?v=5`). Assets are cached **1 year, immutable** (`assetCache` in `server/app.js`
   and the `/app/` header in `vercel.json`), so **bump it on every page (`app/pages/*.html`) whenever
   you change JS or CSS**, or browsers keep the old file. `npm run dev` (`--dev`) disables caching, so
@@ -87,7 +87,7 @@ data/                runtime secrets & state (gitignored)
 | `/` | `app/pages/beranda.html` | `core/theme` (role picker) |
 | `/command-center` | `app/pages/command-center.html` | everything: `core/*`, `command-center/*` + `views/*` (incl. `persetujuan` = `views/approval.js`, `sentimen`), `event/engine`, `event/approval-ui`, `event/checkin-ui`, `event/admin`, `event/cc-bridge` |
 | `/pengelola` | `app/pages/pengelola.html` | `core/router`, `core/ui`, `core/pdf`, `command-center/sop-data`, `event/engine`, `event/checkin-ui`, `event/admin` → `EvtAdmin.mount(el, 'pengelola')` (SPA: `/pengelola/acara`, `/pengelola/e/<id>/<menu>`) |
-| `/pengunjung` | `app/pages/pengunjung.html` | `core/router`, `event/engine`, `event/visitor` (mobile-first buyer portal) |
+| `/pengunjung` | `app/pages/pengunjung.html` | `core/router`, `event/engine`, `core/auth` (Ubah peran), `event/visitor` (mobile-first buyer portal) |
 | `/checkin` | `app/pages/checkin.html` | `event/engine`, `event/checkin-ui` (gate QR scanner) |
 | `/masuk` | `app/pages/masuk.html` | staff login (email + password, demo account cards) |
 
@@ -99,7 +99,10 @@ Inter and one palette (primary blue tints, neutral, signal yellow, error red; `t
 colours to it) and neutral number colours (`.pg-body` overrides in `app.css`; section/KPI icon boxes hidden there), clean URLs (`fromUrl()`/`evUrl()`), a sticky event header with the status action, and a
 "Perlu tindakan" block whose items also feed the sidebar badges (`attention(e)`). Risky actions use `UI.confirm()`
 (`core/ui.js`, a themed promise dialog), never `confirm()`/`prompt()`. Demo tools (race, stress, 2-gate, reset) are commands in the Ctrl+K palette. The profile menu (top right:
-"Edit profil" saved in localStorage `smicc-pengelola-profil`, "Keluar") replaces the old account block. Ctrl/⌘+K (or `/`) opens a search palette (`palette()`: menus, events, orders by booking
+"Edit profil" saved per account in localStorage `smicc-pengelola-profil:<email>`, "Ubah peran", "Keluar") replaces the old account block.
+"Ubah peran" (`renderSwitch()` in `core/auth.js`, filled into `[data-demo-switch]`) is shared by the avatar menus of
+`/pengunjung`, `/pengelola` and `/command-center`: Pengunjung, Pengelola, Tenant, Command Center (current one marked
+"Aktif"), other demo accounts under "Akun lain". Demo mode switches account in one click; otherwise it links to `/masuk?role=`. Ctrl/⌘+K (or `/`) opens a search palette (`palette()`: menus, events, orders by booking
 code/name, commands). KPI cards with `UI.kpi({ key })` are clickable and open `kpiModal(key)` (quick insight: headline number,
 24 h / 7 day pace, warnings, one breakdown). Pengaturan is one form saved by `Evt.saveEvent(evId, { patch, types, add })` in a single transaction (new
 ticket types are quota-only; quota may not drop below sold + held). Money inputs (`data-rp`) show "Rp 1.500.000"
@@ -146,7 +149,16 @@ dependency-free PDF writer: Helvetica/WinAnsi text, rects, lines, A4 pages). All
    all other visitor screens stay phone-width. Its static content (mall hours, areas, tenant promos, guide) is the
    `MALL`, `AREAS`, `PROMOS`, `GUIDE` constants at the top of that block.
    Gate backup (SOP-EVT-05): `EvtCheckin.backup` in `checkin-ui.js` keeps a per-event attendee manifest in localStorage
-   (`smicc-manifest-v1`, refreshed once per day with a 23:00 cutoff) that can be downloaded as CSV without the server.
+   (`smicc-manifest-v1`, auto-refreshed on every state change, at most every 30 s, for events within 48 h) that can be
+   downloaded without the server as Excel (`Evt.xlsx`, a dependency-free store-only zip writer in `engine.js`), CSV, or a
+   self-contained offline HTML manifest (search + tick attendance, stored per device), or all events at once as a ZIP
+   (`Evt.zipBytes`, same store-only zip writer; `backup.allFiles()`).
+   **Archive ("one year of history")**: `Evt.archive()` / `arcEv` / `arcOrder` / `arcTicket` / `arcStats` build one previous
+   edition per non-draft event (orders, tickets, check-ins, refunds, vehicles, gate reports, approval log) inside the last
+   12 months, deterministically from the event id and `state.seededAt` (same on every device, ~40 ms once per session in
+   Chrome). It is **never written to state** (no size cost, no CAS/guard) and is read-only in every UI (pengelola Dasbor,
+   Daftar acara "Arsip 12 bulan", Transaksi ranges, Check-in & gate, Keuangan, all-events PDF, Command Center portofolio,
+   visitor "Acara yang sudah lewat"). Keep its totals consistent: every view goes through `arcStats` / `months12()` in `admin.js`.
    QR payload: `SMB1|ticketId|eventId|seat|sig`. The signature is a cyrb53 hash with a
    hard-coded sandbox secret (prototype only).
 
@@ -162,6 +174,11 @@ are intercepted automatically, so write in-app links as absolute paths with the 
 `window.Views.<name>`. The sidebar menu is the `NAV` array in `app.js`. `ui.js` (`window.UI`:
 `esc`, `icon`, badges, SVG charts, modals, toasts, relation panel) is shared by all views. `sim.js`
 runs use-case simulations step by step against `Store`.
+The parking "full" simulation lives in `views/parking.js` (state `Store.s.parkSim`, zone occupancy `Store.s.parking`) and
+exposes `window.ParkAlarm`; `renderHeader()` in `app.js` writes `ParkAlarm.bar()` into `#park-alarm` on every page, only
+when its HTML changes (so the heartbeat animation is not restarted), and the per-second timers fill `[data-pk-since]` /
+`[data-pk-eta]`. Alarm buttons use `[data-pk]` click delegation. In the pengelola console the sticky "Informasi terbaru"
+bar is `#pg-news`, drawn by `news()` in `admin.js` (called from `shell()`), from `feed()`.
 
 **Generated reference data.** `app/js/command-center/sop-data.js` (`window.SMICC_REF`: dashboards, SLA, SOPs,
 roles, use cases, relations) is **generated. Never edit it by hand.** The single sources are

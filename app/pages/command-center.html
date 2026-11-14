@@ -7,11 +7,11 @@
   <title>Summarecon Mall · Integrated Command Center Ticketing System</title>
   <!-- Semua aset lokal (tanpa internet): font di vendor/fonts, Tailwind hasil build statis.
        Tema "Papan Petunjuk": token di css/tokens.css, build di tools/tailwind/tailwind.config.js -->
-  <script src="/app/js/core/theme.js?v=78"></script>
-  <script src="/app/js/core/router.js?v=78"></script>
+  <script src="/app/js/core/theme.js?v=79"></script>
+  <script src="/app/js/core/router.js?v=79"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=78" />
-  <link rel="stylesheet" href="/app/css/app.css?v=78" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=79" />
+  <link rel="stylesheet" href="/app/css/app.css?v=79" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
   <!-- SIDEBAR -->
@@ -58,10 +58,10 @@
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
         <!-- profil operator: satu tombol, Keluar ada di dalam menu -->
         <div class="pg-prof" id="cc-prof">
-          <button type="button" class="pg-prof-btn" id="cc-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="cc-prof-menu" aria-label="Menu profil Aris Thorne"><span class="pg-av">AT</span><span class="cc-prof-txt"><b>Aris Thorne</b><small>Kepala operasional (L4)</small></span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
+          <button type="button" class="pg-prof-btn" id="cc-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="cc-prof-menu" aria-label="Menu profil Aris Thorne"><span class="pg-av" data-cc-av>AT</span><span class="cc-prof-txt"><b data-cc-name>Aris Thorne</b><small data-cc-title>Kepala operasional (L4)</small></span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
           <div class="pg-prof-menu" id="cc-prof-menu" hidden>
-            <div class="pg-prof-head"><b>Aris Thorne</b><small>Kepala operasional (L4), cc@example.com</small><span class="cc-shift"><i></i><span>Jaga <span id="shift-menu">Shift A</span>, Fasilitas &amp; Keamanan</span></span></div>
-            <a href="/" class="cc-prof-item"><span class="material-symbols-outlined text-[20px]">apps</span>Pilih peran lain</a>
+            <div class="pg-prof-head"><b data-cc-name>Aris Thorne</b><small><span data-cc-title>Kepala operasional (L4)</span>, cc@example.com</small><span class="cc-shift"><i></i><span>Jaga <span id="shift-menu">Shift A</span>, Fasilitas &amp; Keamanan</span></span></div>
+            <button type="button" id="cc-prof-edit" class="cc-prof-item w-full text-left"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
             <div class="pg-sw" data-demo-switch hidden></div>
             <button type="button" data-logout="command-center divisi-event divisi-ops" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
           </div>
@@ -70,6 +70,7 @@
     </header>
 
     <main class="pt-20 px-6 pb-10 min-h-screen">
+      <div id="park-alarm" class="cc-park-alarm"></div>
       <div id="ticker" class="mb-5"></div>
       <div id="view"></div>
     </main>
@@ -79,34 +80,34 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
 
-  <script src="/app/vendor/qrcode.js?v=78"></script>
-  <script src="/app/vendor/jsQR.js?v=78"></script>
-  <script src="/app/js/command-center/sop-data.js?v=78"></script>
-  <script src="/app/js/command-center/data.js?v=78"></script>
-  <script src="/app/js/command-center/store.js?v=78"></script>
-  <script src="/app/js/core/ui.js?v=78"></script>
-  <script src="/app/js/core/pdf.js?v=78"></script>
-  <script src="/app/js/command-center/views/ticketing.js?v=78"></script>
-  <script src="/app/js/command-center/views/bms.js?v=78"></script>
-  <script src="/app/js/command-center/views/tenant.js?v=78"></script>
-  <script src="/app/js/command-center/views/cctv.js?v=78"></script>
-  <script src="/app/js/command-center/views/energy.js?v=78"></script>
-  <script src="/app/js/command-center/views/analytics.js?v=78"></script>
-  <script src="/app/js/command-center/views/parking.js?v=78"></script>
-  <script src="/app/js/command-center/views/owner360.js?v=78"></script>
-  <script src="/app/js/command-center/sentimen-data.js?v=78"></script>
-  <script src="/app/js/command-center/views/sentimen.js?v=78"></script>
-  <script src="/app/js/event/engine.js?v=78"></script>
-  <script src="/app/js/event/approval-ui.js?v=78"></script>
-  <script src="/app/js/event/checkin-ui.js?v=78"></script>
-  <script src="/app/js/event/admin.js?v=78"></script>
-  <script src="/app/js/event/cc-bridge.js?v=78"></script>
-  <script src="/app/js/command-center/views/approval.js?v=78"></script>
-  <script src="/app/js/command-center/views/sop.js?v=78"></script>
-  <script src="/app/js/command-center/views/usecase.js?v=78"></script>
-  <script src="/app/js/command-center/sim.js?v=78"></script>
-  <script src="/app/js/core/auth.js?v=78"></script>
-  <script src="/app/js/command-center/live.js?v=78"></script>
-  <script src="/app/js/command-center/app.js?v=78"></script>
+  <script src="/app/vendor/qrcode.js?v=79"></script>
+  <script src="/app/vendor/jsQR.js?v=79"></script>
+  <script src="/app/js/command-center/sop-data.js?v=79"></script>
+  <script src="/app/js/command-center/data.js?v=79"></script>
+  <script src="/app/js/command-center/store.js?v=79"></script>
+  <script src="/app/js/core/ui.js?v=79"></script>
+  <script src="/app/js/core/pdf.js?v=79"></script>
+  <script src="/app/js/command-center/views/ticketing.js?v=79"></script>
+  <script src="/app/js/command-center/views/bms.js?v=79"></script>
+  <script src="/app/js/command-center/views/tenant.js?v=79"></script>
+  <script src="/app/js/command-center/views/cctv.js?v=79"></script>
+  <script src="/app/js/command-center/views/energy.js?v=79"></script>
+  <script src="/app/js/command-center/views/analytics.js?v=79"></script>
+  <script src="/app/js/command-center/views/parking.js?v=79"></script>
+  <script src="/app/js/command-center/views/owner360.js?v=79"></script>
+  <script src="/app/js/command-center/sentimen-data.js?v=79"></script>
+  <script src="/app/js/command-center/views/sentimen.js?v=79"></script>
+  <script src="/app/js/event/engine.js?v=79"></script>
+  <script src="/app/js/event/approval-ui.js?v=79"></script>
+  <script src="/app/js/event/checkin-ui.js?v=79"></script>
+  <script src="/app/js/event/admin.js?v=79"></script>
+  <script src="/app/js/event/cc-bridge.js?v=79"></script>
+  <script src="/app/js/command-center/views/approval.js?v=79"></script>
+  <script src="/app/js/command-center/views/sop.js?v=79"></script>
+  <script src="/app/js/command-center/views/usecase.js?v=79"></script>
+  <script src="/app/js/command-center/sim.js?v=79"></script>
+  <script src="/app/js/core/auth.js?v=79"></script>
+  <script src="/app/js/command-center/live.js?v=79"></script>
+  <script src="/app/js/command-center/app.js?v=79"></script>
 </body>
 </html>

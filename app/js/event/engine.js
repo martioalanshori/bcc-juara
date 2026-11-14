@@ -440,6 +440,101 @@
     return { ev: evId, mobil: declared.mobil + projected.mobil, motor: declared.motor + projected.motor, declared, projected, ratio, basis: fromData ? 'data' : 'asumsi',
       orders: os.length, answered: known.length, start: e.start, doors: e.doors || e.start, end: evEnd(e), area: A.name || '', usesParking: !!A.parking };
   }
+  // ------------------------------------------------------------------ arsip setahun: edisi sebelumnya tiap acara
+  // Supaya aplikasi terasa sudah berjalan setahun tanpa menambah state (dikirim ke semua perangkat, batas 350 KB): tiap
+  // acara (bukan draft) punya satu edisi sebelumnya dalam 12 bulan terakhir, lengkap dengan pesanan, e-ticket, check-in,
+  // refund, kendaraan, laporan gate, dan riwayat persetujuan. Dibangkitkan deterministik di browser dari ID acara & waktu
+  // seed (state.seededAt), jadi semua perangkat melihat angka yang sama. Hanya baca: tidak ikut transaksi, guard, atau CAS.
+  const FIRST = ['Rizky', 'Nadia', 'Gilang', 'Salsabila', 'Dimas', 'Ayu', 'Fajar', 'Intan', 'Raka', 'Citra', 'Yoga', 'Putri', 'Bagas', 'Nabila', 'Arif', 'Dewi', 'Hendra', 'Siti', 'Agus', 'Rina', 'Bayu', 'Maya', 'Eko', 'Lestari', 'Fikri', 'Annisa', 'Rendi', 'Wulan', 'Teguh', 'Kirana', 'Ilham', 'Vina', 'Galih', 'Sekar', 'Aldi', 'Tiara', 'Reza', 'Indah', 'Yusuf', 'Melati', 'Andika', 'Laras', 'Rangga', 'Dinda', 'Iqbal', 'Ratna', 'Hafiz', 'Asih'];
+  const LAST = ['Pratama', 'Putri', 'Ramadhan', 'Saputra', 'Lestari', 'Nugraha', 'Permata', 'Mahendra', 'Maharani', 'Wibowo', 'Kusuma', 'Hidayat', 'Siregar', 'Santoso', 'Gunawan', 'Firmansyah', 'Rahayu', 'Setiawan', 'Purnama', 'Hakim', 'Suryadi', 'Anggraini', 'Wijaya', 'Kurniawan', 'Sari', 'Hasibuan', 'Nasution', 'Sutisna', 'Sumarna', 'Ardiansyah', 'Supriatna', 'Rachman', 'Mulyana', 'Hermawan', 'Fauzi', 'Handayani'];
+  const AR_PLATE = ['D', 'D', 'D', 'B', 'Z', 'F', 'T', 'E'], AR_SUF = 'ABCDEFGHJKLMNPRSTUVWXYZ';
+  // Bulan yang cocok per kategori (0 = Januari): bazar/kuliner Ramadan & Agustus, anak saat libur sekolah, dst.
+  const AR_MONTHS = { Kuliner: [2, 3, 7, 11], Bazar: [2, 3, 7, 11], Pameran: [4, 7, 9, 10], Anak: [5, 6, 11, 0], Keluarga: [5, 6, 11, 0], Olahraga: [7, 9, 4, 2], Konser: [1, 4, 7, 9, 11], Musik: [1, 4, 7, 9, 11], Workshop: [1, 3, 8, 10], Komedi: [0, 4, 8, 10] };
+  const AR_REPORTS = ['Antrean gate memanjang, petugas tambahan dikirim', 'Dua e-ticket tangkapan layar dipakai bergantian', 'Pemindai gate sempat lambat karena sinyal Wi-Fi', 'Pengunjung tanpa tiket mencoba masuk lewat pintu samping'];
+  const hash32 = (s) => parseInt(hash(s).slice(-8), 16) >>> 0;
+  let arc = null, arcKey = '';
+  function archive() {
+    if (!state || !state.order) return [];
+    const anchor = state.seededAt || now(), key = anchor + '|' + state.order.join(',');
+    if (arc && arcKey === key) return arc.list;
+    const D = 86400000, H = 3600000, list = [], orders = {}, tickets = {}, byId = {};
+    const a0 = new Date(anchor); a0.setHours(0, 0, 0, 0);
+    const perMonth = {}; // jumlah edisi per bulan-lalu: diratakan supaya tiap bulan ada acara
+    state.order.map((id) => state.events[id]).filter((e) => e && e.status !== 'DRAFT' && e.types && e.types.length).forEach((e) => {
+      const R = prng(hash32('arsip|' + e.id + '|' + anchor)), pick = (a) => a[Math.floor(R() * a.length)], code = (n) => { let x = ''; for (let i = 0; i < n; i++) x += ALPH[Math.floor(R() * ALPH.length)]; return x; };
+      // Bulan edisi sebelumnya: 1-11 bulan lalu, utamakan bulan yang cocok untuk kategorinya, akhir pekan, jam yang sama.
+      const pref = AR_MONTHS[e.cat] || [1, 3, 5, 7, 9, 10];
+      const cands = []; for (let k = 1; k <= 11; k++) { const d = new Date(a0); d.setDate(1); d.setMonth(d.getMonth() - k); if (pref.includes(d.getMonth())) cands.push(k); }
+      // Bulan yang cocok untuk kategori dan masih paling sepi; seri diundi. Sesekali (20%) bulan mana pun yang paling sepi.
+      const pool = (cands.length && R() < 0.8 ? cands : Array.from({ length: 11 }, (_, i) => i + 1));
+      const least = Math.min(...pool.map((k) => perMonth[k] || 0)), back = pick(pool.filter((k) => (perMonth[k] || 0) === least));
+      perMonth[back] = (perMonth[back] || 0) + 1;
+      const s0 = new Date(a0); s0.setDate(1); s0.setMonth(s0.getMonth() - back);
+      const days = []; const mlen = new Date(s0.getFullYear(), s0.getMonth() + 1, 0).getDate();
+      for (let d = 1; d <= mlen; d++) { const x = new Date(s0.getFullYear(), s0.getMonth(), d); if ([0, 5, 6].includes(x.getDay())) days.push(d); }
+      const st = new Date(e.start), start = new Date(s0.getFullYear(), s0.getMonth(), pick(days), st.getHours(), st.getMinutes()).getTime();
+      const dur = (e.end || e.start + 3 * H) - e.start, doorsGap = e.start - (e.doors || e.start - H);
+      const arcId = 'ARS-' + e.id.replace(/^EVT-/, '') + '-' + String(s0.getFullYear()).slice(2) + String(s0.getMonth() + 1).padStart(2, '0');
+      const ed = { id: arcId, src: e.id, archived: true, status: 'DONE', name: e.name, cat: e.cat, area: e.area, venue: e.venue, org: e.org, color: e.color, img: e.img, tagline: e.tagline,
+        start, end: start + Math.min(dur, 3 * D), doors: start - doorsGap, gates: (e.gates || []).slice(), types: e.types.map((t) => Object.assign({}, t)), layout: e.layout,
+        edition: 'Edisi ' + ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][s0.getMonth()] + ' ' + s0.getFullYear(), orders: [], reports: [], audit: [] };
+      // Kapasitas per jenis: kursi bernomor dari denah, sisanya kuota.
+      const seatsBy = {}; if (e.layout) allSeats(e).forEach((sid) => { const ty = seatType(e, sid); (seatsBy[ty] = seatsBy[ty] || []).push(sid); });
+      const popular = /Konser|Musik|Kuliner|Bazar|Komedi/.test(e.cat) ? 0.12 : 0;
+      const maxPer = Math.max(1, Math.min(4, e.maxPerOrder || 4));
+      let oi = 0;
+      ed.types.filter((t) => t.onSale !== false || t.price === 0).forEach((t) => {
+        const pool = t.seated ? (seatsBy[t.id] || []).slice() : null, cap = pool ? pool.length : t.quota || 0;
+        let left = Math.round(cap * Math.min(0.99, 0.6 + popular + R() * 0.3));
+        while (left > 0) {
+          const r = R(), q = Math.min(left, maxPer, r < 0.3 ? 1 : r < 0.76 ? 2 : r < 0.91 ? 3 : 4); left -= q;
+          const nm = pick(FIRST) + ' ' + pick(LAST), u = nm.toLowerCase().replace(/[^a-z]+/g, '.') + (oi % 7 ? oi % 97 : '');
+          // Waktu bayar: lonjakan early bird (hari 1-3), datar, lalu naik menjelang hari H.
+          const z = R(), daysBefore = z < 0.22 ? 27 + R() * 3 : z < 0.62 ? 6 + R() * 21 : R() * 6;
+          const paidAt = Math.min(start - 2 * H, start - daysBefore * D + Math.floor(R() * 14) * H);
+          const id = 'BK-' + code(6); oi++;
+          const vr = R(), veh = vr < 0.45 ? { t: 'mobil', p: pick(AR_PLATE) + ' ' + (1000 + Math.floor(R() * 8999)) + ' ' + pick(AR_SUF) + pick(AR_SUF) } : vr < 0.75 ? { t: 'motor', p: pick(AR_PLATE) + ' ' + (1000 + Math.floor(R() * 8999)) + ' ' + pick(AR_SUF) + pick(AR_SUF) } : null;
+          const items = Array.from({ length: q }, () => ({ type: t.id, seat: pool ? pool.splice(Math.floor(R() * pool.length), 1)[0] : null, price: t.price }));
+          const sub = t.price * q, fee = sub > 0 ? FEE * q : 0, refunded = sub > 0 && R() < 0.022;
+          const o = { id, ev: arcId, archived: true, name: nm, email: u + '@example.com', phone: '+62 8' + (11 + Math.floor(R() * 88)) + '-' + (1000 + Math.floor(R() * 8999)) + '-' + (1000 + Math.floor(R() * 8999)), veh, items, sub, fee, total: sub + fee,
+            status: refunded ? 'REFUNDED' : 'PAID', method: sub ? pick(['QRIS', 'QRIS', 'QRIS', 'VA BCA', 'VA BCA', 'GoPay', 'GoPay', 'OVO', 'DANA', 'VA Mandiri', 'Kartu Kredit']) : 'Gratis', createdAt: paidAt - Math.floor(2 + R() * 9) * 60000, paidAt, tickets: [] };
+          if (refunded) { o.refundedAt = Math.min(start - 6 * H, paidAt + Math.floor(1 + R() * 5) * D); o.refundReason = pick(['Permintaan peserta, berhalangan hadir', 'Salah pilih jadwal', 'Pembayaran ganda']); }
+          items.forEach((it, k) => {
+            const tid = 'T-' + code(7), came = !refunded && R() < 0.88;
+            // Kedatangan: menumpuk 30 menit sebelum mulai, sebagian setelah acara dimulai.
+            const ck = came ? Math.min(ed.end - H, ed.doors + Math.max(0, Math.round(doorsGap * (0.35 + R() * 0.75) + (R() - 0.5) * 40 * 60000))) : null;
+            tickets[tid] = { id: tid, order: id, ev: arcId, type: t.id, seat: it.seat, holder: k ? pick(FIRST) + ' ' + pick(LAST) : nm, status: refunded ? 'VOID' : 'ACTIVE', checkedInAt: ck, gate: ck ? pick(ed.gates.length ? ed.gates : ['Gate A']) : null };
+            o.tickets.push(tid);
+          });
+          orders[id] = o; ed.orders.push(o);
+        }
+      });
+      // Laporan gate yang ditangani Command Center (sesekali) dan riwayat persetujuan.
+      if (R() < 0.35) ed.reports.push({ id: 'GR-' + hash('gr|' + arcId).slice(-4), ts: ed.doors + Math.floor(R() * 2 * H), gate: pick(ed.gates.length ? ed.gates : ['Gate A']), text: pick(AR_REPORTS), ticketId: 'TCK-' + (7000 + Math.floor(R() * 900)) });
+      const sub0 = start - (38 + Math.floor(R() * 20)) * D;
+      ed.audit = [[sub0, 'Diajukan untuk persetujuan', e.org || 'Penyelenggara'], [sub0 + (1 + Math.floor(R() * 3)) * D, 'Disetujui Divisi Event', 'Divisi Event'], [sub0 + (3 + Math.floor(R() * 4)) * D, 'Disetujui Operasional Mall', 'Operasional Mall'], [sub0 + 8 * D, 'Dipublikasikan, penjualan dibuka', e.org || 'Penyelenggara'], [ed.end + 2 * H, 'Acara selesai, laporan ditutup', 'Tim Event Mall']].map(([ts, text, who]) => ({ ts, text, who }));
+      list.push(ed); byId[arcId] = ed;
+    });
+    list.sort((x, y) => y.start - x.start);
+    arc = { list, orders, tickets, byId }; arcKey = key;
+    return list;
+  }
+  const arcEv = (id) => (archive(), arc && arc.byId[id]) || null;
+  const arcOrder = (id) => (archive(), arc && arc.orders[id]) || null;
+  const arcTicket = (id) => (archive(), arc && arc.tickets[id]) || null;
+  // Ringkasan satu edisi arsip (angka yang sama dipakai Dasbor, Daftar acara, Transaksi, Keuangan, Laporan, portal).
+  function arcStats(id) {
+    const ed = arcEv(id); if (!ed) return null;
+    if (ed._st) return ed._st;
+    const cap = ed.types.reduce((a, t) => a + (t.seated ? (ed.layout ? allSeats(ed).filter((s) => seatType(ed, s) === t.id).length : 0) : t.quota || 0), 0);
+    const paid = ed.orders.filter((o) => o.status === 'PAID'), ref = ed.orders.filter((o) => o.status === 'REFUNDED');
+    const tks = paid.flatMap((o) => o.tickets.map((t) => arc.tickets[t]));
+    const byMethod = {}; paid.forEach((o) => { const b = byMethod[o.method] || (byMethod[o.method] = { orders: 0, net: 0 }); b.orders++; b.net += o.total; });
+    const gross = paid.concat(ref).reduce((a, o) => a + o.total, 0), refunded = ref.reduce((a, o) => a + o.total, 0);
+    ed._st = { cap, sold: tks.length, orders: paid.length, refunds: ref.length, gross, refunded, net: gross - refunded, fee: paid.reduce((a, o) => a + o.fee, 0), checkedIn: tks.filter((t) => t.checkedInAt).length,
+      attendance: tks.length ? tks.filter((t) => t.checkedInAt).length / tks.length : 0, byMethod, mobil: paid.filter((o) => o.veh && o.veh.t === 'mobil').length, motor: paid.filter((o) => o.veh && o.veh.t === 'motor').length, reports: ed.reports.length };
+    return ed._st;
+  }
   function cartHolds(evId, cart, t) {
     t = t || now();
     const seats = Object.entries(state.seats[evId] || {}).filter(([, x]) => x.st === 'HELD' && x.cart === cart && !x.order && x.until > t).map(([sid, x]) => ({ seat: sid, type: seatType(ev(evId), sid), until: x.until }));
@@ -1197,6 +1292,72 @@
     }).join('');
     return `<div class="seatmap-wrap"><div class="seatmap"><div class="stage">${esc(e.layout.stage)}</div>${rows}</div></div>`;
   }
+  // ------------------------------------------------------------------ Excel (.xlsx) tanpa library
+  // Satu sheet, teks sebagai inlineStr (tidak pernah dijalankan sebagai rumus), baris judul tebal + dibekukan + filter.
+  // Dibungkus zip tanpa kompresi (metode store) dengan CRC32, cukup untuk Excel, LibreOffice, Google Sheets & Numbers.
+  const utf8 = (s) => { const b = unescape(encodeURIComponent(s)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+  let CRC_T = null;
+  function crc32(u) {
+    if (!CRC_T) { CRC_T = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC_T[n] = c >>> 0; } }
+    let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipStore(files) { // files: [[nama, Uint8Array]]
+    const parts = [], central = []; let off = 0;
+    const d = new Date(now()), dosT = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), dosD = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+    const hdr = (n) => { const b = new Uint8Array(n); return [b, new DataView(b.buffer)]; };
+    files.forEach(([name, data]) => {
+      const nm = utf8(name), crc = crc32(data);
+      const [l, lv] = hdr(30 + nm.length);
+      lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true); lv.setUint16(8, 0, true); lv.setUint16(10, dosT, true); lv.setUint16(12, dosD, true);
+      lv.setUint32(14, crc, true); lv.setUint32(18, data.length, true); lv.setUint32(22, data.length, true); lv.setUint16(26, nm.length, true); l.set(nm, 30);
+      const [c, cv] = hdr(46 + nm.length);
+      cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(12, dosT, true); cv.setUint16(14, dosD, true);
+      cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true); cv.setUint16(28, nm.length, true); cv.setUint32(42, off, true); c.set(nm, 46);
+      parts.push(l, data); central.push(c); off += l.length + data.length;
+    });
+    const csize = central.reduce((a, c) => a + c.length, 0);
+    const [e, ev] = hdr(22);
+    ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true); ev.setUint32(12, csize, true); ev.setUint32(16, off, true);
+    const all = parts.concat(central, [e]), out = new Uint8Array(all.reduce((a, p) => a + p.length, 0));
+    let p = 0; all.forEach((x) => { out.set(x, p); p += x.length; });
+    return out;
+  }
+  const xmlEsc = (v) => String(v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const colName = (i) => { let s = ''; i++; while (i) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  // rows: baris pertama = judul kolom. opts: { sheet, widths: [lebar karakter per kolom] }.
+  function xlsxBytes(rows, opts) {
+    opts = opts || {};
+    const ncol = Math.max(1, ...rows.map((r) => r.length)), last = colName(ncol - 1) + Math.max(1, rows.length);
+    const widths = opts.widths || Array.from({ length: ncol }, (_, i) => Math.min(40, Math.max(8, ...rows.map((r) => String(r[i] == null ? '' : r[i]).length + 2))));
+    const cell = (v, ref, head) => {
+      if (v == null || v === '') return head ? `<c r="${ref}" s="1"/>` : '';
+      if (typeof v === 'number' && isFinite(v)) return `<c r="${ref}"${head ? ' s="1"' : ''}><v>${v}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"${head ? ' s="1"' : ''}><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+    };
+    const sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+      + '<cols>' + widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('') + '</cols><sheetData>'
+      + rows.map((r, y) => `<row r="${y + 1}">${r.map((v, x) => cell(v, colName(x) + (y + 1), y === 0)).join('')}</row>`).join('')
+      + `</sheetData>${rows.length > 1 ? `<autoFilter ref="A1:${last}"/>` : ''}<pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+    const name = xmlEsc(String(opts.sheet || 'Data').replace(/[\\/?*[\]:]/g, ' ').slice(0, 31));
+    return zipStore([
+      ['[Content_Types].xml', utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>')],
+      ['_rels/.rels', utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>')],
+      ['xl/workbook.xml', utf8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${name}" sheetId="1" r:id="rId1"/></sheets>${rows.length > 1 ? `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">'${name.replace(/'/g, "''")}'!$A$1:$${colName(ncol - 1)}$${rows.length}</definedName></definedNames>` : ''}</workbook>`)],
+      ['xl/_rels/workbook.xml.rels', utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>')],
+      ['xl/worksheets/sheet1.xml', utf8(sheet)],
+      ['xl/styles.xml', utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF14213D"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>')],
+    ]);
+  }
+  function download(name, data, type) {
+    const url = URL.createObjectURL(new Blob([data], { type }));
+    const a = document.createElement('a'); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  // ZIP biasa (tanpa kompresi): files = [[nama/jalur, teks atau Uint8Array]].
+  const zipBytes = (files) => zipStore(files.map(([n, d]) => [n, typeof d === 'string' ? utf8(d) : d]));
+  const xlsx = (name, rows, opts) => download(name, xlsxBytes(rows, opts), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   // CSV untuk Excel regional Indonesia: pemisah titik koma, BOM UTF-8, baris CRLF.
   // Teks berawalan = + - @ tab CR diberi kutip tunggal agar tidak dijalankan sebagai rumus (CSV injection).
   function csvText(rows) {
@@ -1217,9 +1378,9 @@
 
   window.Evt = Object.assign(A, {
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
-    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
+    now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText, xlsx, xlsxBytes, zipBytes, download,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
-    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt, turn, ORG_MALL, AREAS, areaVenue, VEH, PLATE_RE, normPlate, vehTxt, parkDemand, PARK_RATIO, areaClash: (areaId, start, end, exceptId) => clashIn(state, areaId, start, end, exceptId),
+    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt, turn, ORG_MALL, AREAS, areaVenue, VEH, PLATE_RE, normPlate, vehTxt, parkDemand, PARK_RATIO, archive, arcEv, arcOrder, arcTicket, arcStats, areaClash: (areaId, start, end, exceptId) => clashIn(state, areaId, start, end, exceptId),
   });
-  Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
+  Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version }, offline: { get: () => mode === 'server' && fails >= OFFLINE_AFTER } });
 })();

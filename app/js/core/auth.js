@@ -20,16 +20,41 @@
   window.SMAuth = { me, logout, switchTo };
   // Tombol "Lanjut sebagai …" (data-switch-email + data-switch-next) di halaman mana pun.
   document.addEventListener('click', (ev) => { const b = ev.target.closest('[data-switch-email]'); if (!b) return; ev.preventDefault(); b.disabled = true; switchTo(b.dataset.switchEmail, b.dataset.switchNext || ''); });
-  // Menu profil: daftar "Ganti akun demo" pada elemen [data-demo-switch] (hanya mode demo).
+  // Menu profil: bagian "Ubah peran" pada elemen [data-demo-switch] (Pengelola, Command Center, Pengunjung).
+  // Empat peran utama, peran yang sedang dipakai ditandai "Aktif". Akun demo lain (Divisi Event, Operasional Mall,
+  // Petugas gate) di bawah "Akun lain". Mode demo: pindah akun satu klik (/api/auth/demo). Bukan mode demo atau tanpa
+  // server: tautan ke halaman masuk peran itu.
   const escH = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const MAIN = [
+    ['pengunjung', 'Pengunjung', 'Beli tiket & lihat e-ticket', 'person', '/pengunjung'],
+    ['pengelola', 'Pengelola', 'Tim Event Mall', 'event_note', '/pengelola'],
+    ['tenant', 'Tenant', 'Penyelenggara acara (EO)', 'storefront', '/pengelola'],
+    ['command-center', 'Command Center', 'Operator mall', 'hub', '/command-center'],
+  ];
+  function currentRole(m) {
+    const p = location.pathname, a = (m && m.active) || {};
+    if (p.startsWith('/pengunjung')) return 'pengunjung';
+    if (p.startsWith('/pengelola')) return a['/pengelola'] || 'pengelola';
+    if (p.startsWith('/command-center')) return a['/command-center'] || 'command-center';
+    if (p.startsWith('/checkin')) return a['/checkin'] || 'gate';
+    return '';
+  }
+  function roleItem(role, label, sub, icon, home, cur, accs) {
+    const inner = '<span class="material-symbols-outlined text-[20px]">' + escH(icon) + '</span><span class="pg-sw-t"><b>' + escH(label) + '</b><small>' + escH(sub) + '</small></span>';
+    if (role === cur) return '<div class="pg-sw-it is-cur" aria-current="true">' + inner + '<em>Aktif</em></div>';
+    if (role === 'pengunjung') return '<a class="pg-sw-it" href="' + escH(home) + '">' + inner + '</a>';
+    const acc = accs.find((x) => x.role === role);
+    if (acc) return '<button type="button" class="pg-sw-it" data-switch-email="' + escH(acc.email) + '" data-switch-next="' + escH(acc.home || home) + '">' + inner + '</button>';
+    return '<a class="pg-sw-it" href="/masuk?role=' + encodeURIComponent(role) + '&amp;next=' + encodeURIComponent(home) + '">' + inner + '</a>';
+  }
   function renderSwitch(m) {
     const boxes = document.querySelectorAll('[data-demo-switch]'); if (!boxes.length) return;
-    const accs = (m && m.demo && m.demoAccounts) || [];
-    boxes.forEach((box) => {
-      if (!accs.length) { box.hidden = true; return; }
-      box.hidden = false;
-      box.innerHTML = '<div class="pg-sw-h">Ganti akun demo</div>' + accs.filter((a) => !(m.roles || []).includes(a.role)).map((a) => '<button type="button" data-switch-email="' + escH(a.email) + '" data-switch-next="' + escH(a.home) + '"><span class="material-symbols-outlined text-[20px]">' + escH(a.icon) + '</span><span><b>' + escH(a.label) + '</b><small>' + escH(a.group) + '</small></span></button>').join('');
-    });
+    const accs = (m && m.demo && m.demoAccounts) || [], cur = currentRole(m);
+    const main = MAIN.map(([r, l, s, i, h]) => roleItem(r, l, s, i, h, cur, accs)).join('');
+    const others = accs.filter((a) => !MAIN.some((x) => x[0] === a.role));
+    const more = others.length ? '<details class="pg-sw-more"' + (others.some((a) => a.role === cur) ? ' open' : '') + '><summary>Akun lain</summary>'
+      + others.map((a) => roleItem(a.role, a.label, a.group, a.icon, a.home, cur, accs)).join('') + '</details>' : '';
+    boxes.forEach((box) => { box.hidden = false; box.innerHTML = '<div class="pg-sw-h">Ubah peran</div>' + main + more; });
   }
   document.addEventListener('DOMContentLoaded', async () => {
     const els = document.querySelectorAll('[data-logout]');

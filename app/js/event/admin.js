@@ -18,7 +18,7 @@
   const GLOBAL_TABS = ['acara', 'portofolio']; // tab lintas acara (tanpa pemilih acara)
   const GTABS = GTABS_, ETABS = TABS.pengelola.slice(GTABS_.length); // menu lintas acara & menu per acara
   const isG = (tab) => GTABS.some((x) => x[0] === tab);
-  const ui = { ev: 'EVT-01', tab: null, seatMode: 'info', seatSel: null, q: '', st: 'ALL', gate: null, ch: 'ALL', aq: '', ast: 'ALL', gq: '', gst: 'ALL', vf: 'ALL' };
+  const ui = { ev: 'EVT-01', tab: null, seatMode: 'info', seatSel: null, q: '', st: 'ALL', gate: null, ch: 'ALL', aq: '', ast: 'ALL', gq: '', gst: 'ALL', vf: 'ALL', grange: 'AKTIF', glim: 150 };
   let unsub = null, host = null;
   const EV_ST = { DRAFT: ['Draft', 'bg-slate-500/20 text-slate-300'], PUBLISHED: ['Dipublikasikan', 'bg-emerald-500/15 text-emerald-300'], CLOSED: ['Penjualan ditutup', 'bg-amber-500/15 text-amber-300'], CANCELLED: ['Dibatalkan', 'bg-rose-500/15 text-rose-300'] };
   const evChip = (e) => UI.chip(EV_ST[e.status][0], EV_ST[e.status][1]);
@@ -140,8 +140,11 @@
   const actorOf = () => { const pf = profile(); return { name: pf.name, role: who() === 'tenant' ? 'Tenant/EO' : 'Tim Event Mall', org: (acct && acct.org) || null }; };
   // Profil tampilan (nama, jabatan, WhatsApp) disimpan di browser ini; email & password akun diatur di server/config.js.
   const PROF_KEY = 'smicc-pengelola-profil';
-  const loadProf = () => { try { return JSON.parse(localStorage.getItem(PROF_KEY)) || {}; } catch (err) { return {}; } };
-  const profile = () => { const p = loadProf(); return { name: p.name || (acct && acct.name) || 'Pengelola acara', title: p.title || 'Pengelola acara', phone: p.phone || '', email: acct ? acct.email : '' }; };
+  // Profil per akun (Pengelola dan Tenant bisa bergantian di browser yang sama lewat menu Ubah peran).
+  // Kunci lama tanpa email tetap dibaca untuk akun pengelola agar profil yang sudah disimpan tidak hilang.
+  const profKey = () => PROF_KEY + (acct ? ':' + acct.email : '');
+  const loadProf = () => { try { return JSON.parse(localStorage.getItem(profKey())) || (who() !== 'tenant' && JSON.parse(localStorage.getItem(PROF_KEY))) || {}; } catch (err) { return {}; } };
+  const profile = () => { const p = loadProf(); return { name: p.name || (acct && acct.name) || 'Pengelola acara', title: p.title || (who() === 'tenant' ? 'Penyelenggara acara (EO)' : 'Tim Event Mall'), phone: p.phone || '', email: acct ? acct.email : '' }; };
   const initialsOf = (n) => String(n).split(/\s+/).filter((w) => /[A-Za-z]/.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'EO';
   function renderProfile() {
     const p = profile(), $ = (id) => document.getElementById(id);
@@ -174,7 +177,7 @@
       const v = { name: f.name.value.trim(), title: f.title.value.trim(), phone: f.phone.value.trim() };
       if (!v.name) { err.hidden = false; err.textContent = 'Isi nama tampilan.'; return f.name.focus(); }
       if (v.phone && !/^\+?[0-9 -]{8,20}$/.test(v.phone)) { err.hidden = false; err.textContent = 'Nomor WhatsApp hanya boleh angka, spasi, atau tanda +.'; return f.phone.focus(); }
-      try { localStorage.setItem(PROF_KEY, JSON.stringify(v)); } catch (e2) { err.hidden = false; err.textContent = 'Browser ini tidak mengizinkan penyimpanan. Profil tidak tersimpan.'; return; }
+      try { localStorage.setItem(profKey(), JSON.stringify(v)); } catch (e2) { err.hidden = false; err.textContent = 'Browser ini tidak mengizinkan penyimpanan. Profil tidak tersimpan.'; return; }
       UI.closeModal(); renderProfile(); UI.toast('Profil disimpan', 'P4');
     });
     f.name.focus();
@@ -217,6 +220,7 @@
   let lastSide = '';
   function shell(force) {
     const side = document.getElementById('pg-side'); if (!side) return;
+    news();
     const html = sideHtml();
     if (!force && html === lastSide) return; // badge tidak berubah: jangan ganggu fokus di sidebar
     lastSide = html;
@@ -281,6 +285,30 @@
       q.focus();
     });
   }
+  // Pemilih acara di Command Center (Pemantauan Event): cari + daftar per status, urut tanggal. Panel & baris sama dengan
+  // pemilih acara konsol pengelola (dropdown(), .pg-pick-row), jadi tampilan & keyboard (panah, Enter, Esc) konsisten.
+  const ccPickList = () => Evt.s.order.map((id) => Evt.ev(id)).filter((x) => x && seen(x) && (isMgr() || x.status !== 'DRAFT')).sort((a, b) => a.start - b.start);
+  function ccPicker(btn) {
+    const list = ccPickList();
+    const groups = [['Berlangsung & akan datang', (x) => ['PUBLISHED', 'CLOSED'].includes(phase(x))], ['Sudah selesai', (x) => phase(x) === 'DONE'], ['Draft', (x) => phase(x) === 'DRAFT'], ['Dibatalkan', (x) => phase(x) === 'CANCELLED']];
+    const row = (x) => `<a href="#" class="pg-pick-row${x.id === ui.ev ? ' on' : ''}" data-pick-ev="${x.id}" style="--c:${esc(x.color)}">${plate(x)}<span class="min-w-0 flex-1"><b>${esc(x.name)}</b><small>${x.id}, ${Evt.fmtShort(x.start)}, ${place(x)}</small></span>${x.id === ui.ev ? icon('check', 'text-[18px] text-primary') : ''}</a>`;
+    const rows = (q) => groups.map(([g, f]) => { const xs = list.filter(f).filter((x) => !q || (x.name + ' ' + x.id + ' ' + x.cat).toLowerCase().includes(q)); return xs.length ? `<div class="pg-pick-g">${g}<span>${xs.length}</span></div>${xs.map(row).join('')}` : ''; }).join('') || '<p class="pg-mempty">Tidak ada acara yang cocok.</p>';
+    dropdown(btn, `<input class="inp w-full" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off" aria-label="Cari acara"><div class="pg-pick-list" id="pick-list">${rows('')}</div>`, (el, close) => {
+      const q = el.querySelector('#pick-q'), lst = el.querySelector('#pick-list'); let at = -1;
+      const items = () => Array.from(lst.querySelectorAll('a'));
+      const mark = () => items().forEach((a, i) => { a.classList.toggle('kb', i === at); if (i === at) a.scrollIntoView({ block: 'nearest' }); });
+      q.addEventListener('input', () => { lst.innerHTML = rows(q.value.trim().toLowerCase()); at = -1; });
+      q.addEventListener('keydown', (ev) => {
+        const it = items();
+        if (ev.key === 'ArrowDown') { ev.preventDefault(); at = Math.min(it.length - 1, at + 1); mark(); }
+        else if (ev.key === 'ArrowUp') { ev.preventDefault(); at = Math.max(0, at - 1); mark(); }
+        else if (ev.key === 'Enter') { ev.preventDefault(); const a = it[at] || it[0]; if (a) a.click(); }
+      });
+      lst.addEventListener('click', (ev) => { const a = ev.target.closest('[data-pick-ev]'); if (!a) return; ev.preventDefault(); close(); ui.ev = a.dataset.pickEv; ui.seatSel = null; redraw(); });
+      const on = lst.querySelector('.on'); if (on) on.scrollIntoView({ block: 'center' });
+      q.focus();
+    });
+  }
   // + Acara baru: nama, area (dengan ketersediaan), jadwal, format tiket. Sisanya diisi di Pengaturan.
   function newEventPanel() {
     const btn = document.getElementById('pg-new'); if (!btn) return; drawer(false);
@@ -315,6 +343,34 @@
   }
   // Header acara (menempel): nama, status, aksi utama sesuai status, menu aksi lain.
   const PRIMARY = { DRAFT: ['PUBLISHED', 'Publikasikan', 'publish', 'btn'], PUBLISHED: ['CLOSED', 'Tutup penjualan', 'block', 'btn-ghost'], CLOSED: ['PUBLISHED', 'Buka lagi penjualan', 'storefront', 'btn'] };
+  // Menu Manifest (cadangan kalau sistem mati, SOP-EVT-05) di sebelah tombol Laporan PDF.
+  function mfMenu(e) {
+    const [tone, label] = EvtCheckin.backup.status(e.id);
+    return `<details class="pg-more pg-mf"><summary class="pg-sign-btn" title="Unduh manifest peserta (cadangan kalau sistem mati)">${icon('cloud_download', 'text-[18px]')}<span>Manifest</span><i class="mf-dot ${tone}" title="${label}"></i></summary><div class="pg-menu">
+      <div class="mf-menu-h">Cadangan kalau sistem mati · <b class="mf-${tone}">${label}</b></div>
+      <button type="button" data-mf-off="${e.id}">${icon('offline_pin', 'text-[18px]')} Manifest offline<small>Dibuka tanpa server: cari & centang hadir</small></button>
+      <button type="button" data-mf-xlsx="${e.id}">${icon('table_view', 'text-[18px]')} Excel (.xlsx)</button>
+      <button type="button" data-mf-csv="${e.id}">${icon('download', 'text-[18px]')} CSV</button></div></details>`;
+  }
+  // Panel Dasbor: cadangan manifest acara yang berjalan atau mulai dalam 48 jam, status per acara di perangkat ini.
+  function manifestPanel() {
+    const B = EvtCheckin.backup, t = Evt.now(), H = 3600000;
+    const evs = visEvs().filter((e) => e.status !== 'DRAFT' && e.status !== 'CANCELLED' && e.start < t + 48 * H && (e.end || e.start + 3 * H) + 2 * H > t).sort((a, b) => a.start - b.start);
+    const d0 = new Date(t); d0.setHours(0, 0, 0, 0);
+    const day = (ts) => (ts < d0.getTime() + 86400000 ? (ts < t ? 'Berlangsung' : 'Hari ini') : ts < d0.getTime() + 2 * 86400000 ? 'Besok' : Evt.fmtShort(ts)) + ' ' + Evt.fmtTime(ts);
+    const rest = visEvs().filter((e) => e.status !== 'DRAFT' && e.status !== 'CANCELLED').length - evs.length;
+    const rows = evs.map((e) => {
+      const m = B.ensure(e.id), [tone, label] = B.status(e.id), dl = B.dlAt(e.id), n = m ? m.rows.filter((r, i) => i && r[11] === 'Aktif').length : 0;
+      const sub = tone === 'warn' ? 'Manifest offline belum diunduh di perangkat ini' : tone === 'bad' ? 'Server terputus, data per ' + Evt.fmtTime(m.savedAt) : 'Diperbarui ' + Evt.fmtTime(m ? m.savedAt : t) + (dl ? ' · diunduh ' + (dl < d0.getTime() ? Evt.fmtShort(dl) + ' ' : '') + Evt.fmtTime(dl) : '');
+      return `<li class="mf-row" style="--c:${esc(e.color)}">${plate(e)}<div class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${day(e.start)} · ${num(n)} tiket · ${sub}</small></div>
+        <span class="mf-st ${tone}"><i></i>${label}</span>
+        <span class="mf-act"><button type="button" class="btn-ghost" data-mf-off="${e.id}" title="Manifest offline">${icon('offline_pin', 'text-[16px]')}<span>Offline</span></button><button type="button" class="btn-ghost" data-mf-xlsx="${e.id}" title="Excel">${icon('table_view', 'text-[16px]')}<span>Excel</span></button><button type="button" class="btn-ghost" data-mf-csv="${e.id}" title="CSV">${icon('download', 'text-[16px]')}<span>CSV</span></button></span></li>`;
+    }).join('');
+    return `<section class="card p-5 mb-5 pg-mf-panel">${UI.h('Cadangan manifest', 'SOP-EVT-05 · diperbarui otomatis setiap ada perubahan · acara 48 jam ke depan', `<button type="button" class="btn" data-mf-zip>${icon('folder_zip', 'text-[18px]')} Semua acara (ZIP)</button>`, 'cloud_off')}
+      ${Evt.offline ? `<p class="mf-warn">${icon('wifi_off', 'text-[18px]')} Server tidak terhubung. Unduhan memakai data terakhir yang diterima perangkat ini.</p>` : ''}
+      ${rows ? `<ul class="mf-list">${rows}</ul>` : '<p class="pg-mempty">Tidak ada acara dalam 48 jam ke depan.</p>'}
+      ${rest > 0 ? `<p class="mf-foot">${num(rest)} acara lain ikut di file ZIP.</p>` : ''}</section>`;
+  }
   function moreMenu(e) {
     const live = liveOrders(e);
     return `<details class="pg-more"><summary class="pg-more-btn" aria-label="Aksi lain untuk ${esc(e.name)}" title="Aksi lain">${icon('more_horiz', 'text-[20px]')}</summary><div class="pg-menu">
@@ -339,7 +395,7 @@
         <div class="pg-sign-meta"><span>${Evt.fmtDate(e.start)}, ${Evt.fmtTime(e.start)} WIB</span><span>Gate dibuka ${Evt.fmtTime(e.doors)}</span>
           <span class="pg-tag"><i style="background:${DOT[e.status]}"></i>${phase(e) === 'DONE' ? 'Selesai' : EV_ST[e.status][0]}</span>${e.status === 'CANCELLED' || e.status === 'DRAFT' ? '' : `<span class="pg-tag"><i style="background:${sale.open ? 'rgb(var(--primary))' : 'rgb(var(--on-surface) / .4)'}"></i>${esc(sale.label)}</span>`}</div>
       </div>
-      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-ev="${e.id}" title="Unduh laporan acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button>${apBtn}${p ? `<button type="button" class="pg-sign-btn ${p[3] === 'btn' ? 'main' : ''}" data-status="${p[0]}" data-ev-id="${e.id}">${icon(p[2], 'text-[18px]')}<span>${p[1]}</span></button>` : ''}${moreMenu(e)}</div></section>`;
+      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-ev="${e.id}" title="Unduh laporan acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button>${e.status !== 'DRAFT' ? mfMenu(e) : ''}${apBtn}${p ? `<button type="button" class="pg-sign-btn ${p[3] === 'btn' ? 'main' : ''}" data-status="${p[0]}" data-ev-id="${e.id}">${icon(p[2], 'text-[18px]')}<span>${p[1]}</span></button>` : ''}${moreMenu(e)}</div></section>`;
   }
   function attnBlock(e) {
     const a = attention(e);
@@ -369,7 +425,7 @@
     return `<section class="pg-sign pg-sign-all"><span class="pg-sign-plate">${icon('apps', 'text-[22px]')}</span>
       <div class="pg-sign-main"><div class="pg-sign-kick"><span>Summarecon Mall Bandung</span></div><h2 class="pg-sign-h">Semua acara</h2>
         <div class="pg-sign-meta"><span>${all.length} acara</span><span>${all.filter((e) => phaseTxt(e) === 'Dijual').length} sedang dijual</span><span>${all.filter((e) => e.status === 'DRAFT').length} draft</span></div></div>
-      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-all title="Unduh laporan semua acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button><button type="button" class="pg-sign-btn main" data-new-ev>${icon('add', 'text-[18px]')}<span>Acara baru</span></button></div></section>`;
+      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-all title="Unduh laporan semua acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button><button type="button" class="pg-sign-btn" data-mf-zip title="Manifest semua acara dalam satu file ZIP">${icon('folder_zip', 'text-[18px]')}<span>Manifest (ZIP)</span></button><button type="button" class="pg-sign-btn main" data-new-ev>${icon('add', 'text-[18px]')}<span>Acara baru</span></button></div></section>`;
   }
   function gdash() {
     const all = visEvs(), t = Evt.now(), D = 86400000;
@@ -377,8 +433,9 @@
     const paid = all.flatMap((e) => Evt.stats(e.id).paid);
     const perDay = days.map((d) => paid.filter((o) => o.paidAt >= d && o.paidAt < d + D).reduce((a, o) => a + o.items.length, 0));
     const next = all.filter((e) => e.status !== 'CANCELLED' && e.status !== 'DRAFT' && e.start + 2 * 3600000 > t).sort((a, b) => a.start - b.start).slice(0, 6);
-    return `<div id="g-feed">${ticker(null)}</div><div id="g-attn">${attnAllBlock()}</div>
+    return `<div id="g-attn">${attnAllBlock()}</div>${isMgr() ? manifestPanel() : ''}
       <div id="acara-kpi" class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">${acaraKpi()}</div>
+      ${historyCard()}
       <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
         <section class="card p-5 xl:col-span-7">${UI.h('Tiket terjual per hari', '14 hari terakhir, semua acara', '', 'trending_up')}${UI.line([{ data: perDay, color: PRI }], { labels: days.map((d, i) => (i % 3 === 0 ? new Date(d).getDate() + '/' + (new Date(d).getMonth() + 1) : '')), min: 0, h: 200 })}</section>
         <section class="card p-5 xl:col-span-5">${UI.h('Acara berikutnya', '', `<a class="btn-ghost" href="${Router.href('/acara')}">Daftar acara</a>`, 'event_upcoming')}
@@ -386,19 +443,28 @@
       </div>`;
   }
   const gStOf = (o) => (o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status);
+  // Pesanan menurut rentang: AKTIF = pesanan acara yang ada sekarang; 30/90/365 hari = ditambah pesanan arsip (hanya baca).
+  function gtrxAll() {
+    const live = Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)));
+    if (ui.grange === 'AKTIF') return live;
+    const from = Evt.now() - +ui.grange * 86400000;
+    return live.concat(arcOrders()).filter((o) => o.createdAt >= from);
+  }
   function gtrxTable() {
     const q = ui.gq.trim().toLowerCase();
-    const list = Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && (ui.gst === 'ALL' || gStOf(o) === ui.gst) && (!q || [o.id, o.name, o.email, o.phone, Evt.ev(o.ev).name].join(' ').toLowerCase().includes(q))).sort((a, b) => b.createdAt - a.createdAt);
+    const list = gtrxAll().filter((o) => (ui.gst === 'ALL' || gStOf(o) === ui.gst) && (!q || [o.id, o.name, o.email, o.phone, evOf(o.ev).name].join(' ').toLowerCase().includes(q))).sort((a, b) => b.createdAt - a.createdAt);
     return `<div class="font-label-md text-label-md text-on-surface-variant mb-2">${num(list.length)} transaksi</div><div class="overflow-x-auto"><table class="tbl min-w-[760px]"><thead><tr><th>Booking</th><th>Acara</th><th>Pemesan</th><th class="text-right">Tiket</th><th class="text-right">Total</th><th>Status</th><th>Dibuat</th></tr></thead><tbody>
-      ${list.slice(0, 150).map((o) => { const e = Evt.ev(o.ev); return `<tr class="row" data-order="${o.id}"><td class="font-label-lg text-label-lg">${o.id}</td><td><div class="font-body-sm text-body-sm">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}</div></td><td><div class="font-body-sm text-body-sm">${esc(o.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.email)}</div></td><td class="text-right">${o.items.length}</td><td class="text-right whitespace-nowrap">${rp(o.total)}</td><td>${oChip(o)}</td><td class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">${Evt.fmtDT(o.createdAt)}</td></tr>`; }).join('') || '<tr><td colspan="7" class="text-on-surface-variant">Tidak ada transaksi yang cocok.</td></tr>'}
-      </tbody></table></div>${list.length > 150 ? '<p class="pg-mnote">Menampilkan 150 transaksi terbaru. Pakai pencarian atau unduh CSV untuk semuanya.</p>' : ''}`;
+      ${list.slice(0, ui.glim).map((o) => { const e = evOf(o.ev); return `<tr class="row" ${o.archived ? 'data-arc-order' : 'data-order'}="${o.id}"><td class="font-label-lg text-label-lg">${o.id}</td><td><div class="font-body-sm text-body-sm">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}</div></td><td><div class="font-body-sm text-body-sm">${esc(o.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.email)}</div></td><td class="text-right">${o.items.length}</td><td class="text-right whitespace-nowrap">${rp(o.total)}</td><td>${oChip(o)}</td><td class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">${Evt.fmtDT(o.createdAt)}</td></tr>`; }).join('') || '<tr><td colspan="7" class="text-on-surface-variant">Tidak ada transaksi yang cocok.</td></tr>'}
+      </tbody></table></div>${list.length > ui.glim ? `<p class="pg-mnote flex flex-wrap items-center gap-3">Menampilkan ${num(ui.glim)} dari ${num(list.length)} transaksi terbaru. <button type="button" class="btn-ghost" data-gmore>Tampilkan 150 lagi</button></p>` : ''}`;
   }
   function gtrx() {
-    const all = Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))), c = {}; all.forEach((o) => { const s = gStOf(o); c[s] = (c[s] || 0) + 1; });
+    const all = gtrxAll(), c = {}; all.forEach((o) => { const s = gStOf(o); c[s] = (c[s] || 0) + 1; });
+    const ranges = [['AKTIF', 'Acara aktif'], ['30', '30 hari'], ['90', '3 bulan'], ['365', '12 bulan']];
     const sts = [['ALL', 'Semua', all.length], ['PAID', 'Lunas'], ['PENDING', 'Menunggu bayar'], ['EXPIRED', 'Kedaluwarsa'], ['CANCELLED', 'Batal'], ['REFUNDED', 'Refund']];
     return `<section class="card p-5">${UI.h('Transaksi semua acara', 'Klik baris untuk melihat detail, mengubah data peserta, atau refund', `<button class="btn-ghost" id="g-csv">${icon('download', 'text-[16px]')} Unduh CSV</button>`, 'receipt_long')}
       <div class="pg-filter"><label class="pg-search">${icon('search', 'text-[18px]')}<span class="sr-only">Cari transaksi</span><input id="gq" class="inp" type="search" placeholder="Cari booking, nama, email, atau acara" value="${esc(ui.gq)}" autocomplete="off"></label>
         <div class="pg-chips" role="group" aria-label="Saring menurut status">${sts.map(([k, l, n]) => `<button type="button" class="chip-btn ${ui.gst === k ? 'on' : ''}" data-gst="${k}" aria-pressed="${ui.gst === k}">${l} <span class="opacity-70">${n != null ? n : c[k] || 0}</span></button>`).join('')}</div></div>
+      <div class="pg-chips mb-3" role="group" aria-label="Rentang waktu">${ranges.map(([k, l]) => `<button type="button" class="chip-btn ${ui.grange === k ? 'on' : ''}" data-grange="${k}" aria-pressed="${ui.grange === k}">${icon(k === 'AKTIF' ? 'event_available' : 'history', 'text-[16px]')} ${l}</button>`).join('')}${ui.grange !== 'AKTIF' ? '<span class="font-label-sm text-label-sm text-on-surface-variant self-center">termasuk arsip edisi sebelumnya (hanya baca)</span>' : ''}</div>
       <div id="g-table">${gtrxTable()}</div></section>`;
   }
   function gck() {
@@ -410,7 +476,10 @@
       <section class="card p-5">${UI.h('Kehadiran per acara', today.length ? today.length + ' acara berlangsung hari ini' : 'Tidak ada acara yang berlangsung hari ini', `<a class="btn-ghost" href="/checkin" target="_blank" rel="noopener">${icon('smartphone', 'text-[16px]')} Pemindai gate</a>`, 'how_to_reg')}
         <div class="overflow-x-auto"><table class="tbl min-w-[720px]"><thead><tr><th>Acara</th><th>Jadwal</th><th>Gate dibuka</th><th class="w-[28%]">Sudah masuk</th><th>Gate</th><th></th></tr></thead><tbody>
         ${rows.map(({ e, s, an, rep }) => `<tr><td><div class="font-label-lg text-label-lg">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}${isHariH(e) ? ' <span class="pg-hari">Hari H</span>' : ''}</div></td><td class="whitespace-nowrap">${Evt.fmtShort(e.start)}<div class="font-label-sm text-label-sm text-on-surface-variant">${Evt.fmtTime(e.start)} WIB</div></td><td class="whitespace-nowrap">${Evt.fmtTime(e.doors)}</td><td><div class="font-label-md text-label-md mb-1">${num(s.checkedIn)} / ${num(s.tickets)}</div>${UI.bar(s.tickets ? (s.checkedIn / s.tickets) * 100 : 0, 'bg-primary-container')}</td><td>${an.length || rep.length ? `<span class="pg-flag">${an.length + rep.length} peringatan</span>` : '<span class="text-on-surface-variant">Normal</span>'}</td><td class="text-right"><a class="btn-ghost !py-1.5" href="${href(e.id, 'checkin')}">Buka</a></td></tr>`).join('') || '<tr><td colspan="6" class="text-on-surface-variant">Belum ada acara yang dijual.</td></tr>'}
-        </tbody></table></div></section>`;
+        </tbody></table></div></section>
+      ${(() => { const ms = months12(), last = arcVis().slice(0, 8); return `<section class="card p-5 mt-5">${UI.h('Kehadiran 12 bulan', 'Persentase tiket yang benar-benar masuk lewat gate, per bulan acara', '', 'history')}
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-5"><div class="xl:col-span-7">${UI.line([{ data: ms.map((m) => (m.sold ? Math.round((m.came / m.sold) * 100) : 0)), color: PRI, dot: 11 }], { labels: ms.map((m) => m.label), min: 0, max: 100, h: 180 })}</div>
+        <div class="xl:col-span-5"><div class="lbl mb-2">Edisi terakhir</div><ul class="pg-mlist">${last.map((ed) => { const s = Evt.arcStats(ed.id); return `<li><button type="button" class="pg-mrow" data-arc="${ed.id}">${plate(ed)}<span class="min-w-0"><b>${esc(ed.name)}</b><small>${Evt.fmtShort(ed.start)} · ${num(s.checkedIn)} dari ${num(s.sold)} masuk${s.reports ? ' · ' + s.reports + ' laporan gate' : ''}</small></span></button><b>${pct1(s.attendance)}</b></li>`; }).join('')}</ul></div></div></section>`; })()}`;
   }
   function gfin() {
     const rows = visEvs().map((e) => ({ e, f: Evt.finance(e.id) })).filter((r) => r.f.totals.orders > 0);
@@ -428,17 +497,30 @@
           ${rows.sort((a, b) => b.f.totals.net - a.f.totals.net).map(({ e, f }) => `<tr><td><div class="font-label-lg text-label-lg">${esc(e.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${e.id}${f.mismatches.length ? ' · <span class="text-rose-300">' + f.mismatches.length + ' selisih</span>' : ''}</div></td><td class="text-right">${f.totals.orders}</td><td class="text-right whitespace-nowrap">${money(f.totals.gross)}</td><td class="text-right whitespace-nowrap">${money(f.totals.refunded)}</td><td class="text-right whitespace-nowrap"><b>${money(f.totals.net)}</b></td><td class="text-right">${f.roi.roi == null ? '-' : Math.round(f.roi.roi * 100) + '%'}</td><td class="text-right"><a class="btn-ghost !py-1.5" href="${href(e.id, 'keuangan')}">Buka</a></td></tr>`).join('') || '<tr><td colspan="7" class="text-on-surface-variant">Belum ada transaksi.</td></tr>'}
           <tr><td><b>Total</b></td><td class="text-right"><b>${rows.reduce((a, r) => a + r.f.totals.orders, 0)}</b></td><td class="text-right whitespace-nowrap"><b>${money(T.gross)}</b></td><td class="text-right whitespace-nowrap"><b>${money(T.ref)}</b></td><td class="text-right whitespace-nowrap"><b>${money(T.net)}</b></td><td></td><td></td></tr></tbody></table></div></section>
         <section class="card p-5 2xl:col-span-4">${UI.h('Per metode pembayaran', 'Semua acara', '', 'payments')}
-          ${bars(methods.map(([m, b]) => ({ label: esc(m), v: b.net, sub: b.orders + ' transaksi' })), (r) => money(r.v))}</section></div>`;
+          ${bars(methods.map(([m, b]) => ({ label: esc(m), v: b.net, sub: b.orders + ' transaksi' })), (r) => money(r.v))}</section></div>
+      ${(() => { const ms = months12(), arc = arcVis().map((ed) => ({ ed, s: Evt.arcStats(ed.id) })), tot = arc.reduce((a, x) => ({ net: a.net + x.s.net, ref: a.ref + x.s.refunded, fee: a.fee + x.s.fee }), { net: 0, ref: 0, fee: 0 }), byA = {};
+        arc.forEach(({ s }) => Object.entries(s.byMethod).forEach(([m, b]) => { const x = byA[m] || (byA[m] = { orders: 0, net: 0 }); x.orders += b.orders; x.net += b.net; }));
+        return `<section class="card p-5 mt-5">${UI.h('Pendapatan 12 bulan', 'Neto per bulan dari semua penjualan tiket (acara aktif & arsip edisi sebelumnya)', `<button class="btn-ghost" id="g-csv-arc">${icon('download', 'text-[16px]')} Arsip (CSV)</button>`, 'history')}
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">${UI.kpi({ label: 'Neto 12 bulan', value: rpJt(ms.reduce((a, m) => a + m.net, 0)), unit: 'Jt', foot: 'semua acara' })}${UI.kpi({ label: 'Neto arsip', value: rpJt(tot.net), unit: 'Jt', foot: arc.length + ' edisi selesai' })}${UI.kpi({ label: 'Refund arsip', value: rpJt(tot.ref), unit: tot.ref >= 1e6 ? 'Jt' : '', foot: (tot.net ? ((tot.ref / (tot.net + tot.ref)) * 100).toFixed(1) : 0) + '% dari bruto' })}${UI.kpi({ label: 'Biaya layanan arsip', value: rpJt(tot.fee), unit: tot.fee >= 1e6 ? 'Jt' : '', foot: rp(Evt.FEE) + ' per tiket berbayar' })}</div>
+        <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5"><div class="2xl:col-span-8"><div class="lbl mb-1">Pendapatan neto per bulan (juta rupiah)</div>${UI.line([{ data: ms.map((m) => Math.round(m.net / 1e5) / 10), color: PRI, dot: 11 }], { labels: ms.map((m) => m.label), min: 0, h: 200 })}
+          <div class="overflow-x-auto mt-4"><table class="tbl min-w-[620px]"><thead><tr><th>Edisi arsip</th><th>Tanggal</th><th class="text-right">Transaksi</th><th class="text-right">Refund</th><th class="text-right">Neto</th></tr></thead><tbody>${arc.slice().sort((a, b) => b.s.net - a.s.net).slice(0, 10).map(({ ed, s }) => `<tr class="row" data-arc="${ed.id}"><td><div class="font-label-lg text-label-lg">${esc(ed.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(ed.edition)} · ${ed.id}</div></td><td class="whitespace-nowrap">${Evt.fmtShort(ed.start)}</td><td class="text-right">${num(s.orders)}</td><td class="text-right whitespace-nowrap">${money(s.refunded)}</td><td class="text-right whitespace-nowrap"><b>${money(s.net)}</b></td></tr>`).join('')}</tbody></table></div></div>
+        <div class="2xl:col-span-4"><div class="lbl mb-2">Per metode pembayaran, arsip</div>${bars(Object.entries(byA).sort((a, b) => b[1].net - a[1].net).map(([m, b]) => ({ label: esc(m), v: b.net, sub: b.orders + ' transaksi' })), (r) => money(r.v))}</div></div></section>`; })()}`;
   }
   function bindGlobal(el) {
     const gq = el.querySelector('#gq'), gt = el.querySelector('#g-table');
     const regt = () => { gt.innerHTML = gtrxTable(); bindRows(gt); };
     if (gq) gq.addEventListener('input', () => { ui.gq = gq.value; regt(); });
+    el.querySelectorAll('[data-grange]').forEach((b) => b.addEventListener('click', () => { ui.grange = b.dataset.grange; ui.glim = 150; redraw(); }));
     el.querySelectorAll('[data-gst]').forEach((b) => b.addEventListener('click', () => { ui.gst = b.dataset.gst; el.querySelectorAll('[data-gst]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); regt(); }));
     const csv = el.querySelector('#g-csv'); if (csv) csv.addEventListener('click', () => {
       const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Jumlah Tiket', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar']];
-      Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))).forEach((o) => rows.push([o.id, Evt.ev(o.ev).name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
+      gtrxAll().forEach((o) => rows.push([o.id, evOf(o.ev).name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
       Evt.csv('transaksi_semua_acara.csv', rows);
+    });
+    const ca = el.querySelector('#g-csv-arc'); if (ca) ca.addEventListener('click', () => {
+      const rows = [['ID', 'Edisi', 'Acara', 'Tanggal', 'Tiket terjual', 'Kapasitas', 'Kehadiran', 'Transaksi', 'Refund', 'Bruto', 'Neto', 'Biaya Layanan']];
+      arcVis().forEach((ed) => { const s = Evt.arcStats(ed.id); rows.push([ed.id, ed.edition, ed.name, Evt.fmtDT(ed.start), s.sold, s.cap, Math.round(s.attendance * 100) + '%', s.orders, s.refunds, s.gross, s.net, s.fee]); });
+      Evt.csv('arsip_12_bulan.csv', rows);
     });
     const cf = el.querySelector('#g-csv-fin'); if (cf) cf.addEventListener('click', () => {
       const rows = [['ID', 'Acara', 'Transaksi', 'Bruto', 'Refund', 'Neto', 'Biaya Layanan', 'Bagi Hasil Mall', 'ROI Mall', 'Selisih']];
@@ -482,6 +564,10 @@
       rows.slice().sort((a, b) => a.e.start - b.e.start).map((r) => [r.e.name, Evt.fmtShort(r.e.start).replace(/ \d{4}$/, ''), phaseTxt(r.e), num(r.s.sold) + '/' + num(r.cap), money(r.f.totals.net), r.s.tickets ? pc(r.s.checkedIn / r.s.tickets) : '-'])
         .concat([['Total', '', '', num(T.sold) + '/' + num(T.cap), money(T.net), T.tk ? pc(T.ck / T.tk) : '-']]), true);
     const by = {}; rows.forEach((r) => r.f.byMethod.forEach((m) => { const b = by[m.method] || (by[m.method] = { orders: 0, gross: 0, ref: 0, net: 0 }); b.orders += m.orders; b.gross += m.gross; b.ref += m.refunded; b.net += m.net; }));
+    const ms12 = months12();
+    section('Riwayat 12 bulan', 'Acara yang sudah berlangsung dan penjualan tiket per bulan (acara aktif & arsip edisi sebelumnya)');
+    table([{ h: 'Bulan', w: 90 }, { h: 'Acara', w: 60, align: 'right' }, { h: 'Tiket terjual', w: 95, align: 'right' }, { h: 'Neto', w: 120, align: 'right' }, { h: 'Kehadiran', w: 80, align: 'right' }],
+      ms12.map((m) => [m.label + ' ' + m.year, num(m.events), num(m.tickets), money(m.net), m.sold ? pc(m.came / m.sold) : '-']).concat([['Total', num(ms12.reduce((a, m) => a + m.events, 0)), num(ms12.reduce((a, m) => a + m.tickets, 0)), money(ms12.reduce((a, m) => a + m.net, 0)), '']]), true);
     section('Per metode pembayaran', 'Semua acara');
     table([{ h: 'Metode', w: 185 }, { h: 'Transaksi', w: 70, align: 'right' }, { h: 'Bruto', w: 90, align: 'right' }, { h: 'Refund', w: 80, align: 'right' }, { h: 'Neto', w: 90, align: 'right' }],
       Object.entries(by).sort((a, b) => b[1].net - a[1].net).map(([m, b]) => [m, num(b.orders), money(b.gross), money(b.ref), money(b.net)]).concat([['Total', num(T.orders), money(T.gross), money(T.ref), money(T.net)]]), true);
@@ -693,6 +779,7 @@
     const evs = evId ? [Evt.ev(evId)].filter(Boolean) : visEvs();
     const evName = (e) => (evId ? '' : esc(e.name.length > 34 ? e.name.slice(0, 34) + '…' : e.name));
     evs.forEach((e) => {
+      const n0 = out.length;
       Evt.stats(e.id).orders.forEach((o) => {
         const ty = Evt.typeById(e, o.items[0].type);
         if (o.status === 'PAID' && o.paidAt > since) out.push({ ts: o.paidAt, tone: 'ok', tag: 'Lunas', code: o.id, txt: `${firstName(o.name)} membeli ${o.items.length} tiket ${esc(ty ? ty.name : '')}`, ev: evName(e) });
@@ -705,23 +792,130 @@
       Object.values(ck).forEach((c) => out.push({ ts: c.ts, tone: 'ok', tag: 'Masuk', code: esc(c.gate.replace(/\s*\(.*\)$/, '')), txt: `${c.n} pengunjung check-in`, ev: evName(e) }));
       Evt.s.reports.filter((r) => r.ev === e.id && r.ts > since).forEach((r) => out.push({ ts: r.ts, tone: 'bad', tag: 'Laporan', code: r.id, txt: `${esc(r.text)} (${esc(r.gate)}${r.ticketId ? ', ditangani ' + esc(r.ticketId) : ', menunggu Command Center'})`, ev: evName(e) }));
       EvtCheckin.anomalies(e.id).forEach((a) => out.push({ ts: t, tone: 'bad', tag: 'Pindaian gagal', code: esc(a.gate.replace(/\s*\(.*\)$/, '')), txt: `${a.n} kali dalam 10 menit, indikasi tiket palsu`, ev: evName(e) }));
+      if (isMgr() && e.status !== 'DRAFT' && e.status !== 'CANCELLED' && e.start + 3 * 3600000 > t && EvtCheckin.backup.status(e.id)[0] === 'warn')
+        out.push({ ts: e.doors || e.start, tone: 'warn', tag: 'Manifest', code: e.id, txt: `manifest offline belum diunduh di perangkat ini, gate dibuka ${Evt.fmtTime(e.doors || e.start)} WIB`, ev: evName(e), go: () => { EvtCheckin.backup.offline(e.id); UI.toast('Manifest offline ' + e.id + ' diunduh', 'P4'); } });
+      for (let i = n0; i < out.length; i++) out[i].evId = e.id;
     });
     return out.sort((a, b) => (a.tone === 'bad') - (b.tone === 'bad') ? (b.tone === 'bad') - (a.tone === 'bad') : b.ts - a.ts).slice(0, evId ? 10 : 14);
   }
-  function ticker(evId) {
-    const items = feed(evId), d0 = new Date(Evt.now()); d0.setHours(0, 0, 0, 0);
-    const when = (ts) => (ts >= d0.getTime() ? Evt.fmtTime(ts) : Evt.fmtShort(ts).replace(/ \d{4}$/, '') + ' ' + Evt.fmtTime(ts));
-    const bad = items.filter((x) => x.tone === 'bad').length;
-    const label = 'Informasi Terbaru';
-    const more = evId ? href(evId, bad ? 'checkin' : 'peserta') : Router.href(bad ? '/kehadiran' : '/transaksi');
-    const tag = `<a class="pg-ticker-tag" href="${more}"><i class="${bad ? 'pulse-ring' : ''}"></i>${label}</a>`;
-    if (!items.length) return `<div class="pg-ticker" role="region" aria-label="Informasi terbaru">${tag}<div class="pg-ticker-vp"><span class="tk-empty">Belum ada aktivitas dalam 3 hari terakhir.</span></div></div>`;
-    const seq = items.map((x) => `<span class="tk-it ${x.tone}"><b>${x.tag} ${x.code}:</b> ${x.txt}${x.ev ? ', ' + x.ev : ''} <time>(${when(x.ts)})</time></span>`).join('<span class="tk-sep" aria-hidden="true">◆</span>');
-    const sec = Math.max(30, items.length * 7);
-    // delay negatif dari jam dinding: setelah digambar ulang, posisi berjalan tetap menyambung
-    return `<div class="pg-ticker" role="region" aria-label="Informasi terbaru">${tag}<div class="ticker-wrap pg-ticker-vp"><div class="ticker-move" style="animation-duration:${sec}s;animation-delay:-${((Date.now() / 1000) % sec).toFixed(2)}s">${seq}</div></div><a class="pg-ticker-more" href="${more}">Lihat semua</a></div>`;
-  }
 
+
+  // ------------------------------------------------------------------ bilah "Informasi terbaru" (di bawah header, semua menu)
+  // Status kiri: Semua normal / N perlu perhatian / N peringatan. Peringatan merah pertama disematkan (tidak ikut berjalan)
+  // sampai ditangani. Teks berjalan berhenti saat disorot; "Lihat semua" membuka daftar lengkap yang bisa diklik.
+  const NB_IC = { 'Lunas': 'check_circle', 'Menunggu bayar': 'hourglass_top', 'Refund': 'currency_exchange', 'Masuk': 'login', 'Laporan': 'campaign', 'Pindaian gagal': 'gpp_maybe', 'Manifest': 'cloud_download' };
+  let newsKey = '', newsItems = [];
+  function newsGo(x) {
+    if (!x) return;
+    if (/^BK-/.test(x.code) && Evt.s.orders[x.code]) return orderModal(x.code);
+    if (x.go) { x.go(); newsKey = ''; news(); if (ui.tab === 'gdash') draw(host); return; }
+    if (x.evId) goTab(x.tone === 'bad' || x.tag === 'Masuk' ? 'checkin' : 'peserta', x.evId);
+  }
+  function news() {
+    const box = document.getElementById('pg-news'); if (!box) return;
+    const g = isG(ui.tab), items = feed(g ? null : ui.ev);
+    const bad = items.filter((x) => x.tone === 'bad'), warn = items.filter((x) => x.tone === 'warn');
+    const key = (g ? '*' : ui.ev) + '|' + items.map((x) => x.tag + x.code + x.txt + x.ts).join('|');
+    if (key === newsKey && box.innerHTML) return; // isi sama: biarkan teks tetap berjalan tanpa lompat
+    newsKey = key; newsItems = items;
+    const d0 = new Date(Evt.now()); d0.setHours(0, 0, 0, 0);
+    const when = (ts) => (ts >= d0.getTime() ? Evt.fmtTime(ts) : Evt.fmtShort(ts).replace(/ \d{4}$/, '') + ' ' + Evt.fmtTime(ts));
+    const [tone, n, txt] = bad.length ? ['bad', bad.length, 'peringatan'] : warn.length ? ['warn', warn.length, 'perlu perhatian'] : ['ok', '', 'Semua normal'];
+    const st = `<span class="nb-st ${tone}"><i></i>${n ? `<b>${n}</b>` : ''}<span class="nb-t">${txt}</span></span>`;
+    const pin = bad[0] ? `<button type="button" class="nb-pin" data-nb="${items.indexOf(bad[0])}">${icon(NB_IC[bad[0].tag] || 'warning', 'text-[18px]')}<span><b>${bad[0].tag}</b> ${bad[0].code}: ${bad[0].txt}${bad[0].ev ? ', ' + bad[0].ev : ''}</span></button>` : '';
+    const rest = items.filter((x) => x !== bad[0]);
+    const it = (x) => `<span class="nb-it ${x.tone}">${icon(NB_IC[x.tag] || 'info', 'text-[16px]')}<b>${x.tag}</b><code>${x.code}</code><span>${x.txt}${x.ev ? ', ' + x.ev : ''}</span><time>${when(x.ts)}</time></span>`;
+    const sec = Math.max(30, rest.length * 7);
+    const vp = rest.length
+      ? `<div class="ticker-wrap nb-vp"><div class="ticker-move" style="animation-duration:${sec}s;animation-delay:-${((Date.now() / 1000) % sec).toFixed(2)}s">${rest.map(it).join('<span class="nb-sep" aria-hidden="true">•</span>')}</div></div>`
+      : `<div class="nb-vp nb-empty">${items.length ? '' : 'Tidak ada aktivitas baru dalam 3 hari terakhir · '}diperbarui ${Evt.fmtTime(Evt.now())}</div>`;
+    const all = items.length ? `<div class="pg-dd nb-dd"><button type="button" class="nb-all" id="nb-all" aria-haspopup="true" aria-expanded="false"><span class="nb-t">Lihat semua</span> (${items.length})${icon('expand_more', 'text-[18px]')}</button></div>` : '';
+    box.className = 'pg-news ' + tone;
+    box.innerHTML = st + pin + vp + all;
+    box.querySelectorAll('[data-nb]').forEach((b) => b.addEventListener('click', () => newsGo(newsItems[+b.dataset.nb])));
+    const ab = box.querySelector('#nb-all'); if (ab) ab.addEventListener('click', () => {
+      dropdown(ab, `<div class="nb-list">${newsItems.map((x, i) => `<button type="button" class="nb-row ${x.tone}" data-nbi="${i}">${icon(NB_IC[x.tag] || 'info', 'text-[20px]')}<span class="min-w-0 flex-1"><b>${x.tag} <code>${x.code}</code></b><small>${x.txt}${x.ev ? ', ' + x.ev : ''}</small></span><time>${when(x.ts)}</time></button>`).join('')}</div>`, (el, close) => {
+        el.querySelectorAll('[data-nbi]').forEach((b) => b.addEventListener('click', () => { close(); newsGo(newsItems[+b.dataset.nbi]); }));
+      });
+    });
+  }
+  // ------------------------------------------------------------------ riwayat 12 bulan (arsip edisi sebelumnya, Evt.archive)
+  // Hanya baca. Dipakai Dasbor, Daftar acara (Arsip), Transaksi, Check-in & gate, Keuangan, Laporan PDF, dan Portofolio CC.
+  const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const arcVis = () => Evt.archive().filter(seen);
+  const evOf = (id) => Evt.ev(id) || Evt.arcEv(id);
+  const arcOrders = () => arcVis().flatMap((ed) => ed.orders);
+  // 12 bulan terakhir termasuk bulan ini: tiket & pendapatan (menurut tanggal bayar), acara & kehadiran (menurut tanggal acara).
+  function months12() {
+    const t = Evt.now(), d = new Date(t); d.setDate(1); d.setHours(0, 0, 0, 0);
+    const ms = Array.from({ length: 12 }, (_, i) => { const a = new Date(d); a.setMonth(a.getMonth() - (11 - i)); const b = new Date(a); b.setMonth(b.getMonth() + 1); return { a: a.getTime(), b: b.getTime(), label: BLN[a.getMonth()], year: a.getFullYear(), tickets: 0, net: 0, events: 0, sold: 0, came: 0 }; });
+    const at = (ts) => ms.find((m) => ts >= m.a && ts < m.b);
+    const pay = (o) => { const m = o.status === 'PAID' && at(o.paidAt); if (m) { m.tickets += o.items.length; m.net += o.total; } };
+    arcVis().forEach((ed) => { const s = Evt.arcStats(ed.id), m = at(ed.start); if (m) { m.events++; m.sold += s.sold; m.came += s.checkedIn; } ed.orders.forEach(pay); });
+    visEvs().forEach((e) => {
+      const s = Evt.stats(e.id); s.paid.forEach(pay);
+      const m = e.status !== 'CANCELLED' && e.start <= t && at(e.start); if (m) { m.events++; m.sold += s.tickets; m.came += s.checkedIn; }
+    });
+    return ms;
+  }
+  const pct1 = (x) => Math.round(x * 100) + '%';
+  // Kartu "Riwayat 12 bulan": angka utama, grafik tiket per bulan, acara terlaris. compact = tanpa daftar acara.
+  function historyCard(opts) {
+    const ms = months12(), arc = arcVis(), cur = ms[11], prev = ms[10];
+    const T = ms.reduce((a, m) => ({ ev: a.ev + m.events, tk: a.tk + m.tickets, net: a.net + m.net, sold: a.sold + m.sold, came: a.came + m.came }), { ev: 0, tk: 0, net: 0, sold: 0, came: 0 });
+    const delta = prev.tickets ? (cur.tickets - prev.tickets) / prev.tickets : null;
+    const top = arc.map((ed) => ({ ed, s: Evt.arcStats(ed.id) })).sort((a, b) => b.s.sold - a.s.sold).slice(0, 5);
+    const tile = (l, v, f) => `<div class="pg-hist-tile"><span>${l}</span><b>${v}</b>${f ? `<small>${f}</small>` : ''}</div>`;
+    return `<section class="card p-5 mb-5 pg-hist">${UI.h('Riwayat 12 bulan', `${ms[0].label} ${ms[0].year} sampai ${cur.label} ${cur.year} · acara yang sudah berlangsung & penjualan tiket per bulan`, isMgr() ? `<a class="btn-ghost" href="${Router.href('/acara')}" data-arc-list>${icon('history', 'text-[16px]')} Lihat arsip</a>` : '', 'history')}
+      <div class="pg-hist-tiles">${tile('Acara terselenggara', num(T.ev), arc.length + ' edisi di arsip')}${tile('Tiket terjual', num(T.tk), delta == null ? '' : `<span class="${delta >= 0 ? 'up' : 'down'}">${delta >= 0 ? '▲' : '▼'} ${Math.abs(Math.round(delta * 100))}%</span> bulan ini dibanding ${prev.label}`)}${tile('Pendapatan neto', money(T.net), 'rata-rata ' + money(Math.round(T.net / 12)) + ' per bulan')}${tile('Rata-rata kehadiran', T.sold ? pct1(T.came / T.sold) : '-', num(T.came) + ' pengunjung masuk lewat gate')}</div>
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 mt-4"><div class="${opts && opts.compact ? 'xl:col-span-12' : 'xl:col-span-7'}"><div class="lbl mb-1">Tiket terjual per bulan</div>${UI.line([{ data: ms.map((m) => m.tickets), color: PRI, dot: 11 }], { labels: ms.map((m) => m.label), min: 0, h: 190 })}</div>
+        ${opts && opts.compact ? '' : `<div class="xl:col-span-5"><div class="lbl mb-2">Acara terlaris 12 bulan</div><ul class="pg-mlist">${top.map(({ ed, s }) => `<li><button type="button" class="pg-mrow" data-arc="${ed.id}">${plate(ed)}<span class="min-w-0"><b>${esc(ed.name)}</b><small>${esc(ed.edition)} · ${num(s.sold)}/${num(s.cap)} tiket · hadir ${pct1(s.attendance)}</small></span></button><b class="whitespace-nowrap">${rpJt(s.net)}${s.net >= 1e6 ? ' Jt' : ''}</b></li>`).join('') || '<p class="pg-mempty">Belum ada acara di arsip.</p>'}</ul></div>`}</div></section>`;
+  }
+  // Baris Daftar acara untuk edisi arsip (kolom sama dengan acara aktif).
+  function arcRow(ed) {
+    const s = Evt.arcStats(ed.id);
+    return `<article class="pg-ev pg-ev-arc" style="--c:${esc(ed.color)}">
+      <div class="pg-ev-name"><button type="button" class="pg-ev-title text-left" data-arc="${ed.id}">${esc(ed.name)}</button><div class="pg-ev-sub">${plate(ed)}<span>${esc(ed.edition)} · ${ed.id} · ${esc(ed.cat)}${ed.org ? ' · ' + esc(ed.org) : ''}</span></div></div>
+      <div class="pg-ev-date"><b>${Evt.fmtShort(ed.start)}</b><span>${Evt.fmtTime(ed.start)} WIB</span></div>
+      <div class="pg-ev-st">${UI.chip('Selesai', 'bg-slate-500/20 text-slate-300')}<span class="pg-ev-sale">hadir ${pct1(s.attendance)}</span></div>
+      <div class="pg-ev-sold"><b>${num(s.sold)} / ${num(s.cap)}</b>${UI.bar(s.cap ? (s.sold / s.cap) * 100 : 0, 'bg-secondary')}</div>
+      <div class="pg-ev-rev"><b>${money(s.net)}</b><span>${s.orders} transaksi${s.refunds ? ', ' + s.refunds + ' refund' : ''}</span></div>
+      <div class="pg-ev-act"><button type="button" class="btn-ghost" data-arc="${ed.id}">Rincian</button></div>
+    </article>`;
+  }
+  function arcRows(ed) { // peserta per e-ticket (Excel/CSV)
+    const out = [['ID Tiket', 'Booking', 'Kategori', 'Kursi', 'Pemegang', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat', 'Status', 'Check-in', 'Gate']];
+    ed.orders.forEach((o) => o.tickets.forEach((tid) => { const k = Evt.arcTicket(tid), ty = ed.types.find((x) => x.id === k.type); out.push([k.id, o.id, ty ? ty.name : k.type, k.seat || 'Berdiri', k.holder, o.name, o.email, o.phone, o.veh ? Evt.VEH[o.veh.t] : 'Tidak bawa', o.veh ? o.veh.p : '', k.status === 'VOID' ? 'Refund' : 'Aktif', k.checkedInAt ? Evt.fmtDT(k.checkedInAt) : '', k.gate || '']); }));
+    return out;
+  }
+  // Rincian edisi arsip: angka, riwayat persetujuan, laporan gate, metode bayar, unduh peserta.
+  function arcModal(id) {
+    const ed = Evt.arcEv(id); if (!ed) return; const s = Evt.arcStats(id), next = Evt.ev(ed.src);
+    const methods = Object.entries(s.byMethod).sort((a, b) => b[1].net - a[1].net);
+    const root = UI.modal(icon('history', 'text-primary text-[22px] align-middle') + ' ' + esc(ed.name) + ` <span class="qi-ev">${esc(ed.edition)} · ${ed.id} · arsip, hanya baca</span>`,
+      qiHead(num(s.sold) + ' <small>/ ' + num(s.cap) + '</small>', 'tiket terjual · ' + Evt.fmtDate(ed.start) + ', ' + Evt.fmtTime(ed.start) + ' WIB · ' + esc(ed.venue.split('·')[0].trim()), [['Kehadiran', pct1(s.attendance)], ['Pendapatan neto', money(s.net)], ['Refund', s.refunds ? s.refunds + ' (' + money(s.refunded) + ')' : 'Tidak ada']])
+      + qiNote(`${num(s.mobil)} mobil dan ${num(s.motor)} motor terdaftar · ${s.reports ? s.reports + ' laporan gate, sudah ditangani Command Center' : 'tanpa laporan gate'}`)
+      + mh('Riwayat') + `<ul class="pg-mlist">${ed.audit.map((a) => `<li><span class="min-w-0 flex-1"><b>${esc(a.text)}</b><small>${esc(a.who)}</small></span><small class="whitespace-nowrap">${Evt.fmtDT(a.ts)}</small></li>`).join('')}${ed.reports.map((r) => `<li class="warn"><span class="min-w-0 flex-1"><b>Laporan ${esc(r.id)}: ${esc(r.text)}</b><small>${esc(r.gate)} · ditangani ${esc(r.ticketId)}</small></span><small class="whitespace-nowrap">${Evt.fmtDT(r.ts)}</small></li>`).join('')}</ul>`
+      + mh('Per metode pembayaran') + bars(methods.map(([m, b]) => ({ label: esc(m), v: b.net, sub: b.orders + ' transaksi' })), (r) => money(r.v))
+      + `<div class="pg-mfoot">${next ? `<a class="btn-ghost" href="${href(next.id, 'ringkasan')}">Edisi berikutnya: ${Evt.fmtShort(next.start)}</a>` : ''}<button type="button" class="btn-ghost" data-arc-x>${icon('table_view', 'text-[16px]')} Peserta (Excel)</button><button type="button" class="btn-ghost" data-arc-c>${icon('download', 'text-[16px]')} CSV</button><button type="button" class="btn" data-close>Tutup</button></div>`, { small: true });
+    root.querySelector('[data-arc-x]').addEventListener('click', () => Evt.xlsx('peserta_' + ed.id + '.xlsx', arcRows(ed), { sheet: 'Peserta ' + ed.id }));
+    root.querySelector('[data-arc-c]').addEventListener('click', () => Evt.csv('peserta_' + ed.id + '.csv', arcRows(ed)));
+  }
+  // Rincian pesanan arsip (hanya baca: tidak bisa refund atau diubah).
+  function arcOrderModal(oid) {
+    const o = Evt.arcOrder(oid); if (!o) return; const ed = Evt.arcEv(o.ev);
+    UI.modal(icon('receipt_long', 'text-primary text-[22px] align-middle') + ' Transaksi ' + o.id + ' <span class="qi-ev">arsip, hanya baca</span>', `<div class="flex flex-col gap-3 font-body-sm text-body-sm">
+      <div class="inner p-3 flex flex-col gap-1"><div class="flex justify-between"><b>${esc(o.name)}</b>${oChip(o)}</div><span class="text-on-surface-variant">${esc(o.email)} · ${esc(o.phone)}</span><span>Kendaraan: ${vehCell(o)}</span><span class="text-on-surface-variant">${o.method} · dibayar ${Evt.fmtDT(o.paidAt)}${o.refundedAt ? ' · refund ' + Evt.fmtDT(o.refundedAt) + ' (' + esc(o.refundReason) + ')' : ''}</span></div>
+      <div class="inner p-3"><b>${esc(ed.name)}</b> <span class="text-on-surface-variant">${esc(ed.edition)}</span><div class="mt-2 flex flex-col gap-1">${o.tickets.map((tid) => { const k = Evt.arcTicket(tid), ty = ed.types.find((x) => x.id === k.type); return `<div class="flex justify-between gap-3"><span>${k.id} · ${esc(ty ? ty.name : k.type)}${k.seat ? ' · ' + k.seat : ''} · ${esc(k.holder)}</span><span class="${k.status === 'VOID' ? 'text-rose-300' : k.checkedInAt ? 'text-emerald-300' : 'text-on-surface-variant'}">${k.status === 'VOID' ? 'VOID' : k.checkedInAt ? 'Masuk ' + Evt.fmtTime(k.checkedInAt) + ', ' + esc(k.gate) : 'Tidak hadir'}</span></div>`; }).join('')}</div>
+        <div class="mt-2 flex justify-between"><span>Total</span><b>${rp(o.total)}</b></div></div></div>`, { small: true });
+  }
+  // Tombol arsip di mana pun (Dasbor, Daftar acara, Transaksi, Portofolio): delegasi satu kali.
+  document.addEventListener('click', (ev) => {
+    const a = ev.target.closest('[data-arc]'); if (a) { ev.preventDefault(); return arcModal(a.dataset.arc); }
+    const o = ev.target.closest('[data-arc-order]'); if (o) { ev.preventDefault(); return arcOrderModal(o.dataset.arcOrder); }
+    const gm = ev.target.closest('[data-gmore]'); if (gm) { ui.glim += 150; const gt = document.getElementById('g-table'); if (gt) { gt.innerHTML = gtrxTable(); bindRows(gt); } return; }
+    const l = ev.target.closest('[data-arc-list]'); if (l && isMgr()) { ev.preventDefault(); ui.ast = 'ARSIP'; goTab('acara'); }
+  });
   // ------------------------------------------------------------------ rincian kartu: jawaban cepat yang dibutuhkan EO
   const pctTxt = (a, b) => (b ? Math.round((a / b) * 100) : 0) + '%';
   function bars(rows, fmt) {
@@ -974,7 +1168,7 @@
     const kAtt = UI.kpi({ key: K('ev:att'), label: 'Kehadiran', icon: 'how_to_reg', value: att.toFixed(0) + '%', unit: num(s.checkedIn) + '/' + num(s.tickets), bar: att, barcls: 'bg-secondary', foot: 'tiket sudah check-in' });
     const pd = Evt.parkDemand(e.id);
     const kVeh = UI.kpi({ key: K('ev:veh'), label: 'Kendaraan terdaftar', icon: 'directions_car', value: num(pd.declared.mobil + pd.declared.motor), unit: num(pd.declared.mobil) + ' mobil · ' + num(pd.declared.motor) + ' motor', foot: 'Prediksi ' + num(pd.mobil) + ' mobil, ' + num(pd.motor) + ' motor' });
-    const kpis = isMgr() ? `<div id="evt-feed">${ticker(e.id)}</div>${attnBlock(e)}<div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
+    const kpis = isMgr() ? `${attnBlock(e)}<div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
       ${isHariH(e) ? kAtt : ''}
       ${UI.kpi({ key: K('ev:sold'), label: 'Tiket terjual', icon: 'confirmation_number', value: num(s.sold), unit: '/ ' + num(cap), bar: cap ? (s.sold / cap) * 100 : 0, foot: (cap ? ((s.sold / cap) * 100).toFixed(1) : 0) + '% kapasitas jual' })}
       ${UI.kpi({ key: K('ev:rev'), label: 'Pendapatan', icon: 'payments', value: rpJt(s.revenue), unit: s.revenue >= 1e6 ? 'Jt' : '', foot: s.paid.length + ' transaksi lunas · ' + num(s.registrants) + ' pemesan unik' })}
@@ -1227,7 +1421,7 @@
   }
   function peserta(e) {
     const sts = [['ALL', 'Semua'], ['PAID', 'Lunas'], ['PENDING', 'Menunggu bayar'], ['EXPIRED', 'Kedaluwarsa'], ['CANCELLED', 'Batal'], ['REFUNDED', 'Refund']];
-    return `<section class="card p-5">${UI.h('Data peserta & status pembayaran', isMgr() ? 'Klik baris untuk mengubah data peserta, mengirim ulang e-ticket, atau refund' : 'Pemantauan transaksi, hanya baca (refund & perubahan data oleh pengelola acara)', `<div class="flex gap-2"><button class="btn-ghost" id="csv-p">${icon('download', 'text-[16px]')} Peserta (CSV)</button><button class="btn-ghost" id="csv-t">${icon('download', 'text-[16px]')} Transaksi (CSV)</button></div>`, 'groups')}
+    return `<section class="card p-5">${UI.h('Data peserta & status pembayaran', isMgr() ? 'Klik baris untuk mengubah data peserta, mengirim ulang e-ticket, atau refund' : 'Pemantauan transaksi, hanya baca (refund & perubahan data oleh pengelola acara)', `<div class="flex flex-wrap gap-2"><button class="btn-ghost" id="xlsx-p">${icon('table_view', 'text-[16px]')} Peserta (Excel)</button><button class="btn-ghost" id="csv-p">${icon('download', 'text-[16px]')} Peserta (CSV)</button><button class="btn-ghost" id="csv-t">${icon('download', 'text-[16px]')} Transaksi (CSV)</button></div>`, 'groups')}
       <div class="flex flex-wrap gap-2 items-center mb-4"><input class="inp !w-80" id="q" placeholder="Cari booking, nama, email, HP, kursi, plat…" value="${esc(ui.q)}">${sts.map(([k, l]) => `<button class="chip-btn ${ui.st === k ? 'on' : ''}" data-st="${k}">${l}</button>`).join('')}</div>
       <div class="flex flex-wrap gap-2 items-center mb-4"><span class="font-label-md text-label-md text-on-surface-variant">Kendaraan</span>${[['ALL', 'Semua'], ['mobil', 'Mobil'], ['motor', 'Motor'], ['none', 'Tanpa kendaraan']].map(([k, l]) => `<button class="chip-btn ${ui.vf === k ? 'on' : ''}" data-vf="${k}" aria-pressed="${ui.vf === k}">${l}</button>`).join('')}</div>
       <div id="evt-table">${pesertaTable(e)}</div></section>`;
@@ -1281,7 +1475,7 @@
         ${EvtCheckin.panel()}</section>
       <div class="2xl:col-span-7 flex flex-col gap-5">
         <section class="card p-5"><div id="ck-stats">${ckStats(e, true)}</div></section>
-        <section class="card p-5">${EvtCheckin.backup.card(e.id, { sopHref: isMgr() ? '' : '/command-center/sop?id=SOP-EVT-05' })}</section>
+        ${isMgr() ? '' : `<section class="card p-5">${EvtCheckin.backup.card(e.id, { sopHref: '/command-center/sop?id=SOP-EVT-05' })}</section>`}
         <section class="card p-5">${UI.h('Log pindaian', 'Semua gate', '', 'list_alt')}<div id="ck-log">${EvtCheckin.logTable(e.id, 30)}</div></section></div></div>`;
   }
 
@@ -1343,7 +1537,7 @@
   }
 
   // ------------------------------------------------------------------ pengelola: Semua acara (cari, saring, satu tombol utama + menu aksi lain)
-  const FILTERS = [['ALL', 'Semua'], ['DRAFT', 'Draft'], ['PUBLISHED', 'Dijual'], ['CLOSED', 'Ditutup'], ['DONE', 'Selesai'], ['CANCELLED', 'Dibatalkan']];
+  const FILTERS = [['ALL', 'Semua'], ['DRAFT', 'Draft'], ['PUBLISHED', 'Dijual'], ['CLOSED', 'Ditutup'], ['DONE', 'Selesai'], ['CANCELLED', 'Dibatalkan'], ['ARSIP', 'Arsip 12 bulan']];
   function acaraRow(e) {
     const s = Evt.stats(e.id), cap = s.total - s.blocked, ph = phase(e), sale = Evt.saleState(e);
     const ready = e.status === 'DRAFT' ? readiness(e).filter((x) => !x.warn) : null;
@@ -1368,6 +1562,10 @@
   }
   function acaraList() {
     const q = ui.aq.trim().toLowerCase();
+    if (ui.ast === 'ARSIP') {
+      const xs = arcVis().filter((ed) => !q || [ed.name, ed.id, ed.cat, ed.org || '', ed.edition].join(' ').toLowerCase().includes(q));
+      return xs.length ? xs.map(arcRow).join('') : `<div class="pg-empty">${icon('search_off', 'text-[28px]')}<p>Tidak ada edisi arsip yang cocok.</p></div>`;
+    }
     const evs = visEvs().filter((e) => (ui.ast === 'ALL' || phase(e) === ui.ast) && (!q || [e.name, e.id, e.cat, e.org || '', e.venue].join(' ').toLowerCase().includes(q)));
     return evs.length ? evs.map(acaraRow).join('')
       : `<div class="pg-empty">${icon('search_off', 'text-[28px]')}<p>${visEvs().length ? 'Tidak ada acara yang cocok dengan saringan.' : 'Belum ada acara. Klik <b>Acara baru</b> untuk membuat.'}</p>${q || ui.ast !== 'ALL' ? '<button type="button" class="btn-ghost" data-clear-filter>Hapus saringan</button>' : ''}</div>`;
@@ -1386,7 +1584,7 @@
     <section class="card p-4 sm:p-5">
       <div class="pg-list-head"><div class="min-w-0"><h2 class="font-headline-sm text-headline-sm">Acara di Summarecon Mall Bandung</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Acara yang dipublikasikan langsung tampil di portal pengunjung dan Command Center.</p></div><button type="button" class="btn shrink-0" id="new-ev">${icon('add')} Acara baru</button></div>
       <div class="pg-filter"><label class="pg-search">${icon('search', 'text-[18px]')}<span class="sr-only">Cari acara</span><input id="aq" class="inp" type="search" placeholder="Cari nama, ID, kategori, penyelenggara" value="${esc(ui.aq)}" autocomplete="off"></label>
-        <div class="pg-chips" role="group" aria-label="Saring menurut status">${FILTERS.map(([k, l]) => `<button type="button" class="chip-btn ${ui.ast === k ? 'on' : ''}" data-ast="${k}" aria-pressed="${ui.ast === k}">${l} <span class="opacity-70">${k === 'ALL' ? all.length : c[k] || 0}</span></button>`).join('')}</div></div>
+        <div class="pg-chips" role="group" aria-label="Saring menurut status">${FILTERS.map(([k, l]) => `<button type="button" class="chip-btn ${ui.ast === k ? 'on' : ''}" data-ast="${k}" aria-pressed="${ui.ast === k}">${l} <span class="opacity-70">${k === 'ALL' ? all.length : k === 'ARSIP' ? arcVis().length : c[k] || 0}</span></button>`).join('')}</div></div>
       <div class="pg-ev pg-ev-head" aria-hidden="true"><span>Acara</span><span>Jadwal</span><span>Status</span><span>Terjual</span><span>Pendapatan</span><span></span></div>
       <div id="acara-list" class="pg-ev-list">${acaraList()}</div>
       <p class="pg-note">${icon('info', 'text-[18px]')}<span>Acara yang sudah punya pesanan tidak bisa dihapus. Batalkan acaranya, lalu peserta otomatis di-refund dan dikabari.</span></p></section>`;
@@ -1424,6 +1622,7 @@
           <div class="flex items-center gap-2">${icon('groups', 'text-primary text-[16px]')} ${num(s.sold)} orang, puncak ${Evt.fmtTime(e.doors + 3600000)} · ${UI.dbLink('CCTV', 'cam=CAM-01', 'CCTV')}</div>
           <div class="flex items-center gap-2">${icon('hvac', 'text-primary text-[16px]')} Pre-cooling ${Evt.fmtTime(e.doors - 3600000)} · ${UI.dbLink('BMS', '', 'BMS')}</div>
           <div class="flex items-center gap-2">${icon('shield_person', 'text-primary text-[16px]')} ${Math.ceil(s.sold / 75) + 2} personel keamanan · ${e.gates.length} gate</div></div>`).join('') || '<div class="font-body-sm text-body-sm text-on-surface-variant">Tidak ada acara dalam 30 hari ke depan.</div>'}</div></section></div>
+    ${historyCard()}
     ${UI.relasi('EVT')}`;
   }
 
@@ -1501,7 +1700,8 @@
       <div class="pagebar-row" role="tablist">${tabs.map(([k, l, i]) => `<button class="chip-btn !py-2 !px-3 ${ui.tab === k ? 'on' : ''}" role="tab" aria-selected="${ui.tab === k}" data-tab="${k}">${icon(i, 'text-[16px]')} ${l}</button>`).join('')}</div></section>`;
     if (global) return h;
     const e = Evt.ev(ui.ev); const sale = Evt.saleState(e);
-    h += `<div class="flex flex-wrap gap-2 mb-3">${Evt.s.order.filter((id) => seen(Evt.ev(id)) && (isMgr() || Evt.ev(id).status !== 'DRAFT')).map((id) => { const x = Evt.ev(id); return `<button class="chip-btn ${id === ui.ev ? 'on' : ''}" data-ev="${id}" title="${esc(x.name)}">${id} · ${esc(x.name.length > 28 ? x.name.slice(0, 28) + '…' : x.name)}${x.status === 'CANCELLED' ? ' (batal)' : x.status === 'DRAFT' ? ' (draft)' : ''}</button>`; }).join('')}</div>
+    // Pemilih acara: tombol bergaya pemilih konsol pengelola (dulu deretan chip semua acara); panel di ccPicker().
+    h += `<div class="pg-dd cc-pick mb-3"><button type="button" class="pg-evpick cc-evpick" id="ev-pick" aria-haspopup="true" aria-expanded="false" title="Pilih acara" style="--c:${esc(e.color)}">${plate(e)}<span class="pg-evpick-t"><b>${esc(e.name)}</b><small>${e.id} · ${Evt.fmtShort(e.start)} · ${phaseTxt(e)}</small></span><span class="cc-evpick-n">${ccPickList().length} acara</span>${icon('expand_more', 'text-[20px] pg-evpick-ic')}</button></div>
     <section class="card p-5 mb-5 flex flex-wrap items-center gap-5" style="background:linear-gradient(110deg, ${esc(e.color)}22, rgb(var(--surface-container)) 55%)">
       <div class="flex-1 min-w-[280px]"><div class="font-label-sm text-label-sm text-secondary">${esc(e.cat)} · ${e.id}</div><h2 class="font-headline-lg text-headline-lg">${esc(e.name)}</h2><div class="font-body-sm text-body-sm text-on-surface-variant">${Evt.fmtDate(e.start)} · ${Evt.fmtTime(e.start)} WIB · gate ${Evt.fmtTime(e.doors)} · ${esc(e.venue)}</div></div>
       <div class="flex flex-col items-end gap-1"><div class="flex gap-2">${evChip(e)}${UI.chip(esc(sale.label), sale.open ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-500/20 text-slate-300')}</div><span class="font-label-sm text-label-sm text-on-surface-variant">Jual ${Evt.fmtDT(e.saleStart)} sampai ${Evt.fmtDT(e.saleEnd)}, hold ${e.holdMin} mnt, maks ${e.maxPerOrder}/pesanan</span></div></section>`;
@@ -1565,6 +1765,11 @@
     root.querySelectorAll('[data-attn-st]').forEach((a) => a.addEventListener('click', () => (ui.st = a.dataset.attnSt)));
     root.querySelectorAll('[data-attn-focus]').forEach((a) => a.addEventListener('click', () => (ui.focus = a.dataset.attnFocus)));
     root.querySelectorAll('[data-report-all]').forEach((b) => b.addEventListener('click', reportAllPdf));
+    const mfDone = (msg) => { closeMenus(); UI.toast(msg, 'P4'); newsKey = ''; news(); if (ui.tab === 'gdash') { const y = window.scrollY; draw(host); window.scrollTo(0, y); } else { lastHead = ''; refresh(); } };
+    root.querySelectorAll('[data-mf-off]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.offline(b.dataset.mfOff); mfDone('Manifest offline ' + b.dataset.mfOff + ' diunduh'); }));
+    root.querySelectorAll('[data-mf-xlsx]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.xlsx(b.dataset.mfXlsx); mfDone('Manifest Excel ' + b.dataset.mfXlsx + ' diunduh'); }));
+    root.querySelectorAll('[data-mf-csv]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.download(b.dataset.mfCsv); mfDone('Manifest CSV ' + b.dataset.mfCsv + ' diunduh'); }));
+    root.querySelectorAll('[data-mf-zip]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.zip(); mfDone('Manifest semua acara (ZIP) diunduh'); }));
     root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(); }));
     root.querySelectorAll('[data-report-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.reportEv); if (x) reportPdf(x); }));
     root.querySelectorAll('[data-kpi]').forEach((c) => { const go = () => kpiModal(c.dataset.kpi); c.addEventListener('click', go); c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } }); });
@@ -1582,7 +1787,7 @@
   }
   function bind(el) {
     const e = Evt.ev(ui.ev);
-    el.querySelectorAll('[data-ev]').forEach((b) => b.addEventListener('click', () => { ui.ev = b.dataset.ev; ui.seatSel = null; redraw(); }));
+    const evPick = el.querySelector('#ev-pick'); if (evPick) evPick.addEventListener('click', () => ccPicker(evPick));
     el.querySelectorAll('[data-tab]').forEach((b) => b.addEventListener('click', () => goTab(b.dataset.tab)));
     el.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => { ui.ev = b.dataset.goto; ui.tab = 'ringkasan'; redraw(); }));
     const sr = el.querySelector('[data-stale-reset]'); if (sr) sr.addEventListener('click', resetDemo);
@@ -1610,11 +1815,13 @@
     const q = el.querySelector('#q'); if (q) q.addEventListener('input', () => { ui.q = q.value; el.querySelector('#evt-table').innerHTML = pesertaTable(e); bindRows(el); });
     el.querySelectorAll('button[data-st]:not([data-seat])').forEach((b) => b.addEventListener('click', () => { ui.st = b.dataset.st; redraw(); }));
     el.querySelectorAll('button[data-vf]').forEach((b) => b.addEventListener('click', () => { ui.vf = b.dataset.vf; redraw(); }));
-    const cp = el.querySelector('#csv-p'); if (cp) cp.addEventListener('click', () => {
+    const pesertaRows = () => {
       const rows = [['Acara', 'ID Tiket', 'Booking', 'Kategori', 'Kursi', 'Pemegang', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Status Tiket', 'Check-in', 'Gate']];
       Object.values(Evt.s.tickets).filter((t) => t.ev === e.id).forEach((t) => { const o = Evt.s.orders[t.order]; rows.push([e.name, t.id, o.id, Evt.typeById(e, t.type).name, t.seat || 'Berdiri', t.holder, o.name, o.email, o.phone, vehName(o), vehPlate(o), t.status, t.checkedInAt ? Evt.fmtDT(t.checkedInAt) : '', t.gate || '']); });
-      Evt.csv('peserta_' + e.id + '.csv', rows);
-    });
+      return rows;
+    };
+    const cp = el.querySelector('#csv-p'); if (cp) cp.addEventListener('click', () => Evt.csv('peserta_' + e.id + '.csv', pesertaRows()));
+    const xp = el.querySelector('#xlsx-p'); if (xp) xp.addEventListener('click', () => Evt.xlsx('peserta_' + e.id + '.xlsx', pesertaRows(), { sheet: 'Peserta ' + e.id }));
     const ct = el.querySelector('#csv-t'); if (ct) ct.addEventListener('click', () => {
       const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Jumlah Tiket', 'Kursi', 'Subtotal', 'Biaya Layanan', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar', 'Catatan Refund']];
       Evt.stats(e.id).orders.forEach((o) => rows.push([o.id, e.name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.items.map((i) => i.seat || Evt.typeById(e, i.type).name).join(' '), o.sub, o.fee, o.total, o.method || '', o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status, Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '', o.refundReason || '']));

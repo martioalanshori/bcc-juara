@@ -33,9 +33,9 @@
 
   function renderNav() {
     const act = Store.activeTickets();
-    const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length, APR: window.CCApproval ? CCApproval.count() : 0 };
+    const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length, APR: window.CCApproval ? CCApproval.count() : 0, PARK: window.ParkAlarm ? ParkAlarm.count() : 0 };
     document.getElementById('nav').innerHTML = NAV.map((g) => `<div class="lbl px-3 mt-2 mb-0.5">${g.group}</div>` + g.items.map(([r, n, ic, code]) =>
-      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt">${cnt[code]}</span>` : ''}</a>`).join('')).join('');
+      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt${code === 'PARK' ? ' cnt-alarm' : ''}">${code === 'PARK' ? '!' : cnt[code]}</span>` : ''}</a>`).join('')).join('');
   }
 
   function renderHeader() {
@@ -57,6 +57,9 @@
       <div class="ticker-wrap flex-1 py-2"><div class="ticker-move font-body-sm text-body-sm text-on-surface">${crit.slice(0, 6).map((t) => `<b class="${t.priority === 'P1' ? 'text-rose-300' : 'text-orange-300'}">${t.priority} ${t.id}:</b> ${esc(t.title)}, ${esc(t.location)} (${Store.STATUS_LABEL[t.status]}, SOP ${t.sop})`).join('<span class="mx-6 text-outline">◆</span>')}</div></div>
       <a href="/command-center/sop?id=${top.sop}" class="flex items-center px-3 font-label-sm text-label-sm text-on-surface-variant hover:text-primary shrink-0">SOP ${top.sop}</a></div>` : '';
     // Tulis ulang hanya bila isinya berubah, supaya animasi geser tidak mulai lagi dari awal.
+    // Alarm parkir penuh (views/parking.js): tampil di semua menu, ditulis ulang hanya bila isinya berubah.
+    const pa = document.getElementById('park-alarm');
+    if (pa && window.ParkAlarm) { const ph = ParkAlarm.bar(); if (pa.dataset.html !== ph) { pa.innerHTML = ph; pa.dataset.html = ph; ParkAlarm.tick(); } }
     const tk = document.getElementById('ticker');
     if (tk.dataset.html !== tickerHtml) { tk.innerHTML = tickerHtml; tk.dataset.html = tickerHtml; }
   }
@@ -182,4 +185,39 @@
     document.getElementById('cc-prof').addEventListener('keydown', (e) => { if (e.key === 'Escape' && !pm.hidden) { e.stopPropagation(); open(false); pb.focus(); } });
     pm.addEventListener('click', (e) => { if (e.target.closest('[data-logout]')) open(false); });
   }
+
+  // Edit profil operator: nama & jabatan tampil di header, disimpan hanya di browser ini (localStorage).
+  const PROF_KEY = 'smicc-cc-profil', PROF0 = { name: 'Aris Thorne', title: 'Kepala operasional (L4)' };
+  const loadProf = () => { try { return Object.assign({}, PROF0, JSON.parse(localStorage.getItem(PROF_KEY)) || {}); } catch (e) { return Object.assign({}, PROF0); } };
+  const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+  function renderProf() {
+    const p = loadProf();
+    document.querySelectorAll('[data-cc-name]').forEach((el) => (el.textContent = p.name));
+    document.querySelectorAll('[data-cc-title]').forEach((el) => (el.textContent = p.title || 'Operator Command Center'));
+    document.querySelectorAll('[data-cc-av]').forEach((el) => (el.textContent = initials(p.name)));
+    if (pb) pb.setAttribute('aria-label', 'Menu profil ' + p.name);
+  }
+  function editProfile() {
+    if (pm) { pm.hidden = true; pb.setAttribute('aria-expanded', 'false'); }
+    const p = loadProf();
+    const root = UI.modal('Edit profil', `<form id="f-cc-prof" class="flex flex-col gap-4" novalidate>
+      <div class="flex items-center gap-3"><span class="pg-av pg-av-lg" id="cc-prof-av">${esc(initials(p.name))}</span><div class="min-w-0"><b class="block truncate">${esc(p.name)}</b><span class="font-body-sm text-body-sm text-on-surface-variant">Email dan password diatur administrator.</span></div></div>
+      <label class="f">Nama tampilan<input class="inp" name="name" value="${esc(p.name)}" maxlength="60" required autocomplete="name"></label>
+      <label class="f">Jabatan<input class="inp" name="title" value="${esc(p.title)}" maxlength="60" placeholder="Misalnya supervisor shift"></label>
+      <p class="font-body-sm text-body-sm text-on-surface-variant">Profil ini hanya tersimpan di browser ini.</p>
+      <p class="cf-err" role="alert" hidden></p>
+      <div class="cf-actions"><button type="button" class="btn-ghost" data-close>Batal</button><button class="btn">Simpan profil</button></div></form>`, { small: true });
+    const f = root.querySelector('#f-cc-prof'), err = f.querySelector('.cf-err');
+    f.name.addEventListener('input', () => (root.querySelector('#cc-prof-av').textContent = initials(f.name.value)));
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = { name: f.name.value.trim(), title: f.title.value.trim() };
+      if (!v.name) { err.hidden = false; err.textContent = 'Isi nama tampilan.'; return f.name.focus(); }
+      try { localStorage.setItem(PROF_KEY, JSON.stringify(v)); } catch (e2) { err.hidden = false; err.textContent = 'Browser ini tidak mengizinkan penyimpanan. Profil tidak tersimpan.'; return; }
+      UI.closeModal(); renderProf(); UI.toast('Profil disimpan', 'P4');
+    });
+    f.name.focus();
+  }
+  const pe = document.getElementById('cc-prof-edit'); if (pe) pe.addEventListener('click', editProfile);
+  renderProf();
 })();

@@ -6,11 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <title>Event & Tiket · Summarecon Mall Bandung</title>
-  <script src="/app/js/core/theme.js?v=78"></script>
-  <script src="/app/js/core/router.js?v=78"></script>
+  <script src="/app/js/core/theme.js?v=79"></script>
+  <script src="/app/js/core/router.js?v=79"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=78" />
-  <link rel="stylesheet" href="/app/css/app.css?v=78" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=79" />
+  <link rel="stylesheet" href="/app/css/app.css?v=79" />
 </head>
 <body class="pv-page bg-surface font-body-md text-body-md text-on-surface antialiased">
   <!-- Header: ponsel 2 baris (merek + bahasa/Jelajah/profil, lalu kolom cari); desktop 1 baris (merek, cari,
@@ -48,6 +48,13 @@
     <button type="button" role="menuitemradio" data-lang="en" aria-checked="false" tabindex="-1"><span class="pv-flag" data-flag="en" aria-hidden="true"></span><span class="flex-1">English</span><span class="material-symbols-outlined pv-lang-check text-[18px]">check</span></button>
   </div>
 
+  <!-- Menu akun (klik avatar / Masuk): profil, tiket, Ubah peran (diisi core/auth.js), Keluar. Isi atas & bawah diisi visitor.js. -->
+  <div id="acct-menu" class="pg-prof-menu pv-acct-menu" aria-label="Menu akun" hidden>
+    <div id="acct-top"></div>
+    <div class="pg-sw" data-demo-switch hidden></div>
+    <div id="acct-bottom"></div>
+  </div>
+
   <main id="app" class="pv-wrap px-4 pt-4 pb-40"></main>
 
   <!-- Navigasi bawah (ponsel): hanya tampil setelah pengunjung masuk (body.has-bnav, lihat syncHead di visitor.js). -->
@@ -61,9 +68,10 @@
   <div id="modal-root"></div>
   <div id="toast-root" style="top: calc(var(--hdr, 56px) + 8px)" class="fixed inset-x-0 z-[90] flex flex-col gap-2 items-center px-4 pointer-events-none"></div>
 
-  <script src="/app/vendor/qrcode.js?v=78"></script>
-  <script src="/app/js/event/engine.js?v=78"></script>
-  <script src="/app/js/event/tenants.js?v=78"></script>
-  <script src="/app/js/event/visitor.js?v=78"></script>
+  <script src="/app/vendor/qrcode.js?v=79"></script>
+  <script src="/app/js/event/engine.js?v=79"></script>
+  <script src="/app/js/event/tenants.js?v=79"></script>
+  <script src="/app/js/core/auth.js?v=79"></script>
+  <script src="/app/js/event/visitor.js?v=79"></script>
 </body>
 </html>

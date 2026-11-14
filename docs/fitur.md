@@ -34,19 +34,43 @@ Tampilan mobile-first untuk membeli tiket.
   bila waktu penahanan habis.
 - **Kategori berdiri** (tanpa nomor kursi) dengan kuota.
 - **Data pemesan & data peserta** per tiket (nama pemegang tiket bisa berbeda dari pemesan).
-- **Kendaraan** (wajib dijawab): "Bawa kendaraan ke acara?" Tidak / Ya. Bila Ya, pilih mobil atau motor dan isi plat
-  nomor (dirapikan otomatis ke format `D 1234 ABC`). Satu kendaraan per pesanan, dipakai untuk prediksi parkir.
-- **Ringkasan pesanan**: subtotal, biaya layanan per tiket berbayar, total.
+- **Bawa kendaraan ke acara?** (di kartu Data diri pemesan) Ya / Tidak, awalnya belum dipilih dan wajib dijawab sebelum
+  lanjut bayar; klik lagi pilihan yang aktif untuk membatalkannya. Ya: muncul
+  pilihan Mobil / Motor dan plat nomor (keduanya wajib, plat dirapikan otomatis ke format `D 1234 ABC`). Tidak: pilihan
+  itu disembunyikan. Satu kendaraan per pesanan, dipakai untuk prediksi parkir dan tampil di halaman e-ticket.
+- **Ringkasan pesanan**: subtotal, biaya layanan per tiket berbayar, total. Di langkah data pemesan (judul *Konfirmasi
+  pesanan*) kartu **Tiket yang dipesan** selalu tampil dengan info penting disorot: tanggal & jam, lokasi, jam gate dibuka,
+  kategori & kursi, dan total. Bilah atas: "Kursi ditahan untukmu 07:53 · 2 tiket" ("Tiket ditahan…" bila tanpa nomor kursi).
+- **Form data pemesan** satu kartu *Data diri pemesan*: nama, nama berbeda per tiket, email, WhatsApp (dikelompokkan
+  otomatis `812 3456 7890`), kendaraan & plat. Satu kotak centang mencakup Syarat & Ketentuan, Kebijakan Privasi, dan izin
+  pemrosesan data pribadi (UU PDP), lalu tombol **Lanjut bayar Rp …**.
 - **Pembayaran sandbox** (QRIS, VA BCA, GoPay, OVO, DANA, kartu kredit/debit). Pesanan yang tidak dibayar akan kedaluwarsa
   dan kursinya dilepas.
 - **E-ticket QR** bertanda tangan (format `SMB1|tiket|acara|kursi|tanda tangan`).
 - **Tiket saya**, **Cari pesanan** dan **Kotak masuk** (notifikasi e-ticket, perubahan, refund).
+- **Menu akun** (klik avatar): Edit profil (nama & WhatsApp), Tiket saya, **Ubah peran** ke Pengunjung, Pengelola,
+  Tenant atau Command Center (juga di menu avatar konsol pengelola dan Command Center), Keluar.
 - **Tambah ke kalender** (unduh file `.ics`).
 - **Daftar tunggu** bila tiket habis atau penjualan tutup.
+- **Acara yang sudah lewat** di beranda (edisi sebelumnya 12 bulan terakhir: pengunjung hadir, persen terjual, jadwal edisi
+  berikutnya) dan baris **Edisi sebelumnya** di halaman acara.
 
 ## 2. Konsol pengelola acara (`/pengelola`)
 
 Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Setelah satu acara dipilih:
+
+- **Bilah Informasi terbaru** menempel di bawah header di semua menu: status (Semua normal / N perlu perhatian /
+  N peringatan), peringatan merah disematkan sampai ditangani, teks berjalan (berhenti saat disorot), dan
+  **Lihat semua** untuk daftar lengkap yang bisa diklik (transaksi, gate, unduh manifest). Isinya mengikuti pemilih acara.
+- **Riwayat 12 bulan** (seolah sudah berjalan setahun): setiap acara punya satu edisi sebelumnya dalam 12 bulan terakhir
+  lengkap dengan pesanan, e-ticket, check-in, refund, kendaraan, laporan gate, dan riwayat persetujuan. Tampil di Dasbor
+  (angka utama, tiket per bulan, acara terlaris), Daftar acara (saringan **Arsip 12 bulan** + rincian & unduh peserta),
+  Transaksi (rentang Acara aktif / 30 hari / 3 bulan / 12 bulan), Check-in & gate (kehadiran per bulan), Keuangan
+  (pendapatan per bulan, arsip per edisi, CSV) dan Laporan PDF semua acara. Arsip hanya baca.
+- **Cadangan manifest** di Dasbor: status per acara 48 jam ke depan (Siap / Belum diunduh / Data lama / Tersimpan),
+  tombol Offline/Excel/CSV, dan **Semua acara (ZIP)**. Menu **Manifest** juga ada di sebelah tombol Laporan PDF (header
+  acara), dan **Manifest (ZIP)** di header Semua acara.
+
 
 | Menu | Fitur |
 |---|---|
@@ -55,7 +79,7 @@ Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi
 | Denah kursi | Lihat status kursi langsung, blokir/buka kursi, uji rebutan kursi (2 pembeli memilih kursi yang sama) |
 | Pengaturan | Poster, jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan, asumsi keuangan. Satu tombol simpan |
 | Persetujuan | Unggah 7 dokumen (6 wajib, tiap dokumen menyebut divisi pemeriksanya), cek otomatis area & jadwal, ajukan, status "Giliran: …", waktu tunggu per divisi. Keputusan **Divisi Event** lalu **Operasional Mall** dilakukan di Command Center. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
-| Peserta & transaksi | Cari (termasuk plat nomor) & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund) dan per kendaraan (mobil, motor, tanpa kendaraan). Kolom kendaraan & plat. Detail pesanan: ubah data peserta dan kendaraan, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
+| Peserta & transaksi | **Unduh Peserta (Excel)**. Cari (termasuk plat nomor) & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund) dan per kendaraan (mobil, motor, tanpa kendaraan). Kolom kendaraan & plat. Detail pesanan: ubah data peserta dan kendaraan, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
 | Keuangan & ROI | Bruto, refund, neto, biaya layanan, rekonsiliasi per metode pembayaran, deteksi selisih, penjualan per kategori, bagi hasil & ROI. **Unduh Rekonsiliasi (CSV)** |
 | Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
 | Kirim broadcast | Kirim pengingat ke semua pemesan, riwayat pesan email & WhatsApp, kabari daftar tunggu |
@@ -86,9 +110,17 @@ Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (terma
   dibatalkan, atau acara lain). Satu tiket hanya bisa masuk sekali walau dipindai di dua gate
   bersamaan.
 - Pilih gate, tombol **lapor ke Command Center** untuk kejadian di lapangan.
-- **Cadangan kalau sistem mati** (SOP-EVT-05): manifest peserta per acara dicadangkan otomatis di perangkat
-  (batas harian pukul 23.00, localStorage `smicc-manifest-v1`), bisa diunduh sebagai CSV tanpa server. Juga di menu
-  Check-in & gate konsol pengelola dan Pemantauan Event Command Center.
+- **Cadangan kalau sistem mati** (SOP-EVT-05): manifest peserta (acara 48 jam ke depan atau yang sedang berjalan)
+  disimpan di perangkat (localStorage `smicc-manifest-v1`) dan diperbarui otomatis setiap data berubah, paling sering
+  30 detik sekali, selama server terhubung. Saat server putus, salinan terakhir tetap bisa diunduh:
+  - **Manifest offline**: satu file HTML mandiri yang dibuka tanpa server/internet: cari nama, booking, plat atau kursi,
+    centang hadir (tersimpan di perangkat itu), tiket batal ditandai "tolak", unduh hasil centang (CSV).
+  - **Excel (.xlsx)**: kolom Hadir (untuk dicentang), booking, ID tiket, pemegang, pemesan, kategori, kursi, kendaraan,
+    plat, WhatsApp, email, status, check-in, gate. Urut nama pemegang, baris judul dibekukan dan ada filter.
+  - **CSV** dengan kolom yang sama.
+  - **Semua acara (ZIP)**: satu file berisi folder per acara (Excel, CSV, manifest offline) untuk semua acara yang
+    dijual atau sudah lewat (tanpa draft & dibatalkan), plus `DAFTAR_ACARA.xlsx` dan `BACA_SAYA.txt`.
+  Juga di menu Check-in & gate konsol pengelola dan Pemantauan Event Command Center.
 
 ## 4. Command Center (`/command-center`)
 
@@ -113,7 +145,13 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   (mobil/motor terdaftar + proyeksi, okupansi puncak Aman/Waspada/Penuh, rekomendasi, tombol tiket persiapan).
   **Simulasi parkir penuh**: okupansi zona naik bertahap; peringatan di 90%, di 100% muncul banner merah, tiket P2
   SOP-PRK-06 untuk Tim Parkir dan saran zona pengalihan. "Akhiri simulasi" mengembalikan data sensor.
-- **Pemantauan Event** (hanya baca): portofolio semua acara, detail acara, denah langsung,
+  Alarm terasa nyata: tahap Waspada (85%) / Kritis (95%) / Penuh (100%) dengan **detak ganda lub-dub** yang makin cepat
+  (40 → 56 → 72 per menit) dan perkiraan "penuh dalam mm:ss"; saat penuh **bilah alarm merah di semua menu Command Center**,
+  badge "!" berdenyut di menu Parkir, **suara alarm** (aktif bawaan, bisa dibisukan), **papan VMS** gerbang (matriks LED
+  "PENUH ◀ B2"), **peta basement**, dan **log ANPR langsung**. **Akui alarm** mematikan suara dan mencatat operator & waktu
+  respons di tiket; **Arahkan** mengubah papan VMS & panah LED, zona penuh berangsur turun; di bawah 95% "Kembali normal".
+- **Pemantauan Event** (hanya baca): pemilih acara (cari, dikelompokkan per status), portofolio semua acara dengan
+  **Riwayat 12 bulan**, detail acara, denah langsung,
   gate & keamanan, transaksi, keuangan & ROI. Unduh CSV peserta/transaksi/rekonsiliasi juga
   tersedia di sini.
 

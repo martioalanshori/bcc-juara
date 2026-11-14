@@ -539,3 +539,32 @@ test('prediksi parkir: asumsi rasio tanpa data, pesanan berkendaraan ikut dihitu
   assert.equal(p1.answered, p0.answered + 1);
   assert.equal(Evt.parkDemand('EVT-04').usesParking, true); // Bazar di Parkir Barat memakai lahan parkir
 });
+
+// ------------------------------------------------------------------ Arsip setahun (edisi sebelumnya, tidak di state)
+test('arsip: satu edisi sebelumnya per acara (tanpa draft), dalam 12 bulan terakhir, tidak menambah state', async () => {
+  const { Evt } = await loadEvt();
+  const size0 = JSON.stringify(Evt.s).length;
+  const a = Evt.archive(), live = Evt.s.order.map((id) => Evt.ev(id)).filter((e) => e.status !== 'DRAFT');
+  assert.equal(a.length, live.length);
+  const anchor = Evt.s.seededAt, Y = 366 * 86400000;
+  for (const ed of a) {
+    assert.ok(ed.archived && ed.start < anchor && ed.start > anchor - Y, ed.id + ' dalam 12 bulan terakhir');
+    assert.ok(Evt.ev(ed.src), 'merujuk acara yang ada');
+    assert.ok(!Evt.s.orders[ed.orders[0] && ed.orders[0].id], 'pesanan arsip tidak masuk state');
+  }
+  assert.equal(JSON.stringify(Evt.s).length, size0, 'state tidak berubah');
+});
+
+test('arsip: deterministik di semua perangkat dan angkanya konsisten', async () => {
+  const A = (await loadEvt()).Evt, B = (await loadEvt()).Evt;
+  B.s.seededAt = A.s.seededAt; // perangkat lain, waktu seed sama
+  const sig = (E) => E.archive().map((ed) => ed.id + ':' + E.arcStats(ed.id).sold + ':' + E.arcStats(ed.id).net).join('|');
+  assert.equal(sig(A), sig(B));
+  for (const ed of A.archive()) {
+    const s = A.arcStats(ed.id), paid = ed.orders.filter((o) => o.status === 'PAID');
+    assert.equal(s.sold, paid.reduce((x, o) => x + o.items.length, 0));
+    assert.equal(s.net, paid.reduce((x, o) => x + o.total, 0));
+    assert.ok(s.sold <= s.cap && s.attendance > 0.6 && s.attendance <= 1, ed.id + ' wajar');
+    assert.equal(A.arcOrder(ed.orders[0].id), ed.orders[0]);
+  }
+});

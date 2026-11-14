@@ -141,6 +141,16 @@
     if (a.pct < 30) return [badge(L('Sisa ' + a.left + ' tiket', a.left + ' left'), 'warning'), false];
     return ['', false];
   }
+  // Edisi sebelumnya (arsip setahun, Evt.archive): kartu "sudah lewat" menaut ke edisi berikutnya.
+  const edMonth = (ed) => new Date(ed.start).toLocaleDateString(locale(), { month: 'long', year: 'numeric' });
+  const pastCard = (ed) => {
+    const s = E.arcStats(ed.id), nx = E.ev(ed.src);
+    return `<a href="/pengunjung/e/${ed.src}" class="lp-card lp-card-past"><div class="lp-card-img">${photo(ed)}<span class="lp-cat">${esc(catName(ed.cat))}</span><span class="lp-past-tag">${ic('history', 'text-[14px]')}${L('Selesai', 'Ended')}</span></div>
+      <div class="lp-card-body"><h3 class="lp-card-title">${esc(ed.name)}</h3>
+        <p class="lp-meta">${ic('calendar_month', 'text-[16px]')}<span>${L('Edisi ', '')}${edMonth(ed)}${L('', ' edition')}</span></p>
+        <p class="lp-meta">${ic('groups', 'text-[16px]')}<span>${s.checkedIn.toLocaleString(locale())} ${L('pengunjung hadir', 'visitors attended')} · ${Math.round(s.sold / Math.max(1, s.cap) * 100)}% ${L('tiket terjual', 'sold')}</span></p>
+        <div class="lp-card-foot"><div><span class="lp-from">${L('Edisi berikutnya', 'Next edition')}</span><b class="lp-price">${nx ? fShort(nx.start) : '-'}</b></div><span class="lp-more">${L('Lihat', 'View')}${ic('chevron_right', 'text-[18px]')}</span></div></div></a>`;
+  };
   const card = (e) => {
     const [b, sold] = cardState(e);
     return `<a href="/pengunjung/e/${e.id}" class="lp-card${sold ? ' is-sold' : ''}"><div class="lp-card-img">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span></div>
@@ -282,9 +292,11 @@
     const guide = sec('panduan', L('Panduan pengunjung', 'Visitor guide'), `<div class="lp-row4">${GUIDE.map((g) => `<details class="lp-guide"><summary>${ic(g.icon, 'text-[22px] lp-guide-ic')}<span>${esc(tx2(g.title))}</span>${ic('expand_more', 'lp-guide-chev')}</summary>
       <ul>${g.items.map((x) => `<li>${esc(tx2(x))}</li>`).join('')}</ul></details>`).join('')}</div>`);
 
+    const past = E.archive().filter((ed) => E.ev(ed.src) && E.ev(ed.src).status !== 'CANCELLED').slice(0, 8);
+    const pastHtml = past.length ? sec('lalu', L('Acara yang sudah lewat', 'Past events'), `<p class="lp-lead">${L('Edisi sebelumnya dalam 12 bulan terakhir. Banyak yang kembali digelar, lihat jadwal edisi berikutnya.', 'Previous editions from the last 12 months. Many are coming back, see the next edition.')}</p><div class="lp-grid">${past.map(pastCard).join('')}</div>`) : '';
     return heroHtml + gridHtml
       + (agenda || hotHtml ? `<div class="lp-split${agenda && hotHtml ? '' : ' single'}">${agenda}${hotHtml}</div>` : '')
-      + catHtml + dirHtml + marquee + promoHtml + creator + guide + footer();
+      + catHtml + pastHtml + dirHtml + marquee + promoHtml + creator + guide + footer();
   }
 
   function footer() {
@@ -369,6 +381,7 @@
           ${row('calendar_month', `<b>${fDate(e.start)}</b><span>${L(`Mulai ${fTime(e.start)} WIB, gate dibuka ${fTime(e.doors)} WIB`, `Starts ${fTime(e.start)} WIB, gates open ${fTime(e.doors)} WIB`)}</span>`)}
           ${row('location_on', `<b class="flex items-center gap-2">${plate(x.floor)}${esc(x.key)}</b><span>Summarecon Mall Bandung${x.note ? ' · ' + esc(tx2(x.note)) : ''}</span>`)}
           ${row('storefront', `<b>${esc(e.org || 'Summarecon Mall Bandung')}</b><span>${L('Penyelenggara', 'Organiser')}</span>`)}
+          ${(() => { const ed = E.archive().find((x) => x.src === e.id); if (!ed) return ''; const ps = E.arcStats(ed.id); return row('history', `<b>${L('Edisi sebelumnya: ', 'Previous edition: ')}${edMonth(ed)}</b><span>${ps.checkedIn.toLocaleString(locale())} ${L('pengunjung hadir', 'visitors attended')}, ${Math.round(ps.sold / Math.max(1, ps.cap) * 100)}% ${L('tiket terjual', 'of tickets sold')}</span>`); })()}
         </div>
         <button type="button" id="share" class="lp-more">${ic('share', 'text-[18px]')}<span class="ml-1">${L('Bagikan acara', 'Share event')}</span></button>
         <nav class="pv-tabs" aria-label="${L('Bagian acara', 'Event sections')}"><button type="button" data-jump="desk" class="on">${L('Deskripsi', 'Description')}</button><button type="button" data-jump="tiket">${L('Tiket', 'Tickets')}</button><button type="button" data-jump="sk">${terms}</button></nav>
@@ -400,7 +413,7 @@
   }
   // Bilah "Ditahan untukmu": tepat di bawah header (ikut menempel saat digulir), berisi sisa waktu tahan.
   const holdBar = (h, canClear) => (h.items.length ? `<div class="lp-holdbar" role="status"><div class="lp-holdbar-in">${ic('lock_clock', 'text-[20px]')}
-      <span class="flex-1 min-w-0">${L('Ditahan untukmu', 'Held for you')} <b class="lp-holdbar-t" data-until="${h.until}">--:--</b><span class="lp-holdbar-n"> · ${L(h.items.length + ' tiket', h.items.length + (h.items.length === 1 ? ' ticket' : ' tickets'))}</span></span>
+      <span class="flex-1 min-w-0">${h.items.some((it) => it.seat) ? L('Kursi ditahan untukmu', 'Seats held for you') : L('Tiket ditahan untukmu', 'Tickets held for you')} <b class="lp-holdbar-t" data-until="${h.until}">--:--</b><span class="lp-holdbar-n"> · ${L(h.items.length + ' tiket', h.items.length + (h.items.length === 1 ? ' ticket' : ' tickets'))}</span></span>
       ${canClear ? `<button type="button" class="lp-holdbar-x" id="clear">${L('Lepas semua', 'Release all')}</button>` : ''}</div></div>` : '');
   const saleNotice = (e) => `<div class="inner p-3 mb-3 font-body-sm text-body-sm text-amber-300">${esc(saleLabel(e))}. ${L('Tiket belum bisa dipilih.', 'Tickets cannot be selected right now.')}</div>`;
   const waitBtn = (tid) => `<button class="btn-ghost" data-wl="${tid}">${ic('hourglass_top', 'text-[16px]')} ${L('Daftar tunggu', 'Waiting list')}</button>`;
@@ -468,16 +481,20 @@
 
   const seatOf = (seat) => L(', kursi ', ', seat ') + '<b>' + seat + '</b>';
   // Kendaraan: satu per pesanan, untuk prediksi parkir di Command Center (Evt.parkDemand).
-  function vehFields(saved, field) {
-    const yes = saved.veh === 'yes';
-    const opt = (name, v, icon, label, on) => `<label class="lp-opt"><input type="radio" name="${name}" value="${v}" ${on ? 'checked' : ''}>${ic(icon, 'text-[20px]')}<span>${label}</span></label>`;
+  // "Bawa kendaraan ke acara?" Ya / Tidak, awalnya belum dipilih (wajib dijawab). Ya: muncul Mobil / Motor dan plat nomor.
+  const plateLabel = (v) => (v === 'motor' ? L('Plat nomor motor', 'Motorbike licence plate') : v === 'mobil' ? L('Plat nomor mobil', 'Car licence plate') : L('Plat nomor', 'Licence plate'));
+  function vehFields() {
+    const opt = (name, v, icon, label) => `<label class="lp-opt"><input type="radio" name="${name}" value="${v}">${ic(icon)}<span>${label}</span></label>`;
     const seg = (name, label, help, opts) => `<div class="lp-field" data-field="${name}"><span class="lp-label" id="l-${name}">${label}</span>
-      <div class="lp-seg" role="radiogroup" aria-labelledby="l-${name}" aria-describedby="h-${name}">${opts}</div><p class="lp-help" id="h-${name}" data-help="${esc(help)}">${help}</p></div>`;
-    return `${seg('veh', L('Bawa kendaraan ke acara?', 'Bringing a vehicle to the event?'), L('Untuk memperkirakan kebutuhan parkir saat acara.', 'Helps us estimate parking demand during the event.'),
-        opt('veh', 'no', 'directions_walk', L('Tidak', 'No'), saved.veh === 'no') + opt('veh', 'yes', 'local_parking', L('Ya', 'Yes'), yes))}
-      <div class="lp-veh-more" id="veh-more" ${yes ? '' : 'hidden'}>
-        ${seg('vtype', L('Jenis kendaraan', 'Vehicle type'), L('Pilih salah satu.', 'Choose one.'), opt('vtype', 'mobil', 'directions_car', L('Mobil', 'Car'), saved.vtype === 'mobil') + opt('vtype', 'motor', 'two_wheeler', L('Motor', 'Motorbike'), saved.vtype === 'motor'))}
-        ${field('plate', L('Plat nomor', 'Licence plate'), `<input id="f-plate" class="inp lp-plate" name="plate" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" value="${esc(saved.plate || '')}" placeholder="D 1234 ABC" aria-describedby="h-plate">`, L('Contoh D 1234 ABC.', 'For example D 1234 ABC.'))}
+        <div class="lp-seg lp-seg2" role="radiogroup" aria-labelledby="l-${name}" aria-describedby="h-${name}">${opts}</div><p class="lp-help" id="h-${name}" data-help="${esc(help)}">${help}</p></div>`;
+    const phelp = L('Contoh D 1234 ABC.', 'For example D 1234 ABC.');
+    return `${seg('veh', L('Bawa kendaraan ke acara?', 'Bringing a vehicle to the event?'), L('Untuk menyiapkan slot parkir di hari acara.', 'Helps us prepare parking on the event day.'),
+        opt('veh', 'yes', 'directions_car', L('Ya', 'Yes')) + opt('veh', 'no', 'directions_walk', L('Tidak', 'No')))}
+      <div class="lp-veh-more" id="veh-more" hidden>
+        ${seg('vtype', L('Jenis kendaraan', 'Vehicle type'), L('Pilih salah satu.', 'Choose one.'), opt('vtype', 'mobil', 'directions_car', L('Mobil', 'Car')) + opt('vtype', 'motor', 'two_wheeler', L('Motor', 'Motorbike')))}
+        <div class="lp-field" data-field="plate"><label for="f-plate" class="lp-label" id="l-plate">${plateLabel('')}</label>
+          <input id="f-plate" class="inp lp-plat-inp" name="plate" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="D 1234 ABC" aria-describedby="h-plate">
+          <p class="lp-help" id="h-plate" data-help="${esc(phelp)}">${phelp}</p></div>
       </div>`;
   }
   V.data = (id) => {
@@ -489,36 +506,50 @@
     const saved = JSON.parse(sessionStorage.getItem('smicc-evt-form') || '{}');
     if (me && !saved.email) Object.assign(saved, { name: me.name, email: me.email, phone: me.phone, cc: me.cc }); // isi dari akun yang masuk
     const cc = CC.find((x) => x.k === saved.cc) || CC[0];
-    const go = pr.total ? L('Buat pesanan & bayar', 'Place order & pay') : L('Konfirmasi pendaftaran', 'Confirm registration');
+    const go = pr.total ? L('Lanjut bayar ', 'Continue to pay ') + rp(pr.total) : L('Konfirmasi pendaftaran', 'Confirm registration');
+    const holders = h.items.length > 1 ? `<details class="lp-holders"><summary class="font-label-md text-label-md text-primary">${ic('group', 'text-[16px] align-middle')} ${L('Nama berbeda untuk tiap tiket (opsional)', 'A different name for each ticket (optional)')}</summary><div class="flex flex-col gap-2 mt-2">${h.items.map((it, i) => `<label class="f">${L('Tiket', 'Ticket')} ${i + 1}: ${esc(E.typeById(e, it.type).name)}${it.seat ? L(', kursi ', ', seat ') + it.seat : ''}<input class="inp" name="holder${i}" placeholder="${L('Sama dengan pemesan', 'Same as booker')}"></label>`).join('')}</div></details>` : '';
     const field = (name, label, input, help) => `<div class="lp-field" data-field="${name}"><label for="f-${name}" class="lp-label">${label}</label>${input}<p class="lp-help" id="h-${name}" data-help="${esc(help)}">${help}</p></div>`;
     return `${holdBar(h, false)}${back('/pengunjung/e/' + id + '/kategori', L('Ubah tiket', 'Change tickets'))}${steps('data', e)}
-      <h1 class="font-headline-md text-headline-md mb-3">${L('Ringkasan & data diri', 'Summary & your details')}</h1>
-      ${orderSummary(e, h.items, pr, L(`Kursi ditahan, belum dibayar. Setelah pesanan dibuat, kamu punya ${E.PAY_MIN} menit untuk membayar.`, `Seats held, not yet paid. Once the order is created you have ${E.PAY_MIN} minutes to pay.`))}
+      <h1 class="font-headline-md text-headline-md mb-3">${L('Konfirmasi pesanan', 'Confirm your order')}</h1>
+      ${orderSummary(e, h.items, pr, '', '', true)}
       <form id="f-order" class="flex flex-col gap-4" novalidate>
         <section class="card p-4 flex flex-col gap-4"><h2 class="font-headline-sm text-headline-sm">${L('Data diri pemesan', 'Booker details')}</h2>
           ${field('name', L('Nama lengkap', 'Full name'), `<input id="f-name" class="inp" name="name" autocomplete="name" value="${esc(saved.name || '')}" placeholder="${L('Nama sesuai identitas', 'Name as on your ID')}" aria-describedby="h-name">`, L('Sesuai KTP atau kartu pelajar.', 'As on your ID card.'))}
+          ${holders}
           ${field('email', 'Email', `<input id="f-email" class="inp" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" value="${esc(saved.email || '')}" placeholder="nama@gmail.com" aria-describedby="h-email">`, L('E-ticket dikirim ke email ini.', 'Your e-ticket is sent to this email.'))}
           ${field('phone', L('Nomor WhatsApp', 'WhatsApp number'), `<div class="lp-phone"><div class="lp-cc"><span class="pv-flag" data-cc-flag aria-hidden="true">${cc.flag()}</span><span class="lp-cc-code" data-cc-code>+${cc.code}</span>${ic('expand_more', 'text-[18px]')}
               <select name="cc" aria-label="${L('Kode negara', 'Country code')}">${CC.map((x) => `<option value="${x.k}" ${x === cc ? 'selected' : ''}>${esc(tx2(x.name))} (+${x.code})</option>`).join('')}</select></div>
-            <input id="f-phone" class="inp" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" value="${esc(saved.phone || '')}" placeholder="812 3456 7890" aria-describedby="h-phone"></div>`, L('Pengingat acara dikirim lewat WhatsApp. Tanpa angka 0 di depan.', 'Event reminders are sent via WhatsApp. No leading 0.'))}
-          ${vehFields(saved, field)}
-          ${h.items.length > 1 ? `<details><summary class="font-label-md text-label-md text-primary">${ic('group', 'text-[16px] align-middle')} ${L('Nama berbeda untuk tiap tiket (opsional)', 'A different name for each ticket (optional)')}</summary><div class="flex flex-col gap-2 mt-2">${h.items.map((it, i) => `<label class="f">${L('Tiket', 'Ticket')} ${i + 1}: ${esc(E.typeById(e, it.type).name)}${it.seat ? L(', kursi ', ', seat ') + it.seat : ''}<input class="inp" name="holder${i}" placeholder="${L('Sama dengan pemesan', 'Same as booker')}"></label>`).join('')}</div></details>` : ''}
-          <p class="font-label-sm text-label-sm text-on-surface-variant">${L('Prototipe: gunakan data contoh, bukan data pribadi asli.', 'Prototype: use sample data, not real personal details.')}</p></section>
+            <input id="f-phone" class="inp" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" value="${esc(saved.phone || '')}" placeholder="812 3456 7890" aria-describedby="h-phone"></div>`, L('Pengingat acara dikirim lewat WhatsApp.', 'Event reminders are sent via WhatsApp.'))}
+          ${vehFields()}</section>
         <div class="lp-consents">
-          <label class="lp-check" for="accept_toc"><input type="checkbox" id="accept_toc" name="accept_toc"><span>${L(`Dengan mengklik "${go}", kamu menyetujui <a href="#" data-policy="tnc">Syarat &amp; Ketentuan</a> dan <a href="#" data-policy="privacy">Kebijakan Privasi</a> Summarecon Mall Bandung.`, `By clicking "${go}", you agree to the Summarecon Mall Bandung <a href="#" data-policy="tnc">Terms &amp; Conditions</a> and <a href="#" data-policy="privacy">Privacy Policy</a>.`)}</span></label>
-          <label class="lp-check" for="accept_consent"><input type="checkbox" id="accept_consent" name="accept_consent"><span>${L(`Dengan mengklik "${go}", kamu menyetujui <a href="#" data-policy="pii">Kebijakan Pemrosesan Data Pribadi</a> Summarecon Mall Bandung.`, `By clicking "${go}", you agree to the Summarecon Mall Bandung <a href="#" data-policy="pii">Personal Data Processing Policy</a>.`)}</span></label>
+          <label class="lp-check" for="accept_consent"><input type="checkbox" id="accept_consent" name="accept_consent"><span>${L('Saya menyetujui <a href="#" data-policy="tnc">Syarat &amp; Ketentuan</a> dan <a href="#" data-policy="privacy">Kebijakan Privasi</a> Summarecon Mall Bandung, serta mengizinkan data saya diproses sesuai <a href="#" data-policy="pii">Kebijakan Pemrosesan Data Pribadi</a>.', 'I agree to the Summarecon Mall Bandung <a href="#" data-policy="tnc">Terms &amp; Conditions</a> and <a href="#" data-policy="privacy">Privacy Policy</a>, and allow my data to be processed under the <a href="#" data-policy="pii">Personal Data Processing Policy</a>.')}</span></label>
           <p class="lp-err" id="h-consent" hidden></p></div>
         <button class="btn justify-center !py-3">${ic(pr.total ? 'payments' : 'how_to_reg')} ${go}</button>
-      </form>`;
+      </form>
+      <p class="lp-proto">${ic('science', 'text-[14px] align-middle')} ${L('Prototipe: gunakan data contoh, bukan data pribadi asli.', 'Prototype: use sample data, not real personal details.')}</p>`;
   };
 
   // Ringkasan pesanan: selalu di bagian paling atas (langkah data diri dan halaman pesanan).
-  function orderSummary(e, items, pr, note, extra) {
-    return `<section class="card p-4 mb-4"><h2 class="font-headline-sm text-headline-sm mb-2">${L('Ringkasan pesanan', 'Order summary')}</h2>
-      <div class="flex gap-3 items-start">${e.img ? `<img src="${esc(e.img)}" alt="" class="lp-sum-img">` : ''}<div class="font-body-sm text-body-sm min-w-0"><b>${esc(e.name)}</b><br><span class="text-on-surface-variant">${fDate(e.start)} · ${fTime(e.start)} WIB<br>${esc(e.venue)}</span></div></div>
-      <div class="mt-3 flex flex-col divide-y divide-white/5">${items.map((it) => { const t = E.typeById(e, it.type); return `<div class="flex justify-between gap-3 py-2 font-body-sm text-body-sm"><span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:${t.color}"></span>${esc(t.name)}${it.seat ? seatOf(it.seat) : L(', tanpa nomor kursi', ', unnumbered')}</span><span class="whitespace-nowrap">${rp(it.price != null ? it.price : t.price)}</span></div>`; }).join('')}
+  // compact: satu baris (acara, jumlah tiket, total) yang bisa dibuka; terbuka otomatis di layar lebar.
+  function orderSummary(e, items, pr, note, extra, compact) {
+    const when = `${fDate(e.start)} · ${fTime(e.start)} WIB`;
+    const lines = () => `<div class="mt-3 flex flex-col divide-y divide-white/5">${items.map((it) => { const t = E.typeById(e, it.type); return `<div class="flex justify-between gap-3 py-2 font-body-sm text-body-sm"><span><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:${t.color}"></span>${esc(t.name)}${it.seat ? seatOf(it.seat) : L(', tanpa nomor kursi', ', unnumbered')}</span><span class="whitespace-nowrap">${rp(it.price != null ? it.price : t.price)}</span></div>`; }).join('')}
         <div class="flex justify-between py-2 font-body-sm text-body-sm text-on-surface-variant"><span>${L('Biaya layanan', 'Service fee')}</span><span>${pr.fee ? rp(pr.fee) : '–'}</span></div>
-        <div class="flex justify-between py-2 font-headline-sm text-headline-sm"><span>Total</span><span>${rp(pr.total)}</span></div></div>
+        <div class="flex justify-between py-2 font-headline-sm text-headline-sm"><span>Total</span><span>${rp(pr.total)}</span></div></div>`;
+    if (compact) {
+      // Rincian pesanan di langkah data pemesan: selalu tampil; tanggal & jam, lokasi, kursi, total, dan batas bayar disorot.
+      const by = {}; items.forEach((it) => { (by[it.type] = by[it.type] || []).push(it.seat); });
+      const seats = Object.entries(by).map(([ty, ss]) => { const t = E.typeById(e, ty), s = ss.filter(Boolean); return `<span class="lp-seat-chip"><i style="background:${t.color}"></i>${esc(t.name)} · <b>${s.length ? esc(s.join(', ')) : ss.length + ' ' + L('tiket', 'tickets')}</b></span>`; }).join('');
+      const fact = (icon, html) => `<li>${ic(icon, 'text-[18px]')}<span>${html}</span></li>`;
+      return `<section class="card p-4 mb-4 lp-sumx"><h2 class="font-headline-sm text-headline-sm mb-3">${L('Tiket yang dipesan', 'Your tickets')}</h2>
+        <div class="flex gap-3 items-start">${e.img ? `<img src="${esc(e.img)}" alt="" class="lp-sum-img">` : ''}<div class="min-w-0"><b class="lp-sumx-name">${esc(e.name)}</b>
+          <ul class="lp-sumx-facts">${fact('calendar_month', `<b>${fDate(e.start)}</b>, ${L('pukul', 'at')} <b>${fTime(e.start)} WIB</b>`)}${fact('location_on', esc(e.venue))}${e.doors ? fact('door_open', L('Gate dibuka ', 'Gates open ') + fTime(e.doors) + ' WIB') : ''}</ul></div></div>
+        <div class="lp-seat-chips">${seats}</div>
+        ${lines()}</section>`;
+    }
+    return `<section class="card p-4 mb-4"><h2 class="font-headline-sm text-headline-sm mb-2">${L('Ringkasan pesanan', 'Order summary')}</h2>
+      <div class="flex gap-3 items-start">${e.img ? `<img src="${esc(e.img)}" alt="" class="lp-sum-img">` : ''}<div class="font-body-sm text-body-sm min-w-0"><b>${esc(e.name)}</b><br><span class="text-on-surface-variant">${when}<br>${esc(e.venue)}</span></div></div>
+      ${lines()}
       ${note ? `<p class="font-label-sm text-label-sm text-on-surface-variant mt-1">${note}</p>` : ''}${extra || ''}</section>`;
   }
 
@@ -573,10 +604,10 @@
     const f = Object.fromEntries(new FormData(form));
     let first = null;
     VFIELDS.forEach((k) => { const m = checkField(k, f); showErr(form, k, m); if (m && !first) first = form.querySelector('#f-' + k) || form.querySelector(`input[name=${k}]`); });
-    const okC = form.accept_toc.checked && form.accept_consent.checked;
+    const okC = form.accept_consent.checked;
     const ce = form.querySelector('#h-consent');
-    ce.hidden = okC; ce.innerHTML = okC ? '' : ic('error', 'text-[16px]') + '<span>' + L('Centang kedua persetujuan di atas untuk melanjutkan.', 'Tick both agreements above to continue.') + '</span>';
-    if (!first && !okC) first = !form.accept_toc.checked ? form.accept_toc : form.accept_consent;
+    ce.hidden = okC; ce.innerHTML = okC ? '' : ic('error', 'text-[16px]') + '<span>' + L('Centang persetujuan di atas untuk melanjutkan.', 'Tick the agreement above to continue.') + '</span>';
+    if (!first && !okC) first = form.accept_consent;
     if (first) { first.focus(); first.scrollIntoView({ block: 'center', behavior: 'smooth' }); return null; }
     const cc = CC.find((x) => x.k === f.cc) || CC[0];
     return { name: f.name.trim().replace(/\s+/g, ' '), email: f.email.trim().toLowerCase(), phone: '+' + cc.code + ' ' + phoneDigits(f.phone, cc).replace(/^(\d{3})(\d{3,4})(\d+)$/, '$1-$2-$3'), holders: Object.keys(f).filter((k) => k.startsWith('holder')).map((k) => f[k].trim()), vehicle: f.veh === 'yes' ? { t: f.vtype, p: E.normPlate(f.plate) } : null };
@@ -620,6 +651,7 @@
   }
   function ticketsView(o, e) {
     return `<div class="inner p-3 mb-4 flex items-center gap-2 font-body-sm text-body-sm text-emerald-300">${ic('mark_email_read', 'text-[18px]')} ${L(`E-ticket juga dikirim ke ${esc(o.email)} & WhatsApp ${esc(o.phone)} (simulasi).`, `E-tickets were also sent to ${esc(o.email)} & WhatsApp ${esc(o.phone)} (simulated).`)}</div>
+      ${o.veh ? `<div class="inner p-3 mb-4 flex items-center gap-3 font-body-sm text-body-sm">${ic(o.veh.t === 'motor' ? 'two_wheeler' : 'directions_car', 'text-[22px] text-primary')}<div class="flex-1 min-w-0">${L('Kendaraan terdaftar untuk acara ini', 'Vehicle registered for this event')}<br><b>${esc(L(E.VEH[o.veh.t], o.veh.t === 'motor' ? 'Motorbike' : 'Car'))}</b> <span class="lp-plat-tag">${esc(o.veh.p)}</span></div></div>` : ''}
       <div class="flex flex-col gap-4 mb-4">${o.tickets.map((tid, i) => { const t = E.s.tickets[tid]; const ty = E.typeById(e, t.type); return `<section class="card p-0 overflow-hidden">
         <div class="px-4 py-3 flex items-center justify-between" style="background:linear-gradient(90deg, ${ty.color}44, transparent)"><span class="font-label-lg text-label-lg">E-ticket ${i + 1}/${o.tickets.length}</span><span class="font-label-sm text-label-sm">${esc(ty.name)}</span></div>
         <div class="p-4 flex flex-col items-center gap-3"><div class="paper p-2 rounded-lg">${E.qrSvg(E.qrText(t), 200)}</div>
@@ -669,6 +701,71 @@
       d.className = 'btn'; d.href = '/pengunjung/masuk?next=' + next; d.innerHTML = `${ic('login', 'text-[18px]')}<span>${L('Masuk', 'Log in')}</span>`;
       m.className = 'pv-hbtn pv-hround'; m.href = '/pengunjung/masuk?next=' + next; m.setAttribute('aria-label', L('Masuk', 'Log in')); m.innerHTML = ic('person', 'text-[20px]');
     }
+  }
+
+  // Menu akun (klik avatar di header, atau "Masuk" saat belum masuk): profil, Tiket saya, Ubah peran
+  // (Pengunjung / Pengelola / Tenant / Command Center, diisi core/auth.js), Keluar.
+  const acct = document.getElementById('acct-menu');
+  let acctBtn = null;
+  function acctFill() {
+    const next = encodeURIComponent(Router.path() === '/masuk' ? '/tiket' : Router.path());
+    const item = (tag, attrs, icon, label) => `<${tag} class="cc-prof-item w-full text-left" ${attrs}>${ic(icon, 'text-[20px]')}${label}</${tag}>`;
+    acct.querySelector('#acct-top').innerHTML = me
+      ? `<div class="pg-prof-head pv-acct-head"><span class="lp-avatar" aria-hidden="true">${esc(initialsOf(me.name))}</span><div class="min-w-0 flex flex-col"><b>${esc(me.name)}</b><small>${esc(me.email)}</small></div></div>
+        ${item('button', 'type="button" data-acct-edit', 'manage_accounts', L('Edit profil', 'Edit profile'))}${item('a', 'href="/pengunjung/tiket"', 'confirmation_number', L('Tiket saya', 'My tickets'))}`
+      : `<div class="pg-prof-head"><b>${L('Belum masuk', 'Not logged in')}</b><small>${L('Masuk untuk melihat semua tiketmu.', 'Log in to see all your tickets.')}</small></div>
+        ${item('a', `href="/pengunjung/masuk?next=${next}"`, 'login', L('Masuk', 'Log in'))}`;
+    acct.querySelector('#acct-bottom').innerHTML = me ? `<div class="pg-sw">${item('button', 'type="button" data-acct-out style="color:rgb(var(--error))"', 'logout', L('Keluar', 'Log out'))}</div>` : '';
+  }
+  function acctClose(focusBtn) {
+    if (acct.hidden) return;
+    acct.hidden = true;
+    if (acctBtn) { acctBtn.setAttribute('aria-expanded', 'false'); if (focusBtn) acctBtn.focus(); }
+  }
+  function acctOpen(btn) {
+    acctFill(); acctBtn = btn;
+    const r = btn.getBoundingClientRect();
+    acct.style.top = r.bottom + 8 + 'px';
+    acct.style.right = Math.max(8, document.documentElement.clientWidth - r.right) + 'px';
+    acct.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    const f = acct.querySelector('a, button'); if (f) f.focus();
+  }
+  ['h-login', 'h-login-m'].forEach((id) => {
+    const b = document.getElementById(id); if (!b) return;
+    b.setAttribute('aria-haspopup', 'true'); b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-controls', 'acct-menu');
+    b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (!acct.hidden && acctBtn === b) acctClose(); else { acctClose(); acctOpen(b); } });
+  });
+  acct.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-acct-edit]')) { acctClose(); editProfile(); return; }
+    if (ev.target.closest('[data-acct-out]')) { acctClose(); signOut(); syncHead(); toast(L('Kamu sudah keluar.', 'You have logged out.'), 'info'); Router.go('/'); return; }
+    if (ev.target.closest('a, button')) acctClose();
+  });
+  acct.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); acctClose(true); } });
+  document.addEventListener('click', (ev) => { if (!acct.hidden && !acct.contains(ev.target)) acctClose(); });
+  window.addEventListener('resize', () => acctClose());
+  // Edit profil pengunjung: nama & nomor WhatsApp (email = identitas masuk, tidak diubah di sini). Disimpan di browser ini.
+  function editProfile() {
+    if (!me) return;
+    const cc = CC.find((x) => x.k === me.cc) || CC[0];
+    const r = modal(L('Edit profil', 'Edit profile'), `<form id="f-vprof" class="flex flex-col gap-4" novalidate>
+      <div class="flex items-center gap-3"><span class="lp-avatar lp-avatar-lg" id="vp-av" aria-hidden="true">${esc(initialsOf(me.name))}</span><div class="min-w-0"><b class="block truncate">${esc(me.email)}</b><span class="lp-help">${L('Email dipakai untuk masuk dan tidak diubah di sini.', 'Your email is used to log in and cannot be changed here.')}</span></div></div>
+      <div class="lp-field" data-field="name"><label for="vp-name" class="lp-label">${L('Nama lengkap', 'Full name')}</label><input id="vp-name" class="inp" name="name" value="${esc(me.name)}" autocomplete="name" aria-describedby="vp-h-name"><p class="lp-help" id="vp-h-name" data-help="${L('Dipakai untuk mengisi data pemesan.', 'Used to fill in booker details.')}">${L('Dipakai untuk mengisi data pemesan.', 'Used to fill in booker details.')}</p></div>
+      <div class="lp-field" data-field="phone"><label for="vp-phone" class="lp-label">${L('Nomor WhatsApp', 'WhatsApp number')}</label><div class="lp-phone"><div class="lp-cc"><span class="pv-flag" aria-hidden="true">${cc.flag()}</span><span class="lp-cc-code">+${cc.code}</span></div><input id="vp-phone" class="inp" name="phone" type="tel" inputmode="numeric" value="${esc(me.phone || '')}" placeholder="812 3456 7890" aria-describedby="vp-h-phone"></div><p class="lp-help" id="vp-h-phone" data-help="${L('Pengingat acara dikirim lewat WhatsApp.', 'Event reminders are sent via WhatsApp.')}">${L('Pengingat acara dikirim lewat WhatsApp.', 'Event reminders are sent via WhatsApp.')}</p></div>
+      <p class="lp-help">${L('Profil ini hanya tersimpan di browser ini.', 'This profile is only stored in this browser.')}</p>
+      <div class="flex justify-end gap-2"><button type="button" class="btn-ghost" data-close>${L('Batal', 'Cancel')}</button><button class="btn">${L('Simpan profil', 'Save profile')}</button></div></form>`);
+    const f = r.querySelector('#f-vprof');
+    f.name.addEventListener('input', () => (r.querySelector('#vp-av').textContent = initialsOf(f.name.value)));
+    f.addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const v = { name: f.name.value, phone: f.phone.value, cc: cc.k };
+      const eName = checkField('name', v), ePhone = checkField('phone', v);
+      showErr(f, 'name', eName); showErr(f, 'phone', ePhone);
+      if (eName || ePhone) return (eName ? f.name : f.phone).focus();
+      me = Object.assign({}, me, { name: v.name.trim().replace(/\s+/g, ' '), phone: phoneDigits(v.phone, cc).replace(/^(\d{3})(\d{4})(\d+)$/, '$1 $2 $3') });
+      try { localStorage.setItem(ACC_KEY, JSON.stringify(me)); } catch (_) { /* tetap berlaku sampai tab ditutup */ }
+      closeModal(); syncHead(); render(true); toast(L('Profil disimpan.', 'Profile saved.'), 'ok');
+    });
+    f.name.focus();
   }
 
   V.masuk = () => {
@@ -875,30 +972,54 @@
     }));
     const fo = app.querySelector('#f-order');
     if (fo) {
-      const save = () => { const f = Object.fromEntries(new FormData(fo)); sessionStorage.setItem('smicc-evt-form', JSON.stringify({ name: f.name, email: f.email, phone: f.phone, cc: f.cc, veh: f.veh, vtype: f.vtype, plate: f.plate })); };
+      const save = () => { const f = Object.fromEntries(new FormData(fo)); sessionStorage.setItem('smicc-evt-form', JSON.stringify({ name: f.name, email: f.email, phone: f.phone, cc: f.cc })); };
       const phone = fo.querySelector('#f-phone');
-      // Nomor: hanya angka & spasi; 0 di depan dibuang (kode negara sudah dipilih di kiri).
-      phone.addEventListener('input', () => { const v = phone.value.replace(/[^\d ]/g, '').replace(/^0+/, ''); if (v !== phone.value) phone.value = v; });
+      // Nomor: hanya angka; 0 di depan dibuang (kode negara sudah dipilih di kiri); dikelompokkan 812 3456 7890
+      // (Singapura 1234 5678) saat mengetik di ujung kolom, supaya kursor tidak melompat saat menyunting di tengah.
+      const group = (d, k) => (k === 'SG' ? [4, 4] : [3, 4, 9]).reduce((a, n) => { if (d) { a.push(d.slice(0, n)); d = d.slice(n); } return a; }, []).join(' ');
+      phone.addEventListener('input', () => {
+        const end = phone.selectionStart === phone.value.length, d = phone.value.replace(/\D/g, '').replace(/^0+/, '');
+        const v = end ? group(d, fo.cc.value) : phone.value.replace(/[^\d ]/g, '').replace(/^0+/, '');
+        if (v !== phone.value) phone.value = v;
+      });
       fo.querySelector('select[name=cc]').addEventListener('change', (ev) => {
         const cc = CC.find((x) => x.k === ev.target.value) || CC[0];
         fo.querySelector('[data-cc-flag]').innerHTML = cc.flag(); fo.querySelector('[data-cc-code]').textContent = '+' + cc.code;
         if (phone.value) showErr(fo, 'phone', checkField('phone', Object.fromEntries(new FormData(fo))));
       });
       // Galat muncul setelah kolom ditinggalkan; saat diketik ulang, hilang begitu isinya sudah benar.
-      // Kendaraan: blok jenis & plat hanya muncul bila menjawab Ya; plat dirapikan saat kolom ditinggalkan.
+      // Kendaraan: Ya memunculkan jenis & plat, Tidak menyembunyikannya; memilih jenis langsung memindah fokus ke plat.
+      // Klik lagi pilihan yang sudah aktif (Ya atau Tidak) membatalkannya: kembali ke awal, belum memilih apa pun.
       const more = fo.querySelector('#veh-more'), plate = fo.querySelector('#f-plate');
-      fo.querySelectorAll('input[name=veh]').forEach((r) => r.addEventListener('change', () => {
-        more.hidden = r.value !== 'yes'; showErr(fo, 'veh', '');
-        if (more.hidden) { showErr(fo, 'vtype', ''); showErr(fo, 'plate', ''); } else if (!fo.querySelector('input[name=vtype]:checked')) fo.querySelector('input[name=vtype]').focus();
+      const vehSync = () => {
+        const v = (fo.querySelector('input[name=veh]:checked') || {}).value;
+        more.hidden = v !== 'yes'; showErr(fo, 'veh', '');
+        if (more.hidden) { showErr(fo, 'vtype', ''); showErr(fo, 'plate', ''); }
+      };
+      fo.querySelectorAll('input[name=veh]').forEach((r) => {
+        let was = false;
+        r.addEventListener('pointerdown', () => { was = r.checked; });
+        r.addEventListener('keydown', (ev) => { if (ev.key === ' ' || ev.key === 'Enter') was = r.checked; });
+        r.addEventListener('click', () => {
+          if (was) {
+            r.checked = false; was = false;
+            fo.querySelectorAll('input[name=vtype]').forEach((x) => (x.checked = false));
+            plate.value = ''; fo.querySelector('#l-plate').textContent = plateLabel('');
+          }
+          vehSync();
+        });
+      });
+      fo.querySelectorAll('input[name=vtype]').forEach((r) => r.addEventListener('change', () => {
+        showErr(fo, 'vtype', ''); fo.querySelector('#l-plate').textContent = plateLabel(r.value);
+        if (!plate.value.trim()) plate.focus();
       }));
-      fo.querySelectorAll('input[name=vtype]').forEach((r) => r.addEventListener('change', () => showErr(fo, 'vtype', '')));
       plate.addEventListener('blur', () => { if (plate.value.trim()) plate.value = E.normPlate(plate.value); });
       ['name', 'email', 'phone', 'plate'].forEach((k) => {
         const el = fo.querySelector('#f-' + k);
         el.addEventListener('blur', () => { if (el.value.trim()) showErr(fo, k, checkField(k, Object.fromEntries(new FormData(fo)))); });
         el.addEventListener('input', () => { if (el.classList.contains('is-err') && !checkField(k, Object.fromEntries(new FormData(fo)))) showErr(fo, k, ''); });
       });
-      fo.querySelectorAll('.lp-check input').forEach((c) => c.addEventListener('change', () => { if (fo.accept_toc.checked && fo.accept_consent.checked) fo.querySelector('#h-consent').hidden = true; }));
+      fo.querySelectorAll('.lp-check input').forEach((c) => c.addEventListener('change', () => { if (fo.accept_consent.checked) fo.querySelector('#h-consent').hidden = true; }));
       fo.querySelectorAll('[data-policy]').forEach((a) => a.addEventListener('click', (ev) => {
         ev.preventDefault(); ev.stopPropagation();
         const [title, items] = POLICY()[a.dataset.policy];
