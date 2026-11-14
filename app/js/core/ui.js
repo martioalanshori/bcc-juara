@@ -140,7 +140,7 @@
       settle(null); // dialog konfirmasi yang masih terbuka dianggap batal
       const root = document.getElementById('modal-root');
       root.innerHTML = `<div class="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto scrim p-4 sm:p-6" data-close>
-        <div class="card-elev w-full ${opts.wide ? 'max-w-4xl' : opts.small ? 'max-w-lg' : 'max-w-2xl'} mt-6 sm:mt-10" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+        <div class="card-elev w-full ${opts.wide ? 'max-w-4xl' : opts.small ? 'max-w-lg' : 'max-w-2xl'} ui-modal-box" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
           <div class="flex items-center justify-between px-6 py-4 border-b border-white/10"><h3 class="font-headline-md text-headline-md">${title}</h3><button class="btn-ghost !px-2" data-close>${icon('close')}</button></div>
           <div class="p-6">${body}</div></div></div>`;
       root.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', (e) => { if (e.target === el || el.tagName === 'BUTTON') UI.closeModal(); }));
@@ -178,6 +178,13 @@
     },
     // Notifikasi singkat. sev: P1/P2 = gagal/penting (merah), P3 = peringatan, P4/lainnya = berhasil.
     // Garis tipis di bawah menunjukkan sisa waktu tampil; berhenti saat diarahkan mouse, bisa ditutup.
+    // Teks berjalan (.ticker-move di dalam root): kecepatan tetap sekitar 40 px/detik berapa pun panjangnya,
+    // dan posisi berlanjut (bukan mulai dari awal) saat isinya digambar ulang.
+    marquee(root) {
+      const mv = root && root.querySelector('.ticker-move'); if (!mv) return;
+      const sec = Math.max(20, Math.round(mv.scrollWidth / 40));
+      mv.style.setProperty('--nb-dur', sec + 's'); mv.style.animationDuration = sec + 's'; mv.style.animationDelay = '-' + ((Date.now() / 1000) % sec).toFixed(2) + 's';
+    },
     toast(text, sev, sub) {
       const root = document.getElementById('toast-root');
       const kind = sev === 'P1' || sev === 'P2' ? 'bad' : sev === 'P3' ? 'warn' : 'ok';

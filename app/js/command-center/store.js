@@ -13,6 +13,8 @@
   const subs = new Set();
   let saveT = null;
 
+  // Telemetri yang digerakkan demo berjalan (live.js): daya grid, efisiensi chiller, air, CO2, kamera, latensi, arus orang.
+  const TELE0 = () => ({ mw: 14.82, kwtr: 0.562, cop: 6.25, water: 1840, co2: 18.42, lat: 18, camOn: 1420, flow: 142 });
   function seed() {
     const S = window.SEED;
     const now = Date.now();
@@ -52,6 +54,7 @@
       ],
       sim: null,
       parking: JSON.parse(JSON.stringify(S.PARKING)),
+      tele: TELE0(),
       parkSim: null,
       settings: { follow: true, speed: 1 },
     };
@@ -67,6 +70,7 @@
   }
   // State lama di localStorage: tambahkan okupansi parkir (zona baru dari SEED ikut ditambahkan).
   function migrate() {
+    if (state && !state.tele) state.tele = TELE0();
     if (!Array.isArray(state.parking)) state.parking = [];
     window.SEED.PARKING.forEach((z) => { if (!state.parking.some((x) => x.id === z.id)) state.parking.push(Object.assign({}, z)); });
     if (state.parkSim === undefined) state.parkSim = null;
@@ -86,6 +90,7 @@
     get s() { return state; },
     subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
     reset() { state = seed(); emit('reset'); },
+    commit(kind) { emit(kind || 'ticket'); }, // simpan + beri tahu view setelah perubahan massal (live.js tidy)
     ticket(id) { return state.tickets.find((t) => t.id === id); },
     activeTickets() { return state.tickets.filter((t) => t.status !== 'CLOSED' && t.status !== 'RESOLVED'); },
 

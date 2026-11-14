@@ -7,12 +7,12 @@
   <meta name="theme-color" content="#181b1f" />
   <title>Konsol Pengelola Acara · Summarecon Mall Bandung</title>
   <!-- Path 2 · Pengelola / Event Organizer. Rute: /pengelola/acara, /pengelola/e/EVT-01/<menu> (app/js/event/admin.js). -->
-  <script src="/app/js/core/theme.js?v=80"></script>
-  <script src="/app/js/core/router.js?v=80"></script>
+  <script src="/app/js/core/theme.js?v=105"></script>
+  <script src="/app/js/core/router.js?v=105"></script>
   <script>try { if (localStorage.getItem('smicc-pengelola-nav') === 'mini' || (localStorage.getItem('smicc-pengelola-nav') == null && innerWidth < 1280)) document.documentElement.classList.add('pg-mini'); } catch (e) { /* tanpa storage */ }</script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=80" />
-  <link rel="stylesheet" href="/app/css/app.css?v=80" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=105" />
+  <link rel="stylesheet" href="/app/css/app.css?v=105" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased pg-body">
   <a href="#view" class="pg-skip">Lewati ke konten</a>
@@ -20,26 +20,21 @@
   <div class="pg-scrim scrim" id="pg-scrim" hidden></div>
 
   <div class="pg-main">
+    <!-- Header (AUDIT P1, plan header): judul di kiri (pemilih acara ada di sidebar, di atas Dasbor), cari, satu aksi utama kontekstual, profil.
+         Peran aktif & tombol tema ada di menu profil. Di ponsel judul & aksi utama turun ke kepala konten (.pg-mhead). -->
     <header class="pg-top">
       <button type="button" class="pg-menu-btn" id="pg-menu" aria-label="Buka menu" aria-controls="pg-side" aria-expanded="false"><span class="material-symbols-outlined">menu</span></button>
-      <div class="pg-dd"><button type="button" class="pg-evpick" id="pg-evpick" aria-haspopup="true" aria-expanded="false" title="Pilih acara"></button></div>
-      <div class="flex flex-col leading-tight min-w-0 flex-1">
-        <span class="font-label-sm text-label-sm text-on-surface-variant truncate" id="pg-crumb">Konsol Pengelola Acara</span>
-        <h1 class="font-headline-sm text-headline-sm truncate" id="pg-title">Memuat…</h1>
-      </div>
-      <button type="button" class="pg-search-btn" id="pg-cmdk-btn" aria-keyshortcuts="Control+K Meta+K" aria-haspopup="dialog" title="Cari acara, menu, atau kode booking"><span class="material-symbols-outlined text-[20px]">search</span><span class="pg-search-txt">Cari</span><kbd data-kbd>Ctrl K</kbd></button>
-      <div class="flex items-center gap-1 shrink-0">
-        <div class="pg-dd"><button type="button" class="btn pg-new-btn" id="pg-new" aria-haspopup="true" aria-expanded="false"><span class="material-symbols-outlined text-[18px]">add</span><span class="pg-new-t">Acara baru</span></button></div>
-        <span class="id-chip" id="pg-id-chip" hidden></span>
-        <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
-        <div class="pg-prof" id="pg-prof">
-          <button type="button" class="pg-prof-btn" id="pg-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="pg-prof-menu"><span class="pg-av" id="pg-av">EO</span><span class="pg-prof-name" id="pg-prof-name">Pengelola acara</span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
-          <div class="pg-prof-menu" id="pg-prof-menu" hidden>
-            <div class="pg-prof-head"><b id="pg-prof-n2">Pengelola acara</b><small id="pg-prof-sub"></small></div>
-            <button type="button" id="pg-prof-edit"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
-            <div class="pg-sw" data-demo-switch hidden></div>
-            <button type="button" data-logout="pengelola tenant" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
-          </div>
+      <h1 class="pg-top-title" id="pg-title">Memuat…</h1>
+      <button type="button" class="pg-search-btn" id="pg-cmdk-btn" aria-keyshortcuts="Control+K Meta+K" aria-haspopup="dialog" aria-label="Cari acara, menu, atau kode booking" title="Cari acara, menu, atau kode booking (Ctrl K)"><span class="material-symbols-outlined text-[20px]">search</span><span class="pg-search-txt">Cari</span><kbd data-kbd>Ctrl K</kbd></button>
+      <div class="pg-top-act" id="pg-act"></div>
+      <div class="pg-prof" id="pg-prof">
+        <button type="button" class="pg-prof-btn" id="pg-prof-btn" aria-haspopup="true" aria-expanded="false" aria-controls="pg-prof-menu"><span class="pg-av" id="pg-av">EO</span><span class="pg-prof-name" id="pg-prof-name">Pengelola acara</span><span class="material-symbols-outlined text-[18px] pg-prof-chev">expand_more</span></button>
+        <div class="pg-prof-menu" id="pg-prof-menu" hidden>
+          <div class="pg-prof-head"><b id="pg-prof-n2">Pengelola acara</b><small id="pg-prof-sub"></small><span class="pg-prof-role" id="pg-prof-role" hidden></span></div>
+          <button type="button" id="pg-prof-edit"><span class="material-symbols-outlined text-[20px]">manage_accounts</span>Edit profil</button>
+          <button type="button" data-theme-toggle><span class="material-symbols-outlined text-[20px]">dark_mode</span><span data-theme-lbl>Mode gelap</span></button>
+          <div class="pg-sw" data-demo-switch hidden></div>
+          <button type="button" data-logout="pengelola tenant" hidden><span class="material-symbols-outlined text-[20px]">logout</span>Keluar</button>
         </div>
       </div>
     </header>
@@ -51,16 +46,16 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-4 sm:right-6 z-[90] flex flex-col gap-2 items-end pg-toasts"></div>
 
-  <script src="/app/vendor/qrcode.js?v=80"></script>
-  <script src="/app/vendor/jsQR.js?v=80"></script>
-  <script src="/app/js/command-center/sop-data.js?v=80"></script>
-  <script src="/app/js/core/ui.js?v=80"></script>
-  <script src="/app/js/core/pdf.js?v=80"></script>
-  <script src="/app/js/core/auth.js?v=80"></script>
-  <script src="/app/js/event/engine.js?v=80"></script>
-  <script src="/app/js/event/approval-ui.js?v=80"></script>
-  <script src="/app/js/event/checkin-ui.js?v=80"></script>
-  <script src="/app/js/event/admin.js?v=80"></script>
+  <script src="/app/vendor/qrcode.js?v=105"></script>
+  <script src="/app/vendor/jsQR.js?v=105"></script>
+  <script src="/app/js/command-center/sop-data.js?v=105"></script>
+  <script src="/app/js/core/ui.js?v=105"></script>
+  <script src="/app/js/core/pdf.js?v=105"></script>
+  <script src="/app/js/core/auth.js?v=105"></script>
+  <script src="/app/js/event/engine.js?v=105"></script>
+  <script src="/app/js/event/approval-ui.js?v=105"></script>
+  <script src="/app/js/event/checkin-ui.js?v=105"></script>
+  <script src="/app/js/event/admin.js?v=105"></script>
   <script>EvtAdmin.mount(document.getElementById('view'), 'pengelola');</script>
 </body>
 </html>

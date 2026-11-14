@@ -126,7 +126,7 @@
     a.forEach((x) => { if (x.tab === 'ringkasan') return; const c = b[x.tab] || [0, false]; b[x.tab] = [c[0] + x.n, c[1] || x.sev === 'crit']; });
     return b;
   }
-  const cnt = (v) => (v && v[0] ? `<span class="pg-cnt${v[1] ? ' red' : ''}">${v[0] > 99 ? '99+' : v[0]}</span>` : '');
+  const cnt = (v) => (v && v[0] ? `<span class="pg-cnt red">${v[0] > 99 ? '99+' : v[0]}</span>` : ''); // badge sidebar selalu merah (konsisten)
 
   // ------------------------------------------------------------------ sidebar, bar bawah ponsel, header acara
   let acct = null; // akun yang login (dari /api/auth/me)
@@ -152,8 +152,9 @@
     $('pg-av').textContent = initialsOf(p.name); $('pg-prof-name').textContent = p.name;
     $('pg-prof-n2').textContent = p.name; $('pg-prof-sub').textContent = p.email ? p.title + ', ' + p.email : p.title + ' (mode lokal)';
     $('pg-prof-btn').setAttribute('aria-label', 'Menu profil ' + p.name);
-    const ch = $('pg-id-chip');
-    if (ch && acct) { const t = who() === 'tenant'; ch.hidden = false; ch.className = 'id-chip ' + (t ? 'tenant' : 'mall'); ch.innerHTML = icon(t ? 'storefront' : 'admin_panel_settings', 'text-[18px]') + '<span><b>' + (t ? 'Tenant/EO' : 'Tim Event Mall') + '</b>' + (t ? ' · ' + esc(acct.org) : '') + '</span>'; }
+    // Peran yang sedang aktif (dulu chip di header) sekarang di kepala menu profil.
+    const rl = $('pg-prof-role');
+    if (rl && acct) { const t = who() === 'tenant'; rl.hidden = false; rl.className = 'pg-prof-role ' + (t ? 'tenant' : 'mall'); rl.innerHTML = icon(t ? 'storefront' : 'admin_panel_settings', 'text-[16px]') + '<span><b>' + (t ? 'Tenant/EO' : 'Tim Event Mall') + '</b>' + (t ? ' · ' + esc(acct.org) : '') + '</span>'; }
   }
   function profMenu(open) {
     const m = document.getElementById('pg-prof-menu'), b = document.getElementById('pg-prof-btn'); if (!m) return;
@@ -191,6 +192,7 @@
     return `<div class="pg-brand"><a href="${Router.href('/dasbor')}" class="pg-brand-link" title="Konsol Pengelola Acara"><span class="pg-brand-ic">${icon('event_available', 'text-[18px]')}</span><span class="pg-lbl flex flex-col leading-tight min-w-0"><b>Konsol Pengelola</b><small>Summarecon Mall Bandung</small></span></a>
         <button type="button" class="pg-collapse" data-collapse aria-label="Ciutkan sidebar" title="Ciutkan atau lebarkan sidebar">${icon('left_panel_close', 'text-[20px]')}</button>
         <button type="button" class="pg-close" data-drawer-close aria-label="Tutup menu">${icon('close', 'text-[20px]')}</button></div>
+      <div class="pg-dd pg-side-pick"><button type="button" class="pg-evpick" id="pg-evpick" aria-haspopup="true" aria-expanded="false" title="Pilih acara">${pickerLabel()}</button></div>
       <nav class="pg-nav" aria-label="Navigasi konsol">
         ${(all ? GTABS : e ? ETABS : []).map(([k, l, i]) => item(k, l, i, cnt(b[k]))).join('')}
       </nav>
@@ -201,7 +203,7 @@
   }
   function bnavHtml() {
     const all = isG(ui.tab), e = Evt.ev(ui.ev), b = all ? gBadges() : e ? badges(e) : {};
-    const it = (tab, label, ic) => `<a href="${href(ui.ev, tab)}" class="${ui.tab === tab ? 'on' : ''}"${ui.tab === tab ? ' aria-current="page"' : ''}>${icon(ic, 'text-[22px]')}<span>${label}</span>${b[tab] && b[tab][0] ? `<i class="${b[tab][1] ? 'red' : ''}"></i>` : ''}</a>`;
+    const it = (tab, label, ic) => `<a href="${href(ui.ev, tab)}" class="${ui.tab === tab ? 'on' : ''}"${ui.tab === tab ? ' aria-current="page"' : ''}>${icon(ic, 'text-[22px]')}<span>${label}</span>${b[tab] && b[tab][0] ? '<i class="red"></i>' : ''}</a>`;
     const links = all ? it('gdash', 'Dasbor', 'space_dashboard') + it('acara', 'Acara', 'event_note') + it('gtrx', 'Transaksi', 'receipt_long')
       : it('gdash', 'Semua', 'apps') + it('ringkasan', 'Ringkasan', 'monitoring') + it('peserta', 'Peserta', 'groups');
     return links + it(all ? 'gck' : 'checkin', 'Check-in', 'qr_code_scanner') + `<button type="button" data-drawer-open>${icon('menu', 'text-[22px]')}<span>Lainnya</span></button>`;
@@ -221,6 +223,7 @@
   function shell(force) {
     const side = document.getElementById('pg-side'); if (!side) return;
     news();
+    if (!force && dd && side.contains(dd.el)) return; // panel pemilih acara sedang terbuka di sidebar
     const html = sideHtml();
     if (!force && html === lastSide) return; // badge tidak berubah: jangan ganggu fokus di sidebar
     lastSide = html;
@@ -230,10 +233,9 @@
     document.getElementById('pg-bnav').innerHTML = bnavHtml();
     const e = Evt.ev(ui.ev), title = tabLabel(ui.tab), g = isG(ui.tab);
     document.getElementById('pg-title').textContent = title;
-    document.getElementById('pg-crumb').textContent = g || !e ? 'Semua acara' : e.id + ' · ' + e.name;
+    topAction();
     document.title = title + (!g && e ? ' · ' + e.name : ' · Semua acara') + ' · Konsol Pengelola';
-    const pk = document.getElementById('pg-evpick'); if (pk) { const lbl = pickerLabel(); if (pk.innerHTML !== lbl) pk.innerHTML = lbl; }
-    bindHeader();
+    side.querySelector('#pg-evpick').addEventListener('click', evPicker);
     side.querySelector('[data-collapse]').addEventListener('click', () => {
       const mini = document.documentElement.classList.toggle('pg-mini');
       try { localStorage.setItem('smicc-pengelola-nav', mini ? 'mini' : 'open'); } catch (err) { /* tanpa storage */ }
@@ -247,6 +249,11 @@
     if (dd) { const same = dd.btn === btn; dd.close(); if (same) return null; }
     const wrap = btn.parentElement, el = document.createElement('div');
     el.className = 'pg-dd-panel'; el.innerHTML = html; wrap.appendChild(el); btn.setAttribute('aria-expanded', 'true');
+    if (wrap.closest('#pg-side') && window.innerWidth >= 768) { // sidebar sempit & overflow hidden: panel menempel di samping tombol
+      const r = btn.getBoundingClientRect(), w = el.offsetWidth;
+      el.classList.add('pg-dd-fixed'); el.style.top = Math.min(r.bottom + 6, window.innerHeight - 120) + 'px';
+      el.style.left = (window.innerWidth < 1024 ? Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) : r.left) + 'px';
+    }
     const onDoc = (ev) => { if (!wrap.contains(ev.target)) close(); };
     const onKey = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(); btn.focus(); } };
     function close() { el.remove(); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey, true); if (dd && dd.el === el) dd = null; }
@@ -254,21 +261,40 @@
     el.querySelectorAll('[data-dd-close]').forEach((b) => b.addEventListener('click', close));
     dd = { el, btn, close }; if (onBind) onBind(el, close); return dd;
   }
-  let headerBound = false;
-  function bindHeader() {
-    if (headerBound) return; const pk = document.getElementById('pg-evpick'), nw = document.getElementById('pg-new');
-    if (!pk || !nw) return; headerBound = true;
-    pk.addEventListener('click', evPicker); nw.addEventListener('click', newEventPanel);
+  // Tombol utama header selalu "Acara baru" (di semua halaman). Aksi status acara ada di kartu acara (statusHtml).
+  function primaryHtml() {
+    return `<div class="pg-dd"><button type="button" class="btn pg-act-btn" data-new-ev>${icon('add', 'text-[18px]')}<span class="pg-act-t">Acara baru</span></button></div>`;
   }
+  // Aksi status di kartu acara, di sebelah Unduh: Ajukan persetujuan / Menunggu … / Publikasikan / Tutup penjualan / Buka lagi.
+  function statusHtml(e) {
+    if (!e || e.status === 'CANCELLED' || phase(e) === 'DONE') return '';
+    if (e.status === 'DRAFT' && Evt.needsApproval(e)) {
+      const st = e.approval.st, lbl = { DRAFT: 'Ajukan persetujuan', REVISI: 'Perbaiki & ajukan ulang', DIAJUKAN: 'Menunggu ' + ((Evt.currentStep(e) || {}).name || 'persetujuan') }[st] || 'Persetujuan';
+      return `<a class="pg-sign-btn ${st === 'DIAJUKAN' ? '' : 'main'}" href="${href(e.id, 'persetujuan')}">${icon('approval', 'text-[18px]')}<span>${esc(lbl)}</span></a>`;
+    }
+    const p = PRIMARY[e.status]; if (!p) return '';
+    return `<button type="button" class="pg-sign-btn ${p[3] === 'btn' ? 'main' : ''}" data-status="${p[0]}" data-ev-id="${e.id}">${icon(p[2], 'text-[18px]')}<span>${p[1]}</span></button>`;
+  }
+  let lastAct = null;
+  function topAction() {
+    const box = document.getElementById('pg-act'); if (!box) return;
+    const html = primaryHtml();
+    if (html === lastAct) return; // jangan tutup panel Acara baru yang sedang terbuka
+    lastAct = html; box.innerHTML = html; bindActions(box);
+  }
+  // Kepala konten di ponsel: judul halaman + aksi utama (header ponsel hanya memuat menu, pemilih acara, cari, profil).
+  const mobileHead = () => `<div class="pg-mhead"><h2>${esc(tabLabel(ui.tab))}</h2>${primaryHtml()}</div>`;
   const pickerLabel = () => { const all = isG(ui.tab), e = all ? null : Evt.ev(ui.ev);
     return (e ? `${plate(e)}<span class="pg-evpick-t"><b>${esc(e.name)}</b><small>${e.id}, ${phaseTxt(e).toLowerCase()}</small></span>`
       : `<span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="pg-evpick-t"><b>Semua acara</b><small>${visEvs().length} acara</small></span>`) + icon('expand_more', 'text-[20px] pg-evpick-ic'); };
   function evPicker() {
-    const btn = document.getElementById('pg-evpick'); if (!btn) return; drawer(false);
+    const btn = document.getElementById('pg-evpick'); if (!btn) return;
     const rows = (q) => visEvs().filter((e) => !q || (e.name + ' ' + e.id + ' ' + e.cat).toLowerCase().includes(q)).map((e) => `<a href="${href(e.id, isG(ui.tab) ? 'ringkasan' : ui.tab)}" class="pg-pick-row${e.id === ui.ev && !isG(ui.tab) ? ' on' : ''}" data-pick-ev="${e.id}" style="--c:${esc(e.color)}">${plate(e)}<span class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${e.id}, ${Evt.fmtShort(e.start)}, ${phaseTxt(e).toLowerCase()}</small></span></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-2">Tidak ada acara yang cocok.</p>';
     const allRow = `<a href="${Router.href('/dasbor')}" class="pg-pick-row${isG(ui.tab) ? ' on' : ''}" data-pick-all><span class="pg-pick-all">${icon('apps', 'text-[18px]')}</span><span class="min-w-0 flex-1"><b>Semua acara</b><small>${visEvs().length} acara</small></span></a>`;
-    dropdown(btn, `<input class="inp w-full" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off" aria-label="Cari acara"><div class="pg-pick-list" id="pick-list">${allRow}${rows('')}</div>`, (el, close) => {
+    dropdown(btn, `<input class="inp w-full" id="pick-q" placeholder="Cari nama, ID, atau kategori" autocomplete="off" aria-label="Cari acara"><div class="pg-pick-list" id="pick-list">${allRow}${rows('')}</div>
+      <button type="button" class="pg-pick-new" data-pick-new>${icon('add', 'text-[18px]')}Acara baru</button>`, (el, close) => {
       const q = el.querySelector('#pick-q'), list = el.querySelector('#pick-list'); let at = -1;
+      el.querySelector('[data-pick-new]').addEventListener('click', (ev) => { ev.stopPropagation(); close(); newEventPanel(btn); });
       const items = () => Array.from(list.querySelectorAll('a'));
       const mark = () => items().forEach((a, i) => { a.classList.toggle('kb', i === at); if (i === at) a.scrollIntoView({ block: 'nearest' }); });
       q.addEventListener('input', () => { list.innerHTML = (q.value.trim() ? '' : allRow) + rows(q.value.trim().toLowerCase()); at = -1; });
@@ -280,7 +306,7 @@
       });
       list.addEventListener('click', (ev) => {
         const all = ev.target.closest('[data-pick-all]'), a = ev.target.closest('[data-pick-ev]'); if (!all && !a) return;
-        ev.preventDefault(); close(); if (all) goTab('gdash'); else goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, a.dataset.pickEv);
+        ev.preventDefault(); close(); drawer(false); if (all) goTab('gdash'); else goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, a.dataset.pickEv);
       });
       q.focus();
     });
@@ -310,8 +336,11 @@
     });
   }
   // + Acara baru: nama, area (dengan ketersediaan), jadwal, format tiket. Sisanya diisi di Pengaturan.
-  function newEventPanel() {
-    const btn = document.getElementById('pg-new'); if (!btn) return; drawer(false);
+  function newEventPanel(anchor) {
+    // Jangkar panel: tombol yang diklik, atau tombol Acara baru yang terlihat, atau pemilih acara (dari daftar acara / Ctrl+K).
+    const vis = (b) => b && b.offsetParent !== null && b.parentElement && b.parentElement.classList.contains('pg-dd');
+    const btn = [anchor, document.querySelector('#pg-act [data-new-ev]'), document.querySelector('.pg-mhead [data-new-ev]'), document.getElementById('pg-evpick')].find(vis);
+    if (!btn) return; drawer(false);
     const s0 = Math.ceil((Evt.now() + 14 * 86400000) / 3600000) * 3600000, e0 = s0 + 3 * 3600000;
     const free = (Evt.AREAS.find((a) => !Evt.areaClash(a.id, s0, e0).length) || Evt.AREAS[0]).id;
     dropdown(btn, `<form id="f-new-ev" class="pg-newform" novalidate>
@@ -344,13 +373,15 @@
   // Header acara (menempel): nama, status, aksi utama sesuai status, menu aksi lain.
   const PRIMARY = { DRAFT: ['PUBLISHED', 'Publikasikan', 'publish', 'btn'], PUBLISHED: ['CLOSED', 'Tutup penjualan', 'block', 'btn-ghost'], CLOSED: ['PUBLISHED', 'Buka lagi penjualan', 'storefront', 'btn'] };
   // Menu Manifest (cadangan kalau sistem mati, SOP-EVT-05) di sebelah tombol Laporan PDF.
-  function mfMenu(e) {
-    const [tone, label] = EvtCheckin.backup.status(e.id);
-    return `<details class="pg-more pg-mf"><summary class="pg-sign-btn" title="Unduh manifest peserta (cadangan kalau sistem mati)">${icon('cloud_download', 'text-[18px]')}<span>Manifest</span><i class="mf-dot ${tone}" title="${label}"></i></summary><div class="pg-menu">
-      <div class="mf-menu-h">Cadangan kalau sistem mati · <b class="mf-${tone}">${label}</b></div>
+  // Menu "Unduh" kartu acara (plan header H6): Laporan PDF + manifest cadangan (bukan draft) dalam satu tombol.
+  function dlMenu(e) {
+    const mf = e.status !== 'DRAFT', [tone, label] = mf ? EvtCheckin.backup.status(e.id) : ['ok', ''];
+    return `<details class="pg-more pg-mf"><summary class="pg-sign-btn" title="Unduh laporan & manifest peserta">${icon('download', 'text-[18px]')}<span>Unduh</span>${mf ? `<i class="mf-dot ${tone}" title="Manifest: ${label}"></i>` : ''}</summary><div class="pg-menu">
+      <button type="button" data-report-ev="${e.id}">${icon('picture_as_pdf', 'text-[18px]')} Laporan PDF<small>Ringkasan agregat acara</small></button>
+      ${mf ? `<div class="mf-menu-h">Manifest cadangan kalau sistem mati · <b class="mf-${tone}">${label}</b></div>
       <button type="button" data-mf-off="${e.id}">${icon('offline_pin', 'text-[18px]')} Manifest offline<small>Dibuka tanpa server: cari & centang hadir</small></button>
-      <button type="button" data-mf-xlsx="${e.id}">${icon('table_view', 'text-[18px]')} Excel (.xlsx)</button>
-      <button type="button" data-mf-csv="${e.id}">${icon('download', 'text-[18px]')} CSV</button></div></details>`;
+      <button type="button" data-mf-xlsx="${e.id}">${icon('table_view', 'text-[18px]')} Manifest Excel (.xlsx)</button>
+      <button type="button" data-mf-csv="${e.id}">${icon('download', 'text-[18px]')} Manifest CSV</button>` : ''}</div></details>`;
   }
   // Panel Dasbor: cadangan manifest acara yang berjalan atau mulai dalam 48 jam, status per acara di perangkat ini.
   function manifestPanel() {
@@ -360,13 +391,13 @@
     const day = (ts) => (ts < d0.getTime() + 86400000 ? (ts < t ? 'Berlangsung' : 'Hari ini') : ts < d0.getTime() + 2 * 86400000 ? 'Besok' : Evt.fmtShort(ts)) + ' ' + Evt.fmtTime(ts);
     const rest = visEvs().filter((e) => e.status !== 'DRAFT' && e.status !== 'CANCELLED').length - evs.length;
     const rows = evs.map((e) => {
-      const m = B.ensure(e.id), [tone, label] = B.status(e.id), dl = B.dlAt(e.id), n = m ? m.rows.filter((r, i) => i && r[11] === 'Aktif').length : 0;
+      const m = B.ensure(e.id), [tone, label] = B.status(e.id), dl = B.dlAt(e.id);
       const sub = tone === 'warn' ? 'Manifest offline belum diunduh di perangkat ini' : tone === 'bad' ? 'Server terputus, data per ' + Evt.fmtTime(m.savedAt) : 'Diperbarui ' + Evt.fmtTime(m ? m.savedAt : t) + (dl ? ' · diunduh ' + (dl < d0.getTime() ? Evt.fmtShort(dl) + ' ' : '') + Evt.fmtTime(dl) : '');
-      return `<li class="mf-row" style="--c:${esc(e.color)}">${plate(e)}<div class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${day(e.start)} · ${num(n)} tiket · ${sub}</small></div>
+      return `<li class="mf-row" style="--c:${esc(e.color)}">${plate(e)}<div class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${day(e.start)} · gate ${Evt.fmtTime(e.doors)} · ${(() => { const st = Evt.stats(e.id); return num(st.sold) + ' / ' + num(st.total - st.blocked) + ' terjual'; })()} · ${sub}</small></div>
         <span class="mf-st ${tone}"><i></i>${label}</span>
         <span class="mf-act"><button type="button" class="btn-ghost" data-mf-off="${e.id}" title="Manifest offline">${icon('offline_pin', 'text-[16px]')}<span>Offline</span></button><button type="button" class="btn-ghost" data-mf-xlsx="${e.id}" title="Excel">${icon('table_view', 'text-[16px]')}<span>Excel</span></button><button type="button" class="btn-ghost" data-mf-csv="${e.id}" title="CSV">${icon('download', 'text-[16px]')}<span>CSV</span></button></span></li>`;
     }).join('');
-    return `<section class="card p-5 mb-5 pg-mf-panel">${UI.h('Cadangan manifest', 'SOP-EVT-05 · diperbarui otomatis setiap ada perubahan · acara 48 jam ke depan', `<button type="button" class="btn" data-mf-zip>${icon('folder_zip', 'text-[18px]')} Semua acara (ZIP)</button>`, 'cloud_off')}
+    return `<section class="card p-5 mb-5 pg-mf-panel">${UI.h('Hari ini & besok', 'Acara 48 jam ke depan dengan status cadangan manifest di perangkat ini (SOP-EVT-05). Semua acara sekaligus: menu Unduh di atas.', '', 'today')}
       ${Evt.offline ? `<p class="mf-warn">${icon('wifi_off', 'text-[18px]')} Server tidak terhubung. Unduhan memakai data terakhir yang diterima perangkat ini.</p>` : ''}
       ${rows ? `<ul class="mf-list">${rows}</ul>` : '<p class="pg-mempty">Tidak ada acara dalam 48 jam ke depan.</p>'}
       ${rest > 0 ? `<p class="mf-foot">${num(rest)} acara lain ikut di file ZIP.</p>` : ''}</section>`;
@@ -376,7 +407,6 @@
     return `<details class="pg-more"><summary class="pg-more-btn" aria-label="Aksi lain untuk ${esc(e.name)}" title="Aksi lain">${icon('more_horiz', 'text-[20px]')}</summary><div class="pg-menu">
       ${e.status !== 'DRAFT' ? `<a href="/pengunjung/e/${encodeURIComponent(e.id)}" target="_blank" rel="noopener">${icon('open_in_new', 'text-[18px]')} Lihat di portal</a>` : ''}
       <a href="${href(e.id, 'pengaturan')}">${icon('tune', 'text-[18px]')} Pengaturan</a>
-      <button type="button" data-report-ev="${e.id}">${icon('picture_as_pdf', 'text-[18px]')} Unduh laporan PDF</button>
       ${e.status === 'DRAFT' && !Evt.needsApproval(e) ? `<button type="button" data-status="PUBLISHED" data-ev-id="${e.id}">${icon('publish', 'text-[18px]')} Publikasikan</button>` : ''}
       ${e.status === 'DRAFT' ? `<a href="${href(e.id, 'persetujuan')}">${icon('approval', 'text-[18px]')} Persetujuan</a>` : ''}
       ${e.status !== 'CANCELLED' && e.status !== 'DRAFT' ? (who() === 'tenant' && live ? `<button type="button" class="warn" disabled>${icon('event_busy', 'text-[18px]')} Batalkan acara<small>Sudah ada transaksi, hubungi Tim Event Mall</small></button>` : `<button type="button" class="warn" data-cancel-ev="${e.id}">${icon('event_busy', 'text-[18px]')} Batalkan acara</button>`) : ''}
@@ -384,9 +414,8 @@
   }
   const DOT = { DRAFT: 'rgb(var(--on-surface) / .4)', PUBLISHED: 'rgb(var(--primary))', CLOSED: '#FFC72C', CANCELLED: 'rgb(var(--error))' };
   function mgrHead(e) {
-    const sale = Evt.saleState(e), apGate = e.status === 'DRAFT' && Evt.needsApproval(e), p = apGate ? null : PRIMARY[e.status];
-    const apLbl = apGate && { DRAFT: 'Ajukan persetujuan', REVISI: 'Perbaiki & ajukan ulang', DIAJUKAN: 'Menunggu ' + ((Evt.currentStep(e) || {}).name || 'persetujuan') }[e.approval.st];
-    const apBtn = apGate ? `<a class="pg-sign-btn main" href="${href(e.id, 'persetujuan')}">${icon('approval', 'text-[18px]')}<span>${esc(apLbl)}</span></a>` : '';
+    // Kartu acara: menu Unduh, aksi status acara (statusHtml), dan menu lain.
+    const sale = Evt.saleState(e);
     return `<section class="pg-sign" style="--c:${esc(e.color)}">
       <span class="pg-sign-plate" title="Lantai">${plateOf(e)}</span>
       <div class="pg-sign-main">
@@ -395,7 +424,7 @@
         <div class="pg-sign-meta"><span>${Evt.fmtDate(e.start)}, ${Evt.fmtTime(e.start)} WIB</span><span>Gate dibuka ${Evt.fmtTime(e.doors)}</span>
           <span class="pg-tag"><i style="background:${DOT[e.status]}"></i>${phase(e) === 'DONE' ? 'Selesai' : EV_ST[e.status][0]}</span>${e.status === 'CANCELLED' || e.status === 'DRAFT' ? '' : `<span class="pg-tag"><i style="background:${sale.open ? 'rgb(var(--primary))' : 'rgb(var(--on-surface) / .4)'}"></i>${esc(sale.label)}</span>`}</div>
       </div>
-      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-ev="${e.id}" title="Unduh laporan acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button>${e.status !== 'DRAFT' ? mfMenu(e) : ''}${apBtn}${p ? `<button type="button" class="pg-sign-btn ${p[3] === 'btn' ? 'main' : ''}" data-status="${p[0]}" data-ev-id="${e.id}">${icon(p[2], 'text-[18px]')}<span>${p[1]}</span></button>` : ''}${moreMenu(e)}</div></section>`;
+      <div class="pg-sign-act">${dlMenu(e)}${statusHtml(e)}${moreMenu(e)}</div></section>`;
   }
   function attnBlock(e) {
     const a = attention(e);
@@ -420,12 +449,14 @@
     const shown = a.slice(0, 8);
     return `<section class="card pg-attn" aria-labelledby="attn-all-h"><h3 id="attn-all-h">Perlu tindakan <span>${a.length}</span></h3><ul>${shown.map((x) => `<li class="${x.sev}">${icon(x.sev === 'crit' ? 'error' : x.sev === 'warn' ? 'warning' : 'info', 'text-[20px]')}<span class="flex-1 min-w-0"><b class="pg-attn-ev">${esc(x.e.name)}</b> ${esc(x.text)}</span><a class="btn-ghost !py-1.5" href="${href(x.e.id, x.tab)}"${x.st ? ` data-attn-st="${x.st}"` : ''}${x.focus ? ` data-attn-focus="${x.focus}"` : ''}>${x.btn}</a></li>`).join('')}</ul>${a.length > shown.length ? `<p class="pg-mnote">Dan ${a.length - shown.length} hal lain. Buka acaranya untuk melihat semua.</p>` : ''}</section>`;
   }
+  // Kepala halaman lintas acara (AUDIT P2/P3): ringkasan angka sebagai sub-judul + satu menu "Unduh".
+  // "Acara baru" hanya ada di header konsol, tidak diulang di sini.
   function globalHead() {
     const all = visEvs();
-    return `<section class="pg-sign pg-sign-all"><span class="pg-sign-plate">${icon('apps', 'text-[22px]')}</span>
-      <div class="pg-sign-main"><div class="pg-sign-kick"><span>Summarecon Mall Bandung</span></div><h2 class="pg-sign-h">Semua acara</h2>
-        <div class="pg-sign-meta"><span>${all.length} acara</span><span>${all.filter((e) => phaseTxt(e) === 'Dijual').length} sedang dijual</span><span>${all.filter((e) => e.status === 'DRAFT').length} draft</span></div></div>
-      <div class="pg-sign-act"><button type="button" class="pg-sign-btn" data-report-all title="Unduh laporan semua acara (PDF)">${icon('picture_as_pdf', 'text-[18px]')}<span>Laporan PDF</span></button><button type="button" class="pg-sign-btn" data-mf-zip title="Manifest semua acara dalam satu file ZIP">${icon('folder_zip', 'text-[18px]')}<span>Manifest (ZIP)</span></button><button type="button" class="pg-sign-btn main" data-new-ev>${icon('add', 'text-[18px]')}<span>Acara baru</span></button></div></section>`;
+    return `<div class="pg-pagehead"><p><span><b>${all.length}</b> acara</span><span><b>${all.filter((e) => phaseTxt(e) === 'Dijual').length}</b> sedang dijual</span><span><b>${all.filter((e) => e.status === 'DRAFT').length}</b> draft</span></p>
+      <details class="pg-more"><summary class="pg-dl-btn" title="Unduh laporan & manifest semua acara">${icon('download', 'text-[18px]')}<span>Unduh</span>${icon('expand_more', 'text-[18px]')}</summary><div class="pg-menu">
+        <button type="button" data-report-all>${icon('picture_as_pdf', 'text-[18px]')} Laporan PDF semua acara</button>
+        <button type="button" data-mf-zip>${icon('folder_zip', 'text-[18px]')} Manifest semua acara (ZIP)<small>Cadangan kalau sistem mati (SOP-EVT-05)</small></button></div></details></div>`;
   }
   function gdash() {
     const all = visEvs(), t = Evt.now(), D = 86400000;
@@ -433,14 +464,16 @@
     const paid = all.flatMap((e) => Evt.stats(e.id).paid);
     const perDay = days.map((d) => paid.filter((o) => o.paidAt >= d && o.paidAt < d + D).reduce((a, o) => a + o.items.length, 0));
     const next = all.filter((e) => e.status !== 'CANCELLED' && e.status !== 'DRAFT' && e.start + 2 * 3600000 > t).sort((a, b) => a.start - b.start).slice(0, 6);
-    return `<div id="g-attn">${attnAllBlock()}</div>${isMgr() ? manifestPanel() : ''}
+    // Urutan kebutuhan harian (AUDIT P4): Perlu tindakan → KPI → hari ini & besok (dengan status manifest) → tren → riwayat.
+    return `<div id="g-attn">${attnAllBlock()}</div>
       <div id="acara-kpi" class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">${acaraKpi()}</div>
-      ${historyCard()}
-      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      ${isMgr() ? manifestPanel() : ''}
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-5">
         <section class="card p-5 xl:col-span-7">${UI.h('Tiket terjual per hari', '14 hari terakhir, semua acara', '', 'trending_up')}${UI.line([{ data: perDay, color: PRI }], { labels: days.map((d, i) => (i % 3 === 0 ? new Date(d).getDate() + '/' + (new Date(d).getMonth() + 1) : '')), min: 0, h: 200 })}</section>
         <section class="card p-5 xl:col-span-5">${UI.h('Acara berikutnya', '', `<a class="btn-ghost" href="${Router.href('/acara')}">Daftar acara</a>`, 'event_upcoming')}
           ${next.length ? `<ul class="pg-mlist">${next.map((x) => { const s = Evt.stats(x.id), cap = s.total - s.blocked; return `<li>${plate(x)}<div class="min-w-0 flex-1"><a class="pg-mlink" href="${href(x.id, 'ringkasan')}">${esc(x.name)}</a><small>${x.start <= t ? 'Sedang berlangsung' : Evt.fmtShort(x.start) + ', ' + Evt.fmtTime(x.start) + ' WIB'}</small></div><b class="whitespace-nowrap">${num(s.sold)} / ${num(cap)}</b></li>`; }).join('')}</ul>` : '<p class="pg-mempty">Tidak ada acara yang akan datang.</p>'}</section>
-      </div>`;
+      </div>
+      ${historyCard()}`;
   }
   const gStOf = (o) => (o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status);
   // Pesanan menurut rentang: AKTIF = pesanan acara yang ada sekarang; 30/90/365 hari = ditambah pesanan arsip (hanya baca).
@@ -827,22 +860,20 @@
     const g = isG(ui.tab), items = feed(g ? null : ui.ev);
     const bad = items.filter((x) => x.tone === 'bad'), warn = items.filter((x) => x.tone === 'warn');
     const key = (g ? '*' : ui.ev) + '|' + items.map((x) => x.tag + x.code + x.txt + x.ts).join('|');
-    if (key === newsKey && box.innerHTML) return; // isi sama: biarkan teks tetap berjalan tanpa lompat
+    if (key === newsKey && box.innerHTML) return; // isi sama: jangan gambar ulang
     newsKey = key; newsItems = items;
     const d0 = new Date(Evt.now()); d0.setHours(0, 0, 0, 0);
     const when = (ts) => (ts >= d0.getTime() ? Evt.fmtTime(ts) : Evt.fmtShort(ts).replace(/ \d{4}$/, '') + ' ' + Evt.fmtTime(ts));
-    const [tone, n, txt] = bad.length ? ['bad', bad.length, 'peringatan'] : warn.length ? ['warn', warn.length, 'perlu perhatian'] : ['ok', '', 'Semua normal'];
-    const st = `<span class="nb-st ${tone}"><i></i>${n ? `<b>${n}</b>` : ''}<span class="nb-t">${txt}</span></span>`;
-    const pin = bad[0] ? `<button type="button" class="nb-pin" data-nb="${items.indexOf(bad[0])}">${icon(NB_IC[bad[0].tag] || 'warning', 'text-[18px]')}<span><b>${bad[0].tag}</b> ${bad[0].code}: ${bad[0].txt}${bad[0].ev ? ', ' + bad[0].ev : ''}</span></button>` : '';
-    const rest = items.filter((x) => x !== bad[0]);
-    const it = (x) => `<span class="nb-it ${x.tone}">${icon(NB_IC[x.tag] || 'info', 'text-[16px]')}<b>${x.tag}</b><code>${x.code}</code><span>${x.txt}${x.ev ? ', ' + x.ev : ''}</span><time>${when(x.ts)}</time></span>`;
-    const sec = Math.max(30, rest.length * 7);
-    const vp = rest.length
-      ? `<div class="ticker-wrap nb-vp"><div class="ticker-move" style="animation-duration:${sec}s;animation-delay:-${((Date.now() / 1000) % sec).toFixed(2)}s">${rest.map(it).join('<span class="nb-sep" aria-hidden="true">•</span>')}</div></div>`
-      : `<div class="nb-vp nb-empty">${items.length ? '' : 'Tidak ada aktivitas baru dalam 3 hari terakhir · '}diperbarui ${Evt.fmtTime(Evt.now())}</div>`;
-    const all = items.length ? `<div class="pg-dd nb-dd"><button type="button" class="nb-all" id="nb-all" aria-haspopup="true" aria-expanded="false"><span class="nb-t">Lihat semua</span> (${items.length})${icon('expand_more', 'text-[18px]')}</button></div>` : '';
-    box.className = 'pg-news ' + tone;
-    box.innerHTML = st + pin + vp + all;
+    // Gaya alarm parkir (.pk-alarm): oranye = peringatan, kuning = perlu perhatian, hijau = semua normal.
+    // Teks diam (bukan berjalan): kejadian terpenting + tombol tindak lanjut + Lihat semua (AUDIT P8).
+    const tone = bad.length ? 'crit' : warn.length ? 'warn' : 'good', top = bad[0] || warn[0] || items[0];
+    const head = bad.length ? bad.length + ' PERINGATAN' : warn.length ? warn.length + ' PERLU PERHATIAN' : 'SEMUA NORMAL';
+    const ord = bad.concat(warn, items.filter((x) => x.tone !== 'bad' && x.tone !== 'warn'));
+    const txt = items.length ? `<span class="ticker-move">${ord.map((x) => `<button type="button" class="pk-tk-it ${x.tone}" data-nb="${items.indexOf(x)}"><b>${x.tag}</b> ${x.code}: ${x.txt}${x.ev ? ', ' + x.ev : ''} · ${when(x.ts)}</button>`).join('<span class="nb-sep" aria-hidden="true">•</span>')}</span>` : 'Tidak ada aktivitas baru dalam 3 hari terakhir · diperbarui ' + Evt.fmtTime(Evt.now());
+    const all = items.length ? `<div class="pg-dd nb-dd"><button type="button" class="pk-btn" id="nb-all" aria-haspopup="true" aria-expanded="false">${icon('list', 'text-[16px]')} Lihat semua (${items.length})</button></div>` : '';
+    box.className = 'pg-news';
+    box.innerHTML = `<div class="pk-alarm ${tone}" role="${bad.length ? 'alert' : 'status'}"><span class="pk-ic hb-${tone === 'good' ? 'ok' : tone}">${icon(bad.length ? NB_IC[top.tag] || 'warning' : warn.length ? 'info' : 'check_circle', 'text-[20px]')}</span><b>${head}</b><span class="pk-txt${items.length ? ' ticker-wrap' : ''}">${txt}</span>${all}</div>`;
+    UI.marquee(box);
     box.querySelectorAll('[data-nb]').forEach((b) => b.addEventListener('click', () => newsGo(newsItems[+b.dataset.nb])));
     const ab = box.querySelector('#nb-all'); if (ab) ab.addEventListener('click', () => {
       dropdown(ab, `<div class="nb-list">${newsItems.map((x, i) => `<button type="button" class="nb-row ${x.tone}" data-nbi="${i}">${icon(NB_IC[x.tag] || 'info', 'text-[20px]')}<span class="min-w-0 flex-1"><b>${x.tag} <code>${x.code}</code></b><small>${x.txt}${x.ev ? ', ' + x.ev : ''}</small></span><time>${when(x.ts)}</time></button>`).join('')}</div>`, (el, close) => {
@@ -1082,7 +1113,7 @@
       .forEach((x) => out.push({ group: 'Acara', plate: plateOf(x), label: x.name, sub: x.id + ', ' + Evt.fmtShort(x.start) + ', ' + phaseTxt(x).toLowerCase(), run: () => goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, x.id) }));
     if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && hit([o.id, o.name, o.email, vehPlate(o)].join(' '))).slice(0, 5)
       .forEach((o) => out.push({ group: 'Pesanan', icon: 'receipt_long', label: o.id + ', ' + o.name, sub: Evt.ev(o.ev) ? Evt.ev(o.ev).name : o.ev, run: () => { goTab('peserta', o.ev); orderModal(o.id); } }));
-    push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: newEventPanel });
+    push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: () => newEventPanel() });
     push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF semua acara', kw: 'report cetak export', run: reportAllPdf });
     if (e) push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF', sub: e.id, kw: 'report cetak export', run: () => reportPdf(e) });
     if (e && e.status !== 'DRAFT') push('Perintah', { icon: 'open_in_new', label: 'Lihat di portal pengunjung', sub: e.id, run: () => window.open('/pengunjung/e/' + encodeURIComponent(e.id), '_blank', 'noopener') });
@@ -1593,7 +1624,7 @@
     const all = visEvs(), c = {}; all.forEach((e) => { const p = phase(e); c[p] = (c[p] || 0) + 1; });
     return `
     <section class="card p-4 sm:p-5">
-      <div class="pg-list-head"><div class="min-w-0"><h2 class="font-headline-sm text-headline-sm">Acara di Summarecon Mall Bandung</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Acara yang dipublikasikan langsung tampil di portal pengunjung dan Command Center.</p></div><button type="button" class="btn shrink-0" id="new-ev">${icon('add')} Acara baru</button></div>
+      <div class="pg-list-head"><div class="min-w-0"><h2 class="font-headline-sm text-headline-sm">Acara di Summarecon Mall Bandung</h2><p class="font-body-sm text-body-sm text-on-surface-variant">Acara yang dipublikasikan langsung tampil di portal pengunjung dan Command Center.</p></div></div>
       <div class="pg-filter"><label class="pg-search">${icon('search', 'text-[18px]')}<span class="sr-only">Cari acara</span><input id="aq" class="inp" type="search" placeholder="Cari nama, ID, kategori, penyelenggara" value="${esc(ui.aq)}" autocomplete="off"></label>
         <div class="pg-chips" role="group" aria-label="Saring menurut status">${FILTERS.map(([k, l]) => `<button type="button" class="chip-btn ${ui.ast === k ? 'on' : ''}" data-ast="${k}" aria-pressed="${ui.ast === k}">${l} <span class="opacity-70">${k === 'ALL' ? all.length : k === 'ARSIP' ? arcVis().length : c[k] || 0}</span></button>`).join('')}</div></div>
       <div class="pg-ev pg-ev-head" aria-hidden="true"><span>Acara</span><span>Jadwal</span><span>Status</span><span>Terjual</span><span>Pendapatan</span><span></span></div>
@@ -1736,7 +1767,7 @@
       const canon = evUrl(ui.ev, ui.tab); if (Router.path() !== canon) Router.replace(canon);
       shell(true);
       lastHead = isG(ui.tab) ? globalHead() : mgrHead(Evt.ev(ui.ev));
-      el.innerHTML = Evt.modeBanner() + staleBanner() + (lastHead ? `<div id="evt-head" class="pg-head-wrap">${lastHead}</div>` : '') + `<div id="evt-body">${body()}</div>`;
+      el.innerHTML = Evt.modeBanner() + staleBanner() + `<div id="pg-mhead-wrap">${mobileHead()}</div>` + (lastHead ? `<div id="evt-head" class="pg-head-wrap">${lastHead}</div>` : '') + `<div id="evt-body">${body()}</div>`;
     } else el.innerHTML = header() + `<div id="evt-body">${body()}</div>`;
     bind(el);
     if (ui.focus) {
@@ -1753,6 +1784,7 @@
       if (document.querySelector('.pg-more[open]')) return; // menu aksi sedang terbuka
       if (!isG(ui.tab) && !e) return redraw();
       shell();
+      const mh = el.querySelector('#pg-mhead-wrap'), nmh = mobileHead(); if (mh && mh.innerHTML !== nmh && !mh.querySelector('.pg-dd-panel')) { mh.innerHTML = nmh; bindActions(mh); }
       const h = el.querySelector('#evt-head'), nh = isG(ui.tab) ? globalHead() : mgrHead(e);
       if (h && nh !== lastHead) { lastHead = nh; h.innerHTML = nh; bindActions(h); }
       if (ui.tab === 'acara') { const l = el.querySelector('#acara-list'); l.innerHTML = acaraList(); bindActions(l); return; }
@@ -1781,7 +1813,7 @@
     root.querySelectorAll('[data-mf-xlsx]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.xlsx(b.dataset.mfXlsx); mfDone('Manifest Excel ' + b.dataset.mfXlsx + ' diunduh'); }));
     root.querySelectorAll('[data-mf-csv]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.download(b.dataset.mfCsv); mfDone('Manifest CSV ' + b.dataset.mfCsv + ' diunduh'); }));
     root.querySelectorAll('[data-mf-zip]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.zip(); mfDone('Manifest semua acara (ZIP) diunduh'); }));
-    root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(); }));
+    root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(b); }));
     root.querySelectorAll('[data-report-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.reportEv); if (x) reportPdf(x); }));
     root.querySelectorAll('[data-kpi]').forEach((c) => { const go = () => kpiModal(c.dataset.kpi); c.addEventListener('click', go); c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); } }); });
     root.querySelectorAll('[data-clear-filter]').forEach((b) => b.addEventListener('click', () => { ui.aq = ''; ui.ast = 'ALL'; redraw(); }));
@@ -1806,7 +1838,6 @@
     // Semua acara & header acara (pengelola)
     if (isMgr()) {
       bindActions(el); bindGlobal(el);
-      const ne = el.querySelector('#new-ev'); if (ne) ne.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(); });
       const list = el.querySelector('#acara-list');
       const relist = () => { list.innerHTML = acaraList(); bindActions(list); };
       const aq = el.querySelector('#aq'); if (aq) aq.addEventListener('input', () => { ui.aq = aq.value; relist(); });

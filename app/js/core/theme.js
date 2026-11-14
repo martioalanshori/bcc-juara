@@ -15,6 +15,7 @@
       b.setAttribute('title', 'Ganti ke mode ' + next);
       const ic = b.querySelector('.material-symbols-outlined');
       if (ic) ic.textContent = t === 'dark' ? 'light_mode' : 'dark_mode';
+      const lb = b.querySelector('[data-theme-lbl]'); if (lb) lb.textContent = t === 'dark' ? 'Mode terang' : 'Mode gelap';
     });
   }
   function apply(t) { root.setAttribute('data-theme', t); syncButtons(); }

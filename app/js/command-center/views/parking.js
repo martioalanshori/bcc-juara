@@ -78,8 +78,8 @@
   // Command Center (ParkAlarm.bar, dipanggil app.js), detak ganda lub-dub, suara alarm (WebAudio) sampai diakui, papan
   // VMS gerbang, peta basement, log ANPR langsung, tiket P2 SOP-PRK-06. Akui: suara berhenti, tercatat di tiket.
   // Arahkan: zona penuh berangsur turun, zona tujuan naik; di bawah 95% = "Kembali normal". Akhiri: data sensor kembali.
-  const STEP_MS = 800, BEAT_MS = 1667; // 1667 ms = dua detak pada 72 detak/menit
-  let simT = null, alarmT = null, beatN = 0;
+  const STEP_MS = 300, BEAT_MS = 1667; // 1667 ms = dua detak pada 72 detak/menit
+  let simT = null, alarmT = null, hornT = null, beatN = 0;
   const stageOf = (p) => (p >= 1 ? 'full' : p >= 0.95 ? 'crit' : p >= 0.85 ? 'warn' : 'ok');
   const STAGE_TXT = { ok: 'Normal', warn: 'Waspada', crit: 'Kritis', full: 'Penuh' };
   const zoneById = (id) => zones().find((z) => z.id === id);
@@ -98,25 +98,43 @@
     return (simOcc(s).cap - u1) / rate;
   }
 
-  // Suara alarm: dua nada pendek (lub-dub) tanpa berkas audio. Browser hanya mengizinkan suara setelah ada klik, jadi
-  // konteks audio dibuat saat tombol simulasi diklik; setelah muat ulang, klik apa pun di halaman menyalakannya lagi.
-  let actx = null;
-  function audio() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) { actx = null; } }
-  function beep() {
-    const a = actx; if (!a || a.state !== 'running') return;
-    [[0, 880], [0.2, 660]].forEach(([d, f]) => {
-      const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + d;
-      o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.05, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
-      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + 0.15);
-    });
+  // Suara alarm tanpa berkas audio (WebAudio): klakson naik 3 kali (sekitar 1 detik) diulang tanpa jeda sejak parkir
+  // penuh sampai diakui/dibisukan/pulih (hornLoop); dua bunyi peringatan saat masuk tahap kritis.
+  // Browser hanya mengizinkan suara setelah ada klik, jadi konteks audio dibuat saat tombol simulasi diklik; setelah
+  // muat ulang, klik apa pun di halaman menyalakannya lagi. Semua bunyi lewat filter lolos-rendah + kompresor (tidak pecah).
+  let actx = null, bus = null;
+  function audio() {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+      if (!bus) { const lp = actx.createBiquadFilter(), comp = actx.createDynamicsCompressor(), vol = actx.createGain(); lp.type = 'lowpass'; lp.frequency.value = 3200; vol.gain.value = 0.9; lp.connect(comp); comp.connect(vol); vol.connect(actx.destination); bus = lp; }
+    } catch (e) { actx = null; bus = null; }
   }
+  const live = () => actx && bus && actx.state === 'running';
+  function sfx(t, d, f, f2, type, peak) {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.02); g.gain.setValueAtTime(peak, t + d - 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + d + 0.02);
+  }
+  const thump = (t) => sfx(t, 0.16, 95, 42, 'sine', 0.9); // dentum detak (rendah)
+  const HORN_MS = 1080; // panjang satu putaran klakson (3 x 0,36 detik): diulang tepat setelah selesai
+  function klaxon() { // tiga sapuan naik: bunyi alarm parkir penuh, diulang oleh hornLoop
+    if (!live()) return; const t = actx.currentTime + 0.02;
+    [0, 0.36, 0.72].forEach((k) => { sfx(t + k, 0.32, 380, 1150, 'square', 0.14); sfx(t + k, 0.32, 190, 575, 'sawtooth', 0.08); });
+    thump(t); thump(t + 0.36); thump(t + 0.72);
+  }
+  function ping() { if (!live()) return; const t = actx.currentTime + 0.02; sfx(t, 0.14, 1320, 0, 'triangle', 0.22); sfx(t + 0.2, 0.14, 1320, 0, 'triangle', 0.22); }
   document.addEventListener('pointerdown', () => { const s = Store.s.parkSim; if (s && s.full && !s.ack && !s.muted) audio(); }, true);
 
   function simStep() {
     const s = Store.s.parkSim; if (!s || s.full) { clearInterval(simT); simT = null; return; }
-    simIds(s).forEach((id) => { const z = zoneById(id); Store.parkSet(id, z.used + Math.max(1, Math.ceil(z.cap * (0.004 + Math.random() * 0.006)))); });
+    // Sisa slot tiap zona habis dalam sekitar 10 langkah x 300 ms (sekitar 3 detik sampai penuh), sedikit acak agar alami.
+    simIds(s).forEach((id) => { const z = zoneById(id), b0 = ((s.base || []).find((x) => x[0] === id) || [id, z.used])[1]; Store.parkSet(id, z.used + Math.max(1, Math.ceil(((z.cap - b0) / 9) * (0.85 + Math.random() * 0.3)))); });
     const o = simOcc(s), name = simName(s), hist = (s.hist || []).concat([[Date.now(), o.used]]).slice(-6);
-    if (!s.warned && o.pct >= 0.9) { UI.toast(esc(name) + ' sudah 90%. Siapkan pengalihan.', 'P3', 'SOP-PRK-06'); simPatch({ hist, warned: true }); } else simPatch({ hist });
+    const p0 = { hist };
+    if (!s.warned && o.pct >= 0.9) { UI.toast(esc(name) + ' sudah 90%. Siapkan pengalihan.', 'P3', 'SOP-PRK-06'); p0.warned = true; }
+    if (!s.critPing && o.pct >= 0.95 && o.used < o.cap) { if (!s.muted) ping(); p0.critPing = true; }
+    simPatch(p0);
     if (o.used < o.cap) return;
     clearInterval(simT); simT = null;
     const ids = simIds(s), pbBusy = evList(Date.now() - DAY, Date.now() + DAY).some((e) => { const pd = pdOf(e.id); return pd.usesParking && Date.now() >= pd.doors - 2 * HOUR && Date.now() < pd.end; }), alt = zones().filter((z) => isCar(z) && !ids.includes(z.id) && !(pbBusy && z.id === 'PB') && z.cap - z.used > 0).sort((a, b) => (b.cap - b.used) - (a.cap - a.used))[0];
@@ -125,13 +143,13 @@
     Store.addEvent({ from: 'PARK', to: 'TIC', code: 'EVT-PARK-FULL', title: name + ' penuh', detail: 'Alihkan ke ' + to, sev: 'P2', ticketId: tk.id });
     simPatch({ full: true, at: Date.now(), ticketId: tk.id, to, toId: alt ? alt.id : null, name, ack: false, anpr: [] });
     UI.toast('<b>Parkir penuh:</b> ' + esc(name) + '. Tiket ' + tk.id + ' dibuat, alihkan ke ' + esc(to) + '.', 'P2', 'SOP-PRK-06');
-    startAlarm();
+    if (!s.muted) klaxon();
+    startAlarm(true);
   }
   const PLATES = ['D', 'B', 'D', 'Z', 'D', 'F', 'T', 'E'], SUF = 'ABCDEFGHJKLMNPRSTUVWXYZ';
   function alarmTick() {
     const s = Store.s.parkSim; if (!s || !s.full) { clearInterval(alarmT); alarmT = null; return; }
     beatN++;
-    if (!s.ack && !s.muted && !s.recovered) beep();
     if (beatN % 2) return; // log & pengalihan tiap dua detak (sekitar 3,3 detik)
     const p = {};
     if (!s.recovered) {
@@ -150,7 +168,16 @@
     }
     simPatch(p);
   }
-  function startAlarm() { clearInterval(alarmT); beatN = 0; alarmT = setInterval(alarmTick, BEAT_MS); alarmTick(); }
+  function hornLoop() {
+    const s = Store.s.parkSim; if (!s || !s.full) { clearInterval(hornT); hornT = null; return; }
+    if (!s.ack && !s.muted && !s.recovered) klaxon();
+  }
+  // quiet: klakson pertama sudah dibunyikan simStep, putaran berikutnya menyambung tepat setelahnya.
+  function startAlarm(quiet) {
+    clearInterval(alarmT); clearInterval(hornT); beatN = 0;
+    alarmT = setInterval(alarmTick, BEAT_MS); hornT = setInterval(hornLoop, HORN_MS);
+    if (!quiet) { alarmTick(); hornLoop(); }
+  }
   function startSim(zone) {
     if (Store.s.parkSim) return;
     audio(); // klik tombol = gestur pengguna, suara alarm boleh menyala nanti
@@ -159,7 +186,7 @@
   }
   function endSim() {
     const s = Store.s.parkSim; if (!s) return;
-    clearInterval(simT); simT = null; clearInterval(alarmT); alarmT = null;
+    clearInterval(simT); simT = null; clearInterval(alarmT); alarmT = null; clearInterval(hornT); hornT = null;
     s.base.forEach(([id, used]) => Store.parkSet(id, used));
     Store.setParkSim(null);
     UI.toast('Simulasi parkir penuh diakhiri, okupansi kembali ke data sensor.', 'P4');
@@ -179,6 +206,16 @@
     Store.addLog(s.ticketId, 'Papan VMS & LED panduan diarahkan ke ' + to);
     Store.addEvent({ from: 'PARK', to: 'PARK', code: 'EVT-PARK-REDIRECT', title: short(s.name) + ' → ' + to, detail: 'Papan VMS & LED panduan', sev: 'P3', ticketId: s.ticketId });
   }
+  function shrink() { const s = Store.s.parkSim; if (s && s.full) simPatch({ dismissed: true }); }
+  // Layar alarm penuh menutup sendiri 5 detik setelah parkir penuh (sama dengan Esc/Kecilkan): alarm tetap di bilah atas
+  // semua menu dan klakson tetap berbunyi sampai diakui.
+  const AUTO_CLOSE_MS = 5000;
+  setInterval(() => {
+    const s = Store.s.parkSim; if (!s || !s.full || s.ack || s.dismissed) return;
+    const left = AUTO_CLOSE_MS - (Date.now() - s.at);
+    document.querySelectorAll('[data-pk-close]').forEach((el) => (el.textContent = Math.max(0, Math.ceil(left / 1000))));
+    if (left <= 0 && document.querySelector('.pk-takeover')) shrink();
+  }, 250);
   function mute() { const s = Store.s.parkSim; if (!s) return; if (s.muted) audio(); simPatch({ muted: !s.muted }); }
   // Simulasi yang masih berjalan saat halaman dimuat ulang dilanjutkan.
   if (Store.s.parkSim && !Store.s.parkSim.full) simT = setInterval(simStep, STEP_MS);
@@ -186,8 +223,9 @@
   // Tombol alarm (bilah global & halaman parkir) lewat delegasi: bilah digambar ulang oleh app.js.
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-pk]'); if (!b) return;
-    ({ ack, redirect, mute, end: endSim })[b.dataset.pk]();
+    ({ ack, redirect, mute, shrink, end: endSim })[b.dataset.pk]();
   });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && document.querySelector('.pk-takeover')) { ev.stopPropagation(); shrink(); } }, true);
   // Penghitung "sejak penuh" & "penuh dalam" diperbarui tiap detik tanpa menggambar ulang (detak tidak terputus);
   // juga dipanggil langsung setelah bilah/panel digambar supaya angka tidak kosong sedetik.
   function tick() {
@@ -195,6 +233,7 @@
     document.querySelectorAll('[data-pk-since]').forEach((el) => (el.textContent = mmss(Date.now() - +el.dataset.pkSince)));
     const eta = !s.full && etaMs(s);
     document.querySelectorAll('[data-pk-eta]').forEach((el) => (el.textContent = eta ? mmss(eta) : 'menghitung…'));
+    const ov = document.querySelector('.pk-takeover'); if (ov && !ov.dataset.focused) { ov.dataset.focused = '1'; const f = ov.querySelector('[data-pk=ack]'); if (f) f.focus(); }
   }
   setInterval(tick, 1000);
 
@@ -214,8 +253,19 @@
       return `<div class="pk-alarm good" role="status"><span class="pk-ic">${icon('check_circle', 'text-[20px]')}</span><b>Kembali normal</b><span class="pk-txt">${name} ${Math.floor(o.pct * 100)}% · tiket ${esc(s.ticketId)} menunggu verifikasi</span>${open}</div>`;
     }
     const toZ = s.toId && zoneById(s.toId), to = toZ ? esc(short(toZ.name)) : 'overflow';
-    if (!s.ack) return `<div class="pk-alarm full" role="alert"><span class="pk-ic hb-full">${icon('e911_emergency', 'text-[22px]')}</span><b>PARKIR PENUH</b><span class="pk-txt">${name} · <b data-pk-since="${s.at}"></b> sejak penuh · tiket ${esc(s.ticketId)}</span><button type="button" class="pk-btn main" data-pk="ack">${icon('done_all', 'text-[16px]')} Akui alarm</button><button type="button" class="pk-btn" data-pk="redirect">${icon('alt_route', 'text-[16px]')} Arahkan ke ${to}</button>${open}${sound}</div>`;
+    if (!s.ack) return `${s.dismissed ? '' : takeover(s, o, name, to, open, sound)}<div class="pk-alarm full" role="alert"><i class="pk-hazard" aria-hidden="true"></i><span class="pk-ic hb-full">${icon('e911_emergency', 'text-[22px]')}</span><b>PARKIR PENUH</b><span class="pk-txt">${name} · <b data-pk-since="${s.at}"></b> sejak penuh · tiket ${esc(s.ticketId)}</span><button type="button" class="pk-btn main" data-pk="ack">${icon('done_all', 'text-[16px]')} Akui alarm</button><button type="button" class="pk-btn" data-pk="redirect">${icon('alt_route', 'text-[16px]')} Arahkan ke ${to}</button>${open}${sound}</div>`;
     return `<div class="pk-alarm full ack" role="status"><span class="pk-ic hb-ack">${icon('e911_emergency', 'text-[22px]')}</span><b>PARKIR PENUH</b><span class="pk-txt">${name} · <b data-pk-since="${s.at}"></b> · diakui ${esc(s.ackBy)} ${clock(s.ackAt).slice(0, 5)}${s.redirect ? ' · dialihkan ke ' + to : ''}</span>${s.redirect ? '' : `<button type="button" class="pk-btn main" data-pk="redirect">${icon('alt_route', 'text-[16px]')} Arahkan ke ${to}</button>`}${open}</div>`;
+  }
+  // Layar alarm penuh: muncul saat pertama kali penuh, menutupi semua menu sampai diakui atau dikecilkan (Esc).
+  function takeover(s, o, name, to, open, sound) {
+    return `<div class="pk-takeover" role="alertdialog" aria-modal="true" aria-labelledby="pk-to-h" aria-describedby="pk-to-d"><div class="pk-to-box"><i class="pk-hazard" aria-hidden="true"></i>
+      <div class="pk-to-body"><div class="pk-siren">${icon('e911_emergency')}</div>
+        <div class="pk-to-kick">Alarm parkir · SOP-PRK-06</div><h2 class="pk-to-h" id="pk-to-h">PARKIR PENUH</h2>
+        <p class="pk-to-sub" id="pk-to-d">${name} · ${num(o.used)} / ${num(o.cap)} slot terisi (100%)</p>
+        <p class="pk-to-meta"><b data-pk-since="${s.at}"></b> sejak penuh · tiket P2 ${esc(s.ticketId)} untuk Tim Parkir · kendaraan baru tertahan di gate</p>
+        <div class="pk-to-act"><button type="button" class="pk-btn main" data-pk="ack">${icon('done_all', 'text-[18px]')} Akui alarm</button><button type="button" class="pk-btn" data-pk="redirect">${icon('alt_route', 'text-[18px]')} Arahkan ke ${to}</button>${open}${sound}<button type="button" class="pk-btn" data-pk="shrink" title="Kecilkan ke bilah alarm (Esc)">${icon('close_fullscreen', 'text-[18px]')} Kecilkan</button></div>
+        <p class="pk-to-auto">Layar ini menutup sendiri dalam <b data-pk-close>5</b> detik. Alarm tetap di bilah atas sampai diakui.</p></div>
+      <i class="pk-hazard" aria-hidden="true"></i></div></div>`;
   }
   // Tingkat alarm untuk latar halaman: 'full' = berdenyut (belum diakui), 'ack' = merah tipis diam, '' = normal.
   const level = () => { const s = Store.s.parkSim; return s && s.full && !s.recovered ? (s.ack ? 'ack' : 'full') : ''; };

@@ -8,7 +8,7 @@
   window.Views.energy = {
     title: 'Energi & Utilitas', live: true,
     render() {
-      const D = Store.s.devices;
+      const D = Store.s.devices, T = Store.s.tele, n = UI.num;
       const ch = Object.entries(D).filter(([, d]) => d.type === 'chiller');
       const U = window.SEED.UTILITY;
       const totCost = U.reduce((a, u) => a + u[3], 0), totRec = U.reduce((a, u) => a + u[4], 0);
@@ -21,16 +21,16 @@
       <section class="card p-4 mb-5 flex flex-wrap items-center gap-2">
         <span class="chip-btn"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>Audit energi aktif</span>
         <span class="chip-btn">ISO 50001:2018 terverifikasi</span><span class="chip-btn text-secondary">Bangunan hijau LEED Gold, 84 poin</span>
-        <span class="font-label-md text-label-md text-on-surface-variant">Sinkronisasi grid SCADA: 14 detik lalu</span>
+        <span class="font-label-md text-label-md text-on-surface-variant">Sinkronisasi grid SCADA <b data-clock></b></span>
         <div class="ml-auto flex gap-2"><button class="btn-ghost" data-act="sim">${icon('calculate', 'text-[16px]')} Simulasi tarif WBP/LWBP</button><button class="btn-ghost" data-act="esg">${icon('download', 'text-[16px]')} Ekspor audit ESG (CSV)</button><button class="btn" data-act="ai">${icon('auto_awesome')} Optimasi AI chiller VFD</button></div>
       </section>
       <div class="flex flex-wrap gap-2 mb-5"><span class="lbl self-center mr-1">Periode:</span>${[['today', 'Hari ini'], ['mtd', 'Bulan berjalan (MTD)'], ['q', 'Kuartal'], ['ytd', 'YTD']].map(([k, l]) => `<button class="chip-btn ${F.period === k ? 'on' : ''}" data-period="${k}">${l}</button>`).join('')}</div>
 
       <div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
-        ${UI.kpi({ label: 'Total daya listrik (grid)', icon: 'electric_meter', value: '14.82', unit: 'MW, puncak 16.2 MW', delta: '-3.8% dari baseline', foot: 'Estimasi biaya hari ini Rp 218.4 Jt' })}
-        ${UI.kpi({ label: 'Efisiensi chiller plant', icon: 'ac_unit', value: '0.562', unit: 'kW/TR · COP 6.25', vcls: 'text-secondary', foot: 'Target ≤ 0.62 kW/TR, hemat Rp 42.1 Jt/hari' })}
-        ${UI.kpi({ label: 'Konsumsi & daur ulang air', icon: 'water_drop', value: '1.840', unit: 'm³/hari, 42% daur ulang', foot: 'PDAM 58% (1.060 m³), daur ulang STP 780 m³' })}
-        ${UI.kpi({ label: 'Dekarbonisasi & ESG', icon: 'eco', value: '18.42', unit: 'Ton CO2e', delta: '-14.6% YoY', foot: 'Skor 92.4 (A+), PLTS 4.82 MWh' })}
+        ${UI.kpi({ label: 'Total daya listrik (grid)', icon: 'electric_meter', value: n(T.mw, 2), unit: 'MW, puncak 16,2 MW', delta: n(((T.mw - 15.41) / 15.41) * 100, 1) + '% dari baseline', foot: 'Estimasi biaya hari ini Rp ' + n(T.mw * 14.74, 1) + ' Jt' })}
+        ${UI.kpi({ label: 'Efisiensi chiller plant', icon: 'ac_unit', value: n(T.kwtr, 3), unit: 'kW/TR · COP ' + n(T.cop, 2), foot: 'Target ≤ 0.62 kW/TR, hemat Rp 42.1 Jt/hari' })}
+        ${UI.kpi({ label: 'Konsumsi & daur ulang air', icon: 'water_drop', value: n(T.water), unit: 'm³/hari, 42% daur ulang', foot: 'PDAM 58% (1.060 m³), daur ulang STP 780 m³' })}
+        ${UI.kpi({ label: 'Dekarbonisasi & ESG', icon: 'eco', value: n(T.co2, 2), unit: 'Ton CO2e', delta: '-14.6% YoY', foot: 'Skor 92.4 (A+), PLTS 4.82 MWh' })}
       </div>
 
       <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5 mb-5">

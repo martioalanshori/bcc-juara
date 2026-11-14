@@ -110,6 +110,9 @@
   const free = () => L('Gratis', 'Free');
   const priceTxt = (e) => { const m = priceFrom(e); return m == null ? '-' : m === 0 ? free() : rp(m); };
   const left = (n) => L('Sisa ' + n, n + ' left');
+  // Habis terjual = penjualan buka tapi tidak ada tiket tersisa. Cap "Habis terjual" ditempel di atas foto.
+  const isSold = (e) => E.saleState(e).open && avail(e).left === 0;
+  const soldStamp = () => `<span class="lp-sold-stamp" aria-hidden="true">${L('Habis terjual', 'Sold out')}</span>`;
   // Banner acara: foto bila ada (e.img), selain itu gradien warna acara + ikon kategori.
   const banner = (e, big) => `<div class="pv-banner ${big ? 'pv-banner-lg' : ''} ${e.img ? 'has-img' : ''}" style="--c:${esc(e.color)}">${e.img ? `<img class="pv-banner-img" src="${esc(e.img)}" alt="" loading="lazy" decoding="async">` : ic(evIcon(e.cat), 'pv-banner-ic')}
     <div class="pv-banner-txt"><span class="pv-tag">${esc(catName(e.cat))}</span>${big ? `<div><div class="pv-banner-title">${esc(e.name)}</div>${e.tagline ? `<div class="pv-banner-sub">${esc(e.tagline)}</div>` : ''}</div>` : ''}</div></div>`;
@@ -153,7 +156,7 @@
   };
   const card = (e) => {
     const [b, sold] = cardState(e);
-    return `<a href="/pengunjung/e/${e.id}" class="lp-card${sold ? ' is-sold' : ''}"><div class="lp-card-img">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span></div>
+    return `<a href="/pengunjung/e/${e.id}" class="lp-card${sold ? ' is-sold' : ''}"><div class="lp-card-img">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span>${sold ? soldStamp() : ''}</div>
       <div class="lp-card-body"><h3 class="lp-card-title">${esc(e.name)}</h3>
         <p class="lp-meta">${ic('calendar_month', 'text-[16px]')}<span>${when(e)}</span></p>
         <p class="lp-meta">${where(e)}</p>
@@ -248,7 +251,7 @@
     const agenda = week.length ? sec('week', L('Minggu ini di mal', 'This week at the mall'), `<ol class="lp-agenda">${week.slice(0, 7).map((e) => { const d = new Date(e.start); const today = dayStart(e.start) === t0; return `<li><a href="/pengunjung/e/${e.id}" class="lp-ag-row">
         <span class="lp-dplate${today ? ' is-today' : ''}"><small>${today ? L('Hari ini', 'Today') : d.toLocaleDateString(locale(), { month: 'short' })}</small><b>${d.getDate()}</b></span>
         <span class="lp-ag-main"><b class="lp-ag-title">${esc(e.name)}</b><span class="lp-meta">${d.toLocaleDateString(locale(), { weekday: 'long' })}, ${fTime(e.start)}<span class="lp-dot"></span>${where(e)}</span></span>
-        <span class="lp-ag-price">${priceTxt(e)}</span></a></li>`; }).join('')}</ol>`, week.length > 7 ? seeAll('__all') : '') : '';
+        <span class="lp-ag-price">${isSold(e) ? badge(L('Habis', 'Sold out'), 'danger') : priceTxt(e)}</span></a></li>`; }).join('')}</ol>`, week.length > 7 ? seeAll('__all') : '') : '';
 
     // E. Laku keras: mosaik 1 besar + 2 tinggi (sisa tiket < 30%, belum habis)
     const hot = open.filter((e) => { const a = avail(e); return a.left > 0 && a.pct < 30; }).sort((x, y) => avail(x).pct - avail(y).pct).slice(0, 3);
@@ -345,7 +348,7 @@
     const tix = (t) => {
       const p = s.per[t.id]; const sold = t.onSale && p.available === 0;
       const st = !t.onSale ? badge(L('Tidak dijual', 'Not for sale'), 'neutral') : sold ? badge(L('Habis terjual', 'Sold out'), 'danger') : p.available < 10 ? badge(L('Sisa ' + p.available, p.available + ' left'), 'warning') : badge(L('Tersedia', 'Available'), 'success');
-      return `<div class="pv-tix" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div>${st}</div>
+      return `<div class="pv-tix${sold ? ' pv-tix-sold' : ''}" style="--c:${esc(t.color)}"><div class="px-4 pt-3 pb-3"><div class="flex items-start justify-between gap-2"><div class="font-label-lg text-label-lg">${esc(t.name)}</div>${st}</div>
           <div class="lp-help mt-1">${esc(perks(t))}</div></div>
         <div class="pv-dash mx-4"></div>
         <div class="px-4 py-3 flex items-center justify-between gap-2"><span class="lp-price">${t.price ? rp(t.price) : free()}</span><span class="lp-help text-right">${L('Penjualan berakhir', 'Sales end')}<br>${fDT(e.saleEnd)} WIB</span></div></div>`;
@@ -368,13 +371,13 @@
       'Prototipe: pembayaran memakai simulasi sandbox, tidak ada uang yang ditarik.',
     ];
     const terms = L('Syarat & ketentuan', 'Terms & conditions');
-    const a = avail(e);
+    const a = avail(e); const sold = isSold(e);
     const cta = sale.open && a.left > 0 ? `<a href="/pengunjung/e/${id}/kategori" class="btn lp-cta">${ic('confirmation_number', 'text-[18px]')}${L('Beli tiket', 'Buy tickets')}</a>`
       : sale.open ? `<a href="/pengunjung/e/${id}/kategori" class="btn-ghost lp-cta">${ic('hourglass_top', 'text-[18px]')}${L('Daftar tunggu', 'Waiting list')}</a>`
       : `<span class="lp-cta-note">${ic('info', 'text-[18px]')}${esc(saleLabel(e))}</span>`;
     return `${back('/pengunjung', L('Semua acara', 'All events'))}
       <div class="lp-detail"><div class="lp-detail-main">
-        <div class="lp-detail-img">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span></div>
+        <div class="lp-detail-img${sold ? ' is-sold' : ''}">${photo(e)}<span class="lp-cat">${esc(catName(e.cat))}</span>${sold ? soldStamp() : ''}</div>
         <h1 class="lp-title-lg lp-detail-title">${esc(e.name)}</h1>
         ${e.tagline ? `<p class="lp-lead">${esc(e.tagline)}</p>` : ''}
         <div class="lp-facts">
@@ -393,7 +396,7 @@
           <ol class="list-decimal pl-5 flex flex-col gap-1.5 lp-body-sm">${sk.map((y) => `<li>${esc(y)}</li>`).join('')}</ol></section>
       </div>
       <aside class="lp-side"><div class="lp-cartbar lp-buybox">
-        <div class="lp-buybox-info"><p class="lp-from">${L('Harga mulai dari', 'Prices from')}</p><p class="lp-price lp-price-lg">${priceTxt(e)}</p>
+        <div class="lp-buybox-info">${sold ? `<p class="lp-from">${L('Semua tiket', 'All tickets')}</p><p class="lp-price lp-price-lg lp-sold-txt">${L('Habis terjual', 'Sold out')}</p><p class="lp-help">${L('Gabung daftar tunggu, kami kabari bila ada tiket kembali.', 'Join the waiting list and we will tell you if tickets come back.')}</p>` : `<p class="lp-from">${L('Harga mulai dari', 'Prices from')}</p><p class="lp-price lp-price-lg">${priceTxt(e)}</p>`}
           <ul class="lp-buybox-facts"><li>${ic('calendar_month', 'text-[18px]')}${when(e)}</li><li>${ic('door_open', 'text-[18px]')}${L('Gate dibuka', 'Gates open')} ${fTime(e.doors)} WIB</li><li>${ic('confirmation_number', 'text-[18px]')}${a.left ? L(`Sisa ${a.left} dari ${a.total} tiket`, `${a.left} of ${a.total} tickets left`) : L('Habis terjual', 'Sold out')}</li></ul></div>
         ${cta}</div></aside></div>`;
   };

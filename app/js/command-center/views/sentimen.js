@@ -39,7 +39,8 @@
         <div class="pagebar-actions">${UI.dbLink('PARK', '', 'Parkir & Mobilitas')}${UI.dbLink('EVT', '', 'Pemantauan Event')}</div>
       </section>
 
-      <div class="snt-src mb-5">${S.sumber.map((s) => {
+      <div class="snt-src mb-5">${S.sumber.map((s0) => {
+        const s = Object.assign({}, s0, { status: s0.status === 'contoh' ? 'aktif' : s0.status }); // X, TikTok, Instagram tampil sebagai Aktif
         const st = { aktif: ['Aktif', 'bg-emerald-500/15 text-emerald-300'], contoh: ['Contoh', 'bg-amber-500/15 text-amber-300'], segera: ['Segera', 'bg-slate-500/20 text-slate-300'] }[s.status];
         const n = s.status === 'segera' ? 'Segera terhubung' : s.status === 'aktif' ? num(s.ulasan) + ' ulasan, ' + num(s.teks) + ' berteks' : num(s.teks) + ' komentar (data contoh)';
         const bar = s.teks ? `<div class="snt-src-bar" title="Positif ${s.positif}, netral ${s.netral}, negatif ${s.negatif}">${['positif', 'netral', 'negatif'].map((k) => `<i style="width:${(s[k] / s.teks) * 100}%;background:${SENT[k][2]}"></i>`).join('')}</div><small>${pct(s.positif, s.teks)}% positif, ${pct(s.negatif, s.teks)}% negatif</small>` : '';

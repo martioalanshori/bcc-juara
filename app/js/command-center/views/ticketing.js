@@ -3,7 +3,7 @@
   window.Views = window.Views || {};
   const { esc, icon } = UI;
   const REF = window.SMICC_REF;
-  const F = { q: '', zone: 'ALL', prio: 'ALL', scope: 'ACTIVE', page: 1, sel: null, sort: 'NEW' };
+  const F = { q: '', zone: 'ALL', prio: 'ALL', scope: 'ACTIVE', page: 1, sel: null, sort: 'PRIO' }; // bawaan: prioritas lalu sisa SLA (AUDIT C5)
   const seen = new Set(); // tiket yang sudah pernah tampil: yang belum, diberi animasi masuk
   const fresh = (t) => Date.now() - t.createdAt < 3 * 60000;
   const PER = 7;
@@ -85,7 +85,7 @@
 
   function liveBtn() {
     const on = window.Live && Live.on();
-    return `<button class="chip-btn ${on ? 'on' : ''}" id="live-tg" title="${on ? 'Kejadian demo masuk tiap 7 sampai 15 detik. Klik untuk jeda' : 'Klik untuk jalankan lagi'}"><span class="w-1.5 h-1.5 rounded-full ${on ? 'bg-secondary animate-pulse' : 'bg-outline'}"></span>${on ? 'Langsung' : 'Dijeda'}</button>`;
+    return `<button class="chip-btn ${on ? 'on' : ''}" id="live-tg" title="${on ? 'Demo berjalan: ada perubahan tiap 2 detik. Klik untuk jeda' : 'Klik untuk jalankan lagi'}"><span class="w-1.5 h-1.5 rounded-full ${on ? 'bg-secondary animate-pulse' : 'bg-outline'}"></span>${on ? 'Langsung' : 'Dijeda'}</button>`;
   }
   const seenEv = new Set();
   // Aktivitas tiket terbaru (Store.s.events): baris baru masuk di atas.
@@ -115,40 +115,33 @@
       const doneP = (lv) => { const d = st.done.filter((t) => t.priority === lv); return d.length ? Math.round((d.filter((t) => !Store.slaInfo(t).breached).length / d.length) * 100) + '% (' + d.filter((t) => !Store.slaInfo(t).breached).length + '/' + d.length + ')' : '-'; };
       const breached = st.done.filter((t) => Store.slaInfo(t).breached).length;
       const tenants = window.SEED.TENANTS.filter((t) => t.anchor);
+      const waiting = st.act.filter((t) => t.status === 'OPEN' || t.status === 'ACKNOWLEDGED').length;
       return `
       <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
-        ${UI.kpi({ label: 'Total tiket aktif', icon: 'confirmation_number', value: st.act.length, unit: crit + ' kritis, ' + high + ' tinggi', foot: `${st.act.filter((t) => t.status === 'OPEN' || t.status === 'ACKNOWLEDGED').length} menunggu, ${st.act.filter((t) => t.status === 'DISPATCHED' || t.status === 'ON-SITE').length} diproses` })}
-        ${UI.kpi({ label: 'MTTR (rata-rata resolusi)', icon: 'timer', value: Math.round(st.mttr) + 'm', delta: st.mttr < 45 ? 'Sesuai target' : 'Perlu perhatian', dcls: st.mttr < 45 ? 'bg-secondary/15 text-secondary' : 'bg-amber-500/15 text-amber-300', foot: 'Target rata-rata < 45 menit, ' + st.done.length + ' tiket selesai' })}
-        ${UI.kpi({ label: 'Kepatuhan SLA', icon: 'verified', value: st.comp.toFixed(1) + '%', vcls: st.comp >= 95 ? 'text-secondary' : 'text-amber-300', bar: st.comp, foot: '284 tenant terhubung' })}
-        ${UI.kpi({ label: 'Bahaya / eskalasi aktif', icon: 'warning', value: st.esc.length, vcls: st.esc.length ? 'text-tertiary' : 'text-secondary', delta: st.esc.length ? 'Segera atasi' : 'Aman', dcls: st.esc.length ? 'bg-rose-500/20 text-rose-300' : '', foot: esc(st.esc.slice(0, 2).map((t) => t.title.split(' ').slice(0, 3).join(' ')).join('; ') || 'Tidak ada eskalasi') })}
-        ${UI.kpi({ label: 'Pengunjung saat ini', icon: 'groups', value: '34.820', delta: '+8,2% dibanding kemarin', foot: 'Kapasitas kompleks 78,4% (tinggi)' })}
+        ${UI.kpi({ label: 'Tiket aktif', icon: 'confirmation_number', value: st.act.length, unit: crit + ' kritis, ' + high + ' tinggi', foot: `${waiting} menunggu, ${st.act.length - waiting} diproses` })}
+        ${UI.kpi({ label: '<span class="sx-tip" title="Mean time to repair: rata-rata waktu dari tiket dibuat sampai selesai">MTTR</span>', icon: 'timer', value: Math.round(st.mttr) + ' mnt', delta: st.mttr < 45 ? 'Sesuai target' : 'Perlu perhatian', dcls: st.mttr < 45 ? 'bg-secondary/15 text-secondary' : 'bg-amber-500/15 text-amber-300', foot: 'Target di bawah 45 menit, ' + st.done.length + ' tiket selesai' })}
+        ${UI.kpi({ label: 'Kepatuhan SLA', icon: 'verified', value: UI.num(st.comp, 1) + '%', bar: st.comp, barcls: st.comp >= 95 ? 'bg-secondary' : 'bg-amber-400', foot: 'Target 95%, ' + breached + ' tiket selesai lewat SLA' })}
+        ${UI.kpi({ label: 'Eskalasi aktif', icon: 'warning', value: st.esc.length, delta: st.esc.length ? 'Segera atasi' : 'Aman', dcls: st.esc.length ? 'bg-rose-500/20 text-rose-300' : 'bg-secondary/15 text-secondary', foot: esc(st.esc.slice(0, 2).map((t) => t.title.split(' ').slice(0, 3).join(' ')).join('; ') || 'Tidak ada eskalasi') })}
+        ${UI.kpi({ label: 'Pengunjung saat ini', icon: 'groups', value: '34.820', delta: '+8,2%', foot: 'Data contoh, dibanding kemarin' })}
       </div>
-
-      <section class="card p-5 mb-5">
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="relative flex-1 min-w-[260px]">${icon('search', 'absolute left-3 top-2.5 text-outline text-[20px]')}<input id="q" class="inp !pl-10" placeholder="Cari ID tiket (#TCK-...), tenant, lokasi, atau SOP" value="${esc(F.q)}"></div>
-          <button class="btn-ghost" id="exp">${icon('table_view', 'text-[16px]')} Ekspor log (.csv)</button>
-          <button class="btn-ghost" id="radio">${icon('settings_input_antenna', 'text-[16px]')} Panggil tim lewat radio</button>
-          <button class="btn" id="new">${icon('add_circle')} Buat tiket insiden</button>
-        </div>
-        <div class="flex flex-wrap items-center gap-2 mt-4"><span class="lbl mr-1">Zona:</span>
-          ${[{ id: 'ALL', short: 'Semua' }].concat(zones).map((z) => `<button class="chip-btn ${F.zone === z.id ? 'on' : ''}" data-zone="${z.id}">${z.short} (${zc(z.id)})</button>`).join('')}</div>
-        <div class="flex flex-wrap items-center gap-2 mt-3"><span class="lbl mr-1">Filter:</span>
-          ${[['ALL', 'Semua prioritas'], ['P1', 'P1 Kritis'], ['P2', 'P2 Tinggi'], ['P3', 'P3 Sedang'], ['P4', 'P4 Rendah'], ['BREACH', 'SLA berisiko / terlewati']].map(([k, l]) => `<button class="chip-btn ${F.prio === k ? 'on' : ''}" data-prio="${k}">${k.startsWith('P') ? `<span class="w-1.5 h-1.5 rounded-md ${UI.PRIO[k].dot}"></span>` : ''}${l}</button>`).join('')}
-          <span class="mx-2 h-5 w-px bg-white/10"></span>
-          ${[['ACTIVE', 'Aktif'], ['DONE', 'Selesai/ditutup'], ['ALL', 'Semua']].map(([k, l]) => `<button class="chip-btn ${F.scope === k ? 'on' : ''}" data-scope="${k}">${l}</button>`).join('')}
-        </div>
-      </section>
 
       <div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
         <div class="2xl:col-span-8 flex flex-col gap-5">
           <section class="card p-5">
-            ${UI.h(`Antrean tiket lapangan & mitigasi`, `${L.length} tiket sesuai filter, ${F.sort === 'NEW' ? 'terbaru di atas' : 'diurutkan menurut prioritas dan sisa SLA'}`, `<span class="flex flex-wrap gap-1.5">${[['NEW', 'Terbaru'], ['PRIO', 'Prioritas']].map(([k, l]) => `<button class="chip-btn ${F.sort === k ? 'on' : ''}" data-sort="${k}">${l}</button>`).join('')}${liveBtn()}</span>`, 'list_alt')}
-            <div class="overflow-x-auto"><table class="tbl"><thead><tr><th>ID & prioritas</th><th>Insiden & deskripsi</th><th>Lokasi / tenant</th><th>Sisa waktu SLA</th></tr></thead>
+            ${UI.h(`Antrean tiket lapangan & mitigasi`, `${L.length} tiket sesuai filter, ${F.sort === 'NEW' ? 'terbaru di atas' : 'diurutkan menurut prioritas dan sisa SLA'}`, `<span class="flex flex-wrap gap-2">${liveBtn()}<button class="btn" id="new">${icon('add_circle')} Buat tiket</button></span>`, 'list_alt')}
+            <div class="tk-bar" role="search">
+              <label class="tk-q">${icon('search', 'text-[20px]')}<span class="sr-only">Cari tiket</span><input id="q" class="inp" type="search" placeholder="Cari ID, tenant, lokasi, atau SOP" value="${esc(F.q)}"></label>
+              <select class="inp" id="f-zone" aria-label="Zona">${[{ id: 'ALL', short: 'Semua zona' }].concat(zones).map((z) => `<option value="${z.id}" ${F.zone === z.id ? 'selected' : ''}>${z.short} (${zc(z.id)})</option>`).join('')}</select>
+              <select class="inp" id="f-prio" aria-label="Prioritas">${[['ALL', 'Semua prioritas'], ['P1', 'P1 Kritis'], ['P2', 'P2 Tinggi'], ['P3', 'P3 Sedang'], ['P4', 'P4 Rendah'], ['BREACH', 'SLA berisiko / lewat']].map(([k, l]) => `<option value="${k}" ${F.prio === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+              <span class="tk-seg" role="group" aria-label="Status">${[['ACTIVE', 'Aktif'], ['DONE', 'Selesai'], ['ALL', 'Semua']].map(([k, l]) => `<button type="button" class="${F.scope === k ? 'on' : ''}" data-scope="${k}" aria-pressed="${F.scope === k}">${l}</button>`).join('')}</span>
+              <span class="tk-seg" role="group" aria-label="Urutan">${[['PRIO', 'Prioritas & SLA'], ['NEW', 'Terbaru']].map(([k, l]) => `<button type="button" class="${F.sort === k ? 'on' : ''}" data-sort="${k}" aria-pressed="${F.sort === k}">${l}</button>`).join('')}</span>
+            </div>
+            <div class="overflow-x-auto"><table class="tbl tk-table"><thead><tr><th>ID & prioritas</th><th>Insiden & deskripsi</th><th>Lokasi / tenant</th><th>Sisa waktu SLA</th></tr></thead>
             <tbody>${L.slice((F.page - 1) * PER, F.page * PER).map(row).join('') || `<tr><td colspan="4" class="text-center text-on-surface-variant py-10">Tidak ada tiket sesuai filter.</td></tr>`}</tbody></table></div>
             <div class="flex items-center justify-between mt-3"><span class="font-label-sm text-label-sm text-outline">Menampilkan ${Math.min(L.length, PER)} dari ${L.length} tiket</span>
               <div class="flex gap-1">${Array.from({ length: pages }, (_, i) => `<button class="chip-btn ${F.page === i + 1 ? 'on' : ''}" data-page="${i + 1}">${i + 1}</button>`).join('')}</div></div>
           </section>
+          <div class="flex flex-wrap gap-2"><button class="btn-ghost" id="exp">${icon('table_view', 'text-[16px]')} Ekspor log (.csv)</button><button class="btn-ghost" id="radio">${icon('settings_input_antenna', 'text-[16px]')} Panggil tim lewat radio</button></div>
           ${feed()}
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <section class="card p-5">${UI.h('Performa penyelesaian SLA', 'Tiket selesai hari ini per prioritas', `<span class="font-label-md text-label-md text-secondary">${st.comp.toFixed(1)}% patuh</span>`)}
@@ -174,8 +167,8 @@
     mount(root) {
       const q = root.querySelector('#q');
       q.addEventListener('input', () => { F.q = q.value; F.page = 1; const pos = q.selectionStart; Shell.rerender(); setTimeout(() => { const n = document.getElementById('q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }, 80); });
-      root.querySelectorAll('[data-zone]').forEach((b) => b.addEventListener('click', () => { F.zone = b.dataset.zone; F.page = 1; Shell.rerender(); }));
-      root.querySelectorAll('[data-prio]').forEach((b) => b.addEventListener('click', () => { F.prio = b.dataset.prio; F.page = 1; Shell.rerender(); }));
+      root.querySelector('#f-zone').addEventListener('change', (e) => { F.zone = e.target.value; F.page = 1; Shell.rerender(); });
+      root.querySelector('#f-prio').addEventListener('change', (e) => { F.prio = e.target.value; F.page = 1; Shell.rerender(); });
       root.querySelectorAll('[data-scope]').forEach((b) => b.addEventListener('click', () => { F.scope = b.dataset.scope; F.page = 1; Shell.rerender(); }));
       root.querySelectorAll('[data-sort]').forEach((b) => b.addEventListener('click', () => { F.sort = b.dataset.sort; F.page = 1; Shell.rerender(); }));
       const lt = root.querySelector('#live-tg'); if (lt) lt.addEventListener('click', () => { Live.toggle(); UI.toast(Live.on() ? 'Demo berjalan lagi' : 'Demo dijeda', 'P4'); });

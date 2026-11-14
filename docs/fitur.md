@@ -57,19 +57,19 @@ Tampilan mobile-first untuk membeli tiket.
 
 ## 2. Konsol pengelola acara (`/pengelola`)
 
-Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Setelah satu acara dipilih:
+Pemilih acara di sidebar, di atas menu Dasbor (di layar sempit ada di laci menu). **Semua acara** berisi Dasbor, Daftar acara, Transaksi, Check-in & gate, Keuangan, dan Laporan PDF semua acara. Setelah satu acara dipilih:
 
 - **Bilah Informasi terbaru** menempel di bawah header di semua menu: status (Semua normal / N perlu perhatian /
-  N peringatan), peringatan merah disematkan sampai ditangani, teks berjalan (berhenti saat disorot), dan
-  **Lihat semua** untuk daftar lengkap yang bisa diklik (transaksi, gate, unduh manifest). Isinya mengikuti pemilih acara.
+  N peringatan) bergaya bilah alarm parkir: semua kejadian dalam teks berjalan (peringatan dulu, sekitar 40 px/detik, berhenti saat disorot, bisa diklik), dan tombol
+  **Lihat semua**; oranye = peringatan, kuning = perlu perhatian, hijau = semua normal. **Lihat semua** untuk daftar lengkap yang bisa diklik (transaksi, gate, unduh manifest). Isinya mengikuti pemilih acara.
 - **Riwayat 12 bulan** (seolah sudah berjalan setahun): setiap acara punya satu edisi sebelumnya dalam 12 bulan terakhir
   lengkap dengan pesanan, e-ticket, check-in, refund, kendaraan, laporan gate, dan riwayat persetujuan. Tampil di Dasbor
   (angka utama, tiket per bulan, acara terlaris), Daftar acara (saringan **Arsip 12 bulan** + rincian & unduh peserta),
   Transaksi (rentang Acara aktif / 30 hari / 3 bulan / 12 bulan), Check-in & gate (kehadiran per bulan), Keuangan
   (pendapatan per bulan, arsip per edisi, CSV) dan Laporan PDF semua acara. Arsip hanya baca.
-- **Cadangan manifest** di Dasbor: status per acara 48 jam ke depan (Siap / Belum diunduh / Data lama / Tersimpan),
-  tombol Offline/Excel/CSV, dan **Semua acara (ZIP)**. Menu **Manifest** juga ada di sebelah tombol Laporan PDF (header
-  acara), dan **Manifest (ZIP)** di header Semua acara.
+- **Hari ini & besok** di Dasbor: acara 48 jam ke depan dengan terjual/kapasitas dan status cadangan manifest
+  (Siap / Belum diunduh / Data lama / Tersimpan), tombol Offline/Excel/CSV. Di kartu acara, Laporan PDF dan manifest ada
+  di satu menu **Unduh**; untuk semua acara, menu **Unduh** di atas halaman lintas acara (Laporan PDF, Manifest ZIP).
 
 
 | Menu | Fitur |
@@ -84,7 +84,12 @@ Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi
 | Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
 | Kirim broadcast | Kirim pengingat ke semua pemesan, riwayat pesan email & WhatsApp, kabari daftar tunggu |
 
-Header: **pemilih acara** (dropdown cari) dan **+ Acara baru** (panel: nama, area dengan ketersediaan, mulai, selesai, format tiket). Akun **Tenant/EO** hanya melihat acara organisasinya, tanpa refund, reset, dan alat demo; chip identitas di header.
+Pemilih acara (sidebar): dropdown cari, baris **+ Acara baru** di bawahnya. Header: judul halaman, cari (Ctrl+K), tombol **Acara baru**
+(selalu ada; panel: nama, area dengan ketersediaan, mulai, selesai, format tiket), dan menu profil. Aksi status acara (Ajukan
+persetujuan / Menunggu persetujuan / Publikasikan / Tutup penjualan / Buka lagi penjualan) ada di kartu acara, di sebelah tombol
+**Unduh**. Di ponsel tombol Acara baru pindah ke baris pertama konten. Menu profil berisi peran aktif
+(Tim Event Mall atau Tenant/EO + organisasi), mode terang/gelap, Edit profil, Ubah peran, Keluar. Akun **Tenant/EO** hanya melihat
+acara organisasinya, tanpa refund, reset, dan alat demo.
 
 Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (termasuk alat demo dan reset data event), kartu KPI yang bisa diklik untuk rincian, **Laporan PDF** per acara, profil di kanan atas, peringatan bila data contoh sudah kedaluwarsa.
 
@@ -124,15 +129,29 @@ Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (terma
 
 ## 4. Command Center (`/command-center`)
 
-Sembilan dashboard dan dua alat SOP/simulasi.
+Sembilan dashboard dan dua alat SOP/simulasi; halaman pertama Tiket & Insiden. Di bawah 1024 px sidebar menjadi laci (tombol
+menu di header); di ponsel ada bilah bawah Tiket, Fasilitas, CCTV, Parkir, Lainnya. Tombol merah **Kirim Broadcast** di header
+mengirim siaran ke tenant & personel.
+
+Insiden P1/P2 aktif tampil di **bilah insiden** di bawah header semua menu, bergaya sama dengan bilah alarm parkir: insiden P1/P2 dalam
+teks berjalan (prioritas lalu sisa SLA, dengan hitung mundur), tombol Lihat semua yang membuka daftar semua insiden P1/P2 (klik baris untuk membuka tiket); merah penuh dengan pita bahaya
+bila P1, oranye bila hanya P2.
 
 **Operasional**
-- **Tiket & Insiden**: distribusi masalah per domain, SLA tenant, kesiapan tim reaksi cepat,
+- **Tiket & Insiden**: kartu KPI (tiket aktif, MTTR, kepatuhan SLA, eskalasi, pengunjung), toolbar satu baris (cari, zona,
+  prioritas, status, urutan), urut **prioritas lalu sisa SLA** secara bawaan; distribusi masalah per domain, SLA tenant, kesiapan tim reaksi cepat,
   ekspor log tiket (CSV).
-  **Demo berjalan** (`live.js`): tiap 7 sampai 15 detik ada tiket baru (masuk di urutan teratas), tiket lama
-  bergerak sampai ditutup atau tertahan dengan catatan lapangan, dan pesan tenant. Feed **Aktivitas terbaru**,
-  urutan Terbaru/Prioritas, tombol **Langsung/Dijeda**. Berhenti sendiri saat operator mengetik, ada modal, atau
-  simulasi use case berjalan.
+  **Demo berjalan** (`live.js`): tiap **2 detik** ada perubahan, hanya selama halaman Tiket & Insiden, Fasilitas & BMS,
+  Layanan Tenant & SLA, CCTV & Keamanan, atau Energi & Utilitas dibuka (halaman lain diam). Tiket: tiket baru (50 skenario berbeda, dibagikan
+  bergiliran seperti kartu sehingga tidak berulang sebelum semua keluar) masuk di urutan teratas, tiket lama bergerak sampai ditutup atau tertahan dengan catatan lapangan. Tenant: pesan tenant & tiket tenant bergerak.
+  BMS: suhu supply/return, aliran, beban, kW/TR chiller & AHU bergeser, catatan otomasi. CCTV: latensi, kamera aktif, arus orang,
+  peringatan kamera AI datang dan pergi. Energi: beban grid, efisiensi chiller, air, CO2 (`Store.s.tele`). Setiap kejadian
+  memunculkan **notifikasi** (masalah baru, diakui, tim dikirim, tim tiba, masalah selesai, ditutup, pesan tenant, kamera AI),
+  paling sering satu tiap 3 detik: masalah baru diutamakan, selain itu kejadian terbaru. Feed **Aktivitas terbaru**,
+  urutan Prioritas & SLA/Terbaru, tombol **Langsung/Dijeda**. Berhenti sendiri saat operator mengetik, ada modal, atau
+  simulasi use case berjalan. Saat halaman dibuka lagi setelah lama ditinggal, tiket yang lewat SLA lebih
+  dari 25 menit dianggap sudah ditangani: sebagian ditutup (kebanyakan dalam SLA, sebagian terlambat), paling banyak dua tetap
+  terbuka sedikit lewat SLA, sisanya masih berjalan dalam SLA.
 - **Fasilitas & BMS**: chiller plant, gardu trafo, lift & eskalator, log diagnostik, aksi cepat,
   unduh laporan BMS (CSV).
 - **Layanan Tenant & SLA**: permintaan tenant, izin kerja/fit-out, kepatuhan regulasi, siaran.
@@ -146,9 +165,12 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   **Simulasi parkir penuh** (langsung semua zona mobil): okupansi naik bertahap; peringatan di 90%, di 100% muncul banner merah, tiket P2
   SOP-PRK-06 untuk Tim Parkir dan saran zona pengalihan. "Akhiri simulasi" mengembalikan data sensor.
   Alarm terasa nyata: tahap Waspada (85%) / Kritis (95%) / Penuh (100%) dengan **detak ganda lub-dub** yang makin cepat
-  (40 → 56 → 72 per menit) dan perkiraan "penuh dalam mm:ss"; saat penuh **latar seluruh halaman Command Center berdenyut
-  merah** (lub-dub), **bilah alarm merah di semua menu**, badge "!" berdenyut di menu Parkir, **suara alarm** (aktif bawaan,
-  bisa dibisukan), dan **log ANPR langsung**. **Akui alarm** mematikan suara, latar jadi merah tipis diam, dan operator & waktu
+  (40 → 56 → 72 per menit) dan perkiraan "penuh dalam mm:ss" (sekitar 3 detik sampai penuh); saat penuh muncul **layar alarm
+  penuh** (menutup sendiri setelah 5 detik dengan hitung mundur, lalu tetap sebagai bilah alarm; latar gelap-merah berdetak, sirene dengan lampu berputar, pita garis bahaya bergerak, tombol Akui / Arahkan /
+  Buka parkir / Kecilkan, Esc untuk mengecilkan), **latar seluruh halaman berdenyut merah**, **bilah alarm merah pekat di
+  semua menu** menggantikan bilah protokol insiden, badge "!" berdenyut di menu Parkir, **suara alarm** (klakson naik 3 kali
+  sekitar 1 detik, diulang terus sampai diakui/dibisukan/pulih; dua bunyi peringatan saat kritis; aktif bawaan, bisa dibisukan), dan **log ANPR
+  langsung**. **Akui alarm** mematikan suara, latar jadi merah tipis diam, dan operator & waktu
   respons tercatat di tiket; **Arahkan** mengalihkan ke Parkir Barat (bila tidak dipakai acara) atau overflow, okupansi
   berangsur turun; di bawah 95% "Kembali normal".
 - **Pemantauan Event** (hanya baca): pemilih acara (cari, dikelompokkan per status), portofolio semua acara dengan
@@ -164,7 +186,7 @@ Sembilan dashboard dan dua alat SOP/simulasi.
 - **Persetujuan Acara**: kotak masuk pengajuan acara untuk akun **Divisi Event** dan **Operasional Mall**
   (badge = menunggu keputusan akun ini), detail berisi cek area & jadwal, alur, dokumen, tombol Setujui atau
   Minta revisi hanya pada giliran divisi itu, dan log aktivitas. Operator hanya melihat.
-- **Analisis Sentimen**: ulasan publik (sekarang Google Maps; X, TikTok, Instagram "Segera"), komposisi
+- **Analisis Sentimen**: ulasan publik (Google Maps, X, TikTok, Instagram, semua berlabel Aktif; data X/TikTok/Instagram masih data contoh, lihat catatan metode), komposisi
   positif/netral/negatif, keluhan per topik, tren per bulan, keluhan saat event besar, rekomendasi
   pengembangan untuk mall dan event (masing-masing dengan dasar angkanya), dan kutipan tanpa nama.
   Data statis `app/js/command-center/sentimen-data.js` dari `analisis.py --export-js`.

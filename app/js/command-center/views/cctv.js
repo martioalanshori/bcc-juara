@@ -25,13 +25,14 @@
       const alerts = Object.entries(Store.s.camAlerts).sort((a, b) => b[1].ts - a[1].ts);
       const zones = [['ALL', 'Semua zona (1.420)'], ['GF', 'Atrium Cibadag & Lobby (312)'], ['LG', 'LG & Retail (184)'], ['2F', 'Family & Kids (96)'], ['3F', 'Food Court & Hiburan (142)'], ['BASEMENT', 'Basement & Loading (420)']];
       const secTk = Store.activeTickets().filter((t) => t.category.startsWith('Keamanan'));
+      const T = Store.s.tele;
       return `
       <section class="card pagebar">
         <div class="pagebar-info">
           <span class="stat live"><span class="dot"></span>Jaringan pengawasan online</span>
           <span class="stat">Cluster NVR <b>v8.4.1 (active-sync)</b></span>
-          <span class="stat">Latensi stream <b class="!text-secondary">18ms</b></span>
-          <span class="stat">${icon('videocam', 'text-[16px]')} <b>1.420 / 1.428</b> kamera aktif (99.4%)</span>
+          <span class="stat">Latensi stream <b>${T.lat} ms</b></span>
+          <span class="stat">${icon('videocam', 'text-[16px]')} <b>${UI.num(T.camOn)} / 1.428</b> kamera aktif (${UI.num((T.camOn / 1428) * 100, 1)}%)</span>
         </div>
         <div class="pagebar-actions"><button class="btn-ghost" id="patrol">${icon('local_police', 'text-[16px]')} Patroli keamanan (14 personel)</button><button class="btn-danger" id="lock">${icon('lock', 'text-[16px]')} Lockdown otomatis</button></div>
       </section>
@@ -42,7 +43,7 @@
         <div class="2xl:col-span-8 flex flex-col gap-4">
           <div class="grid ${F.grid === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'} gap-4">
             <div class="${F.grid === 1 ? '' : 'lg:col-span-2 lg:row-span-2'}">${tile(focus, true)}
-              <div class="flex flex-wrap items-center gap-2 mt-2 font-label-md text-label-md"><span class="text-on-surface-variant">Laju aliran pengunjung <b class="text-secondary">+142 orang/menit</b></span><span class="text-on-surface-variant">Sensor suhu ruang 22.4°C</span>
+              <div class="flex flex-wrap items-center gap-2 mt-2 font-label-md text-label-md"><span class="text-on-surface-variant">Laju aliran pengunjung <b>+${T.flow} orang/menit</b></span><span class="text-on-surface-variant">Sensor suhu ruang 22.4°C</span>
                 <span class="ml-auto flex gap-1"><button class="btn-ghost !px-2" data-snap>${icon('photo_camera', 'text-[16px]')}</button><button class="btn-ghost !px-2" data-talk>${icon('mic', 'text-[16px]')}</button><button class="btn-danger !py-1.5" data-mk="${focus.id}">${icon('add_alert', 'text-[16px]')} Buat tiket dari kamera</button></span></div></div>
             ${others.slice(0, F.grid === 4 ? 2 : 2).map((c) => tile(c)).join('')}
           </div>

@@ -20,6 +20,14 @@
   window.SMAuth = { me, logout, switchTo };
   // Tombol "Lanjut sebagai …" (data-switch-email + data-switch-next) di halaman mana pun.
   document.addEventListener('click', (ev) => { const b = ev.target.closest('[data-switch-email]'); if (!b) return; ev.preventDefault(); b.disabled = true; switchTo(b.dataset.switchEmail, b.dataset.switchNext || ''); });
+  // Ubah peran ke Pengunjung: langsung masuk dengan akun demo pengunjung (sesi pengunjung hanya di localStorage,
+  // kunci & data sama dengan DEMO[0] di event/visitor.js). Sesi pengunjung yang sudah ada tidak ditimpa.
+  const VISITOR_KEY = 'smicc-visitor';
+  const VISITOR_DEMO = { email: 'pengunjung@example.com', name: 'Rizky Pratama', cc: 'ID', phone: '812 0000 1001' };
+  document.addEventListener('click', (ev) => {
+    if (!ev.target.closest('[data-visitor-demo]')) return;
+    try { if (!localStorage.getItem(VISITOR_KEY)) localStorage.setItem(VISITOR_KEY, JSON.stringify(VISITOR_DEMO)); } catch (e) { /* tanpa storage: tetap buka sebagai tamu */ }
+  });
   // Menu profil: bagian "Ubah peran" pada elemen [data-demo-switch] (Pengelola, Command Center, Pengunjung).
   // Empat peran utama, peran yang sedang dipakai ditandai "Aktif". Akun demo lain (Divisi Event, Operasional Mall,
   // Petugas gate) di bawah "Akun lain". Mode demo: pindah akun satu klik (/api/auth/demo). Bukan mode demo atau tanpa
@@ -42,7 +50,7 @@
   function roleItem(role, label, sub, icon, home, cur, accs) {
     const inner = '<span class="material-symbols-outlined text-[20px]">' + escH(icon) + '</span><span class="pg-sw-t"><b>' + escH(label) + '</b><small>' + escH(sub) + '</small></span>';
     if (role === cur) return '<div class="pg-sw-it is-cur" aria-current="true">' + inner + '<em>Aktif</em></div>';
-    if (role === 'pengunjung') return '<a class="pg-sw-it" href="' + escH(home) + '">' + inner + '</a>';
+    if (role === 'pengunjung') return '<a class="pg-sw-it" href="' + escH(home) + '" data-visitor-demo>' + inner + '</a>';
     const acc = accs.find((x) => x.role === role);
     if (acc) return '<button type="button" class="pg-sw-it" data-switch-email="' + escH(acc.email) + '" data-switch-next="' + escH(acc.home || home) + '">' + inner + '</button>';
     return '<a class="pg-sw-it" href="/masuk?role=' + encodeURIComponent(role) + '&amp;next=' + encodeURIComponent(home) + '">' + inner + '</a>';

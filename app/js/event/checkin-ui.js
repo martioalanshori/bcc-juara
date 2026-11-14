@@ -121,6 +121,9 @@
   const DL_KEY = 'smicc-manifest-dl', BK_KEY = 'smicc-manifest-v1', BK_HOUR = 23, BK_V = 2, FRESH_MS = 30000, HOUR = 3600000;
   const COLS = ['Hadir', 'Booking', 'ID Tiket', 'Pemegang', 'Pemesan', 'Kategori', 'Kursi', 'Kendaraan', 'Plat', 'WhatsApp', 'Email', 'Status', 'Check-in', 'Gate'];
   const WIDTHS = [7, 11, 12, 24, 24, 16, 8, 11, 12, 18, 26, 14, 16, 18];
+  // Untuk file Excel/CSV: acara tanpa peserta diberi satu baris keterangan agar file tidak tampak kosong atau rusak.
+  const EMPTY_ROW = ['', '', '', 'Belum ada peserta untuk acara ini.', '', '', '', '', '', '', '', '', '', ''];
+  const outRows = (rows) => (rows.length > 1 ? rows : rows.concat([EMPTY_ROW]));
   const ymd = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
   const backup = {
     cutoff(t) { const d = new Date(t); d.setHours(BK_HOUR, 0, 0, 0); if (d.getTime() > t) d.setDate(d.getDate() - 1); return d.getTime(); },
@@ -159,8 +162,8 @@
     near() { const t = E.now(); return (E.s ? E.s.order : []).map((id) => E.ev(id)).filter((e) => e && e.status !== 'DRAFT' && e.status !== 'CANCELLED' && e.start < t + 48 * HOUR && (e.end || e.start + 3 * HOUR) + 2 * HOUR > t).map((e) => e.id); },
     autoSave() { if (E.s && !E.offline) backup.near().forEach((id) => backup.ensure(id)); },
     fname(m, ext) { return 'manifest_' + m.ev + '_' + ymd(m.savedAt) + '.' + ext; },
-    download(evId) { const m = backup.latest(evId); if (m) { E.csv(backup.fname(m, 'csv'), m.rows); backup.markDl([evId]); } return m; },
-    xlsx(evId) { const m = backup.latest(evId); if (m) { E.xlsx(backup.fname(m, 'xlsx'), m.rows, { sheet: 'Manifest ' + m.ev, widths: WIDTHS }); backup.markDl([evId]); } return m; },
+    download(evId) { const m = backup.latest(evId); if (m) { E.csv(backup.fname(m, 'csv'), outRows(m.rows)); backup.markDl([evId]); } return m; },
+    xlsx(evId) { const m = backup.latest(evId); if (m) { E.xlsx(backup.fname(m, 'xlsx'), outRows(m.rows), { sheet: 'Manifest ' + m.ev, widths: WIDTHS }); backup.markDl([evId]); } return m; },
     offline(evId) { const m = backup.latest(evId); if (m) { E.download(backup.fname(m, 'html'), backup.offlineHtml(m), 'text/html;charset=utf-8'); backup.markDl([evId]); } return m; },
     // Kapan manifest acara terakhir diunduh di perangkat ini (localStorage), untuk status di Dasbor & bilah Informasi terbaru.
     dlAll() { try { return JSON.parse(localStorage.getItem(DL_KEY) || '{}') || {}; } catch (e) { return {}; } },
@@ -181,19 +184,22 @@
     allFiles() {
       const t = E.now(), evs = (E.s ? E.s.order : []).map((id) => E.ev(id)).filter((e) => e && e.status !== 'DRAFT' && e.status !== 'CANCELLED').sort((a, b) => a.start - b.start);
       const idx = [['ID', 'Acara', 'Mulai', 'Lokasi', 'Tiket aktif', 'Sudah check-in', 'Folder']], files = [];
+      const everyone = [['ID acara', 'Acara', 'Mulai'].concat(COLS)]; // SEMUA_PESERTA.xlsx: peserta semua acara dalam satu file
       evs.forEach((e) => {
         const rows = backup.rows(e.id), m = { v: BK_V, ev: e.id, name: e.name, start: e.start, at: t, savedAt: t, rows }, dir = e.id + '/';
         const act = rows.slice(1).filter((r) => r[11] === 'Aktif');
         idx.push([e.id, e.name, E.fmtDT(e.start), String(e.venue || '').split('·')[0].trim(), act.length, act.filter((r) => r[0] === 'Sudah').length, dir]);
-        files.push([dir + backup.fname(m, 'xlsx'), E.xlsxBytes(rows, { sheet: 'Manifest ' + e.id, widths: WIDTHS })], [dir + backup.fname(m, 'csv'), E.csvText(rows)], [dir + 'manifest_offline_' + e.id + '.html', backup.offlineHtml(m)]);
+        rows.slice(1).forEach((r) => everyone.push([e.id, e.name, E.fmtDT(e.start)].concat(r)));
+        files.push([dir + backup.fname(m, 'xlsx'), E.xlsxBytes(outRows(rows), { sheet: 'Manifest ' + e.id, widths: WIDTHS })], [dir + backup.fname(m, 'csv'), E.csvText(outRows(rows))], [dir + 'manifest_offline_' + e.id + '.html', backup.offlineHtml(m)]);
       });
       const readme = ['Cadangan manifest peserta Summarecon Mall Bandung (SOP-EVT-05)', 'Data per ' + E.fmtDT(t) + ', ' + evs.length + ' acara.', '',
-        'Isi:', '- DAFTAR_ACARA.xlsx: semua acara, jumlah tiket aktif dan yang sudah check-in, nama foldernya.',
+        'Isi:', '- SEMUA_PESERTA.xlsx: daftar peserta semua acara dalam satu file (kolom ID acara & Acara bisa disaring).',
+        '- DAFTAR_ACARA.xlsx: semua acara, jumlah tiket aktif dan yang sudah check-in, nama foldernya.',
         '- <ID acara>/manifest_offline_<ID>.html: buka di browser tanpa server atau internet. Cari nama, booking, plat, atau kursi, lalu centang hadir.',
         '- <ID acara>/manifest_<ID>_<tanggal>.xlsx: daftar peserta untuk dicetak atau dicentang manual (kolom Hadir).',
         '- <ID acara>/manifest_<ID>_<tanggal>.csv: data yang sama dalam CSV.', '',
         'Tiket berstatus "Batal, tolak" tidak boleh masuk. Setelah server pulih, unduh hasil centang dari manifest offline dan cocokkan ke sistem.'].join(String.fromCharCode(13, 10));
-      return [['BACA_SAYA.txt', readme], ['DAFTAR_ACARA.xlsx', E.xlsxBytes(idx, { sheet: 'Daftar acara', widths: [10, 44, 18, 26, 12, 15, 10] })]].concat(files);
+      return [['BACA_SAYA.txt', readme], ['SEMUA_PESERTA.xlsx', E.xlsxBytes(outRows(everyone), { sheet: 'Semua peserta', widths: [10, 32, 18].concat(WIDTHS) })], ['DAFTAR_ACARA.xlsx', E.xlsxBytes(idx, { sheet: 'Daftar acara', widths: [10, 44, 18, 26, 12, 15, 10] })]].concat(files);
     },
     zip() { const f = backup.allFiles(); E.download('manifest_semua_acara_' + ymd(E.now()) + '.zip', E.zipBytes(f), 'application/zip'); backup.markDl([...new Set(f.map(([n]) => n.split('/')[0]).filter((x) => /^EVT-/.test(x)))]); },
     // Manifest offline: satu file HTML tanpa server & internet. Cari nama/booking/plat/kursi, centang hadir (tersimpan di

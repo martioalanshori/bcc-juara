@@ -7,53 +7,48 @@
   <title>Summarecon Mall · Integrated Command Center Ticketing System</title>
   <!-- Semua aset lokal (tanpa internet): font di vendor/fonts, Tailwind hasil build statis.
        Tema "Papan Petunjuk": token di css/tokens.css, build di tools/tailwind/tailwind.config.js -->
-  <script src="/app/js/core/theme.js?v=80"></script>
-  <script src="/app/js/core/router.js?v=80"></script>
+  <script src="/app/js/core/theme.js?v=105"></script>
+  <script src="/app/js/core/router.js?v=105"></script>
   <link rel="stylesheet" href="/app/vendor/fonts/fonts.css?v=5" />
-  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=80" />
-  <link rel="stylesheet" href="/app/css/app.css?v=80" />
+  <link rel="stylesheet" href="/app/vendor/tailwind.css?v=105" />
+  <link rel="stylesheet" href="/app/css/app.css?v=105" />
 </head>
 <body class="bg-surface font-body-md text-body-md text-on-surface antialiased">
-  <!-- SIDEBAR -->
-  <aside id="sidebar" class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/90 backdrop-blur-xl z-50 flex flex-col justify-between py-5 border-r border-white/5">
-    <div class="flex flex-col gap-6 min-h-0">
-      <div class="px-5 flex items-center justify-between">
-        <a href="/command-center/ticketing" class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center"><span class="material-symbols-outlined text-primary text-[20px]">hub</span></div>
-          <div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight">Command Center</span><span class="font-label-sm text-label-sm text-secondary">Summarecon Mall Bandung</span></div>
+  <a href="#view" class="pg-skip">Lewati ke konten</a>
+  <!-- SIDEBAR: tetap di layar lebar, menjadi laci (drawer) di bawah 1024 px (AUDIT C1) -->
+  <aside id="sidebar" class="cc-side" aria-label="Navigasi Command Center">
+    <div class="flex flex-col gap-5 min-h-0">
+      <div class="px-5 flex items-center justify-between gap-2">
+        <a href="/command-center/ticketing" class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-primary text-[20px]">hub</span></div>
+          <div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface leading-tight">Command Center</span><span class="font-label-sm text-label-sm text-on-surface-variant">Summarecon Mall Bandung</span></div>
         </a>
-        <div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+        <button type="button" class="cc-icon-btn cc-drawer-x" id="cc-close" aria-label="Tutup menu"><span class="material-symbols-outlined">close</span></button>
       </div>
       <nav id="nav" class="flex flex-col gap-1 px-3 overflow-y-auto"></nav>
     </div>
-    <div class="px-4 flex flex-col gap-3">
-      <div class="bg-surface-container rounded-xl p-3 flex flex-col gap-2">
-        <div class="flex items-center justify-between text-on-surface-variant"><span class="font-label-sm text-label-sm">Telemetri zona</span><span class="font-label-sm text-label-sm text-secondary" id="tele-status">Semua normal</span></div>
-        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">Latensi jaringan inti</span><span class="text-on-surface" id="tele-lat">14ms</span></div>
-        <div class="flex items-center justify-between font-label-md text-label-md"><span class="text-on-surface-variant">Node IoT aktif</span><span class="text-primary">1.842</span></div>
-      </div>
-      <div class="flex items-center justify-between px-2 text-on-surface-variant">
-        <span class="font-label-sm text-label-sm">Build 4.19.0-SMB</span>
-        <button id="btn-reset" class="font-label-sm text-label-sm text-outline hover:text-tertiary" title="Kembalikan data demo ke kondisi awal">Reset demo</button>
-      </div>
+    <div class="px-5 pt-3 flex items-center justify-between text-on-surface-variant">
+      <span class="font-label-sm text-label-sm">Build 4.19.0-SMB</span>
+      <button id="btn-reset" class="font-label-sm text-label-sm text-on-surface-variant hover:text-on-surface" title="Kembalikan data demo ke kondisi awal">Reset demo</button>
     </div>
   </aside>
+  <div class="cc-scrim scrim" id="cc-scrim" hidden></div>
 
-  <div class="pl-72">
-    <!-- HEADER -->
-    <header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 px-6 border-b border-outline-variant flex items-center justify-between gap-4">
-      <!-- kiri: halaman yang sedang dibuka + shift jaga (identitas mal sudah ada di sidebar) -->
-      <div class="flex items-center gap-4 min-w-0">
-        <div class="flex flex-col leading-tight shrink-0"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Command Center</span><h1 class="font-headline-sm text-headline-sm text-on-surface whitespace-nowrap" id="hdr-title">Memuat…</h1></div>
-        <div class="hidden 2xl:flex items-center gap-2 px-3 py-1 rounded-md bg-surface-container whitespace-nowrap" title="Shift jaga saat ini"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="font-label-sm text-label-sm text-on-surface-variant">Fasilitas &amp; Keamanan</span></div>
+  <div class="cc-main">
+    <!-- HEADER: judul halaman di kiri; satu aksi sekunder (siaran) + profil di kanan -->
+    <header class="cc-top">
+      <button type="button" class="cc-icon-btn cc-menu-btn" id="cc-menu" aria-label="Buka menu" aria-controls="sidebar" aria-expanded="false"><span class="material-symbols-outlined">menu</span></button>
+      <div class="flex items-center gap-4 min-w-0 flex-1">
+        <div class="flex flex-col leading-tight min-w-0"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap cc-top-kick">Command Center</span><h1 class="font-headline-sm text-headline-sm text-on-surface truncate" id="hdr-title">Memuat…</h1></div>
+        <div class="cc-shift-chip" title="Shift jaga saat ini"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span class="font-label-sm text-label-sm text-on-surface" id="shift">Shift A</span><span class="font-label-sm text-label-sm text-on-surface-variant">Fasilitas &amp; Keamanan</span></div>
       </div>
-      <div class="flex items-center gap-4">
-        <div class="hidden xl:flex items-center gap-5 cc-hstats">
-          <a href="/command-center/ticketing" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Tiket aktif</span><span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-label-md text-label-md" id="hdr-active">0</span></a>
-          <a href="/command-center/owner360" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Okupansi mal</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-primary font-label-md text-label-md">94.2%</span></a>
-          <a href="/command-center/bms" class="flex items-center gap-2"><span class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">Kesehatan sistem</span><span class="px-2 py-0.5 rounded bg-surface-container-high text-secondary font-label-md text-label-md" id="hdr-health">99.8%</span></a>
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="cc-hstats">
+          <a href="/command-center/ticketing"><span>Tiket aktif</span><b id="hdr-active">0</b></a>
+          <a href="/command-center/owner360"><span>Okupansi mal</span><b>94,2%</b></a>
+          <a href="/command-center/bms"><span>Kesehatan sistem</span><b id="hdr-health">99,8%</b></a>
         </div>
-        <button id="btn-broadcast" class="btn-danger whitespace-nowrap"><span class="material-symbols-outlined text-[18px]">campaign</span>Kirim siaran</button>
+        <button id="btn-broadcast" class="btn-danger cc-bc-btn whitespace-nowrap" title="Kirim broadcast ke tenant &amp; personel"><span class="material-symbols-outlined text-[18px]">campaign</span><span class="cc-bc-t">Kirim Broadcast</span></button>
         <span class="id-chip" id="cc-id-chip" hidden></span>
         <button type="button" class="theme-btn" data-theme-toggle aria-label="Ganti mode tampilan"><span class="material-symbols-outlined">dark_mode</span></button>
         <!-- profil operator: satu tombol, Keluar ada di dalam menu -->
@@ -69,45 +64,46 @@
       </div>
     </header>
 
-    <main class="pt-20 px-6 pb-10 min-h-screen">
+    <main class="cc-content" id="cc-content">
+      <div id="ticker" class="cc-ticker"></div>
       <div id="park-alarm" class="cc-park-alarm"></div>
-      <div id="ticker" class="mb-5"></div>
-      <div id="view"></div>
+      <div id="view" tabindex="-1"></div>
     </main>
   </div>
+  <nav class="cc-bnav" id="cc-bnav" aria-label="Navigasi cepat"></nav>
 
   <div id="sim-root"></div>
   <div id="modal-root"></div>
   <div id="toast-root" class="fixed bottom-6 right-6 z-[90] flex flex-col gap-2 items-end"></div>
 
-  <script src="/app/vendor/qrcode.js?v=80"></script>
-  <script src="/app/vendor/jsQR.js?v=80"></script>
-  <script src="/app/js/command-center/sop-data.js?v=80"></script>
-  <script src="/app/js/command-center/data.js?v=80"></script>
-  <script src="/app/js/command-center/store.js?v=80"></script>
-  <script src="/app/js/core/ui.js?v=80"></script>
-  <script src="/app/js/core/pdf.js?v=80"></script>
-  <script src="/app/js/command-center/views/ticketing.js?v=80"></script>
-  <script src="/app/js/command-center/views/bms.js?v=80"></script>
-  <script src="/app/js/command-center/views/tenant.js?v=80"></script>
-  <script src="/app/js/command-center/views/cctv.js?v=80"></script>
-  <script src="/app/js/command-center/views/energy.js?v=80"></script>
-  <script src="/app/js/command-center/views/analytics.js?v=80"></script>
-  <script src="/app/js/command-center/views/parking.js?v=80"></script>
-  <script src="/app/js/command-center/views/owner360.js?v=80"></script>
-  <script src="/app/js/command-center/sentimen-data.js?v=80"></script>
-  <script src="/app/js/command-center/views/sentimen.js?v=80"></script>
-  <script src="/app/js/event/engine.js?v=80"></script>
-  <script src="/app/js/event/approval-ui.js?v=80"></script>
-  <script src="/app/js/event/checkin-ui.js?v=80"></script>
-  <script src="/app/js/event/admin.js?v=80"></script>
-  <script src="/app/js/event/cc-bridge.js?v=80"></script>
-  <script src="/app/js/command-center/views/approval.js?v=80"></script>
-  <script src="/app/js/command-center/views/sop.js?v=80"></script>
-  <script src="/app/js/command-center/views/usecase.js?v=80"></script>
-  <script src="/app/js/command-center/sim.js?v=80"></script>
-  <script src="/app/js/core/auth.js?v=80"></script>
-  <script src="/app/js/command-center/live.js?v=80"></script>
-  <script src="/app/js/command-center/app.js?v=80"></script>
+  <script src="/app/vendor/qrcode.js?v=105"></script>
+  <script src="/app/vendor/jsQR.js?v=105"></script>
+  <script src="/app/js/command-center/sop-data.js?v=105"></script>
+  <script src="/app/js/command-center/data.js?v=105"></script>
+  <script src="/app/js/command-center/store.js?v=105"></script>
+  <script src="/app/js/core/ui.js?v=105"></script>
+  <script src="/app/js/core/pdf.js?v=105"></script>
+  <script src="/app/js/command-center/views/ticketing.js?v=105"></script>
+  <script src="/app/js/command-center/views/bms.js?v=105"></script>
+  <script src="/app/js/command-center/views/tenant.js?v=105"></script>
+  <script src="/app/js/command-center/views/cctv.js?v=105"></script>
+  <script src="/app/js/command-center/views/energy.js?v=105"></script>
+  <script src="/app/js/command-center/views/analytics.js?v=105"></script>
+  <script src="/app/js/command-center/views/parking.js?v=105"></script>
+  <script src="/app/js/command-center/views/owner360.js?v=105"></script>
+  <script src="/app/js/command-center/sentimen-data.js?v=105"></script>
+  <script src="/app/js/command-center/views/sentimen.js?v=105"></script>
+  <script src="/app/js/event/engine.js?v=105"></script>
+  <script src="/app/js/event/approval-ui.js?v=105"></script>
+  <script src="/app/js/event/checkin-ui.js?v=105"></script>
+  <script src="/app/js/event/admin.js?v=105"></script>
+  <script src="/app/js/event/cc-bridge.js?v=105"></script>
+  <script src="/app/js/command-center/views/approval.js?v=105"></script>
+  <script src="/app/js/command-center/views/sop.js?v=105"></script>
+  <script src="/app/js/command-center/views/usecase.js?v=105"></script>
+  <script src="/app/js/command-center/sim.js?v=105"></script>
+  <script src="/app/js/core/auth.js?v=105"></script>
+  <script src="/app/js/command-center/live.js?v=105"></script>
+  <script src="/app/js/command-center/app.js?v=105"></script>
 </body>
 </html>

@@ -31,20 +31,37 @@
     return { route: window.Views[route] ? route : 'ticketing', params };
   }
 
+  // Badge menu: semua angka merah agar konsisten (permintaan tim); parkir penuh tetap "!" berdenyut.
+  function counts() {
+    const act = Store.activeTickets(), p1 = (xs) => xs.some((t) => t.priority === 'P1');
+    const devBad = Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length;
+    const cams = Object.values(Store.s.camAlerts), ten = act.filter((t) => t.tenant);
+    const park = window.ParkAlarm ? ParkAlarm.count() : 0;
+    return {
+      TIC: [act.length, p1(act)], CCTV: [cams.length, cams.some((c) => c.sev === 'P1')], BMS: [devBad, true],
+      TEN: [ten.length, p1(ten)], APR: [window.CCApproval ? CCApproval.count() : 0, false], PARK: [park, true],
+    };
+  }
+  const badge = (code, c) => (!code || !c[code] || !c[code][0] ? '' : code === 'PARK' ? '<span class="cnt cnt-alarm">!</span>' : `<span class="cnt crit">${c[code][0]}</span>`);
   function renderNav() {
-    const act = Store.activeTickets();
-    const cnt = { TIC: act.length, CCTV: Object.keys(Store.s.camAlerts).length, BMS: Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length, TEN: act.filter((t) => t.tenant).length, APR: window.CCApproval ? CCApproval.count() : 0, PARK: window.ParkAlarm ? ParkAlarm.count() : 0 };
-    document.getElementById('nav').innerHTML = NAV.map((g) => `<div class="lbl px-3 mt-2 mb-0.5">${g.group}</div>` + g.items.map(([r, n, ic, code]) =>
-      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}">${icon(ic, 'text-[20px]')}<span>${n}</span>${code && cnt[code] ? `<span class="cnt${code === 'PARK' ? ' cnt-alarm' : ''}">${code === 'PARK' ? '!' : cnt[code]}</span>` : ''}</a>`).join('')).join('');
+    const c = counts();
+    document.getElementById('nav').innerHTML = NAV.map((g) => `<div class="lbl px-3 mt-3 mb-1">${g.group}</div>` + g.items.map(([r, n, ic, code]) =>
+      `<a class="nav-item ${current.route === r ? 'active' : ''}" href="/command-center/${r}"${current.route === r ? ' aria-current="page"' : ''}>${icon(ic, 'text-[20px]')}<span>${n}</span>${badge(code, c)}</a>`).join('')).join('');
+    // Bilah navigasi bawah di ponsel: Tiket, Fasilitas, CCTV, Parkir + Lainnya (membuka laci).
+    const bn = document.getElementById('cc-bnav');
+    if (bn) {
+      const B = [['ticketing', 'Tiket', 'confirmation_number', 'TIC'], ['bms', 'Fasilitas', 'hvac', 'BMS'], ['cctv', 'CCTV', 'videocam', 'CCTV'], ['parking', 'Parkir', 'local_parking', 'PARK']];
+      const html = B.map(([r, n, ic, code]) => `<a href="/command-center/${r}" class="cc-bn ${current.route === r ? 'on' : ''}"${current.route === r ? ' aria-current="page"' : ''}><span class="cc-bn-ic">${icon(ic, 'text-[22px]')}${badge(code, c)}</span><span>${n}</span></a>`).join('')
+        + `<button type="button" class="cc-bn ${B.some((x) => x[0] === current.route) ? '' : 'on'}" data-cc-drawer>${icon('menu', 'text-[22px]')}<span>Lainnya</span></button>`;
+      if (bn.dataset.html !== html) { bn.innerHTML = html; bn.dataset.html = html; }
+    }
   }
 
   function renderHeader() {
     const act = Store.activeTickets();
     document.getElementById('hdr-active').textContent = act.length;
     const bad = Object.values(Store.s.devices).filter((d) => ['TRIP', 'FAULT', 'LEAK'].includes(d.status)).length;
-    document.getElementById('hdr-health').textContent = (99.9 - bad * 0.4).toFixed(1) + '%';
-    document.getElementById('tele-status').textContent = bad ? bad + ' alarm aset' : 'Semua normal';
-    document.getElementById('tele-status').className = 'font-label-sm text-label-sm ' + (bad ? 'text-tertiary' : 'text-secondary');
+    document.getElementById('hdr-health').textContent = UI.num(99.9 - bad * 0.4, 1) + '%';
     const h = new Date().getHours();
     const shift = h >= 7 && h < 15 ? 'Shift A (07-15)' : h >= 15 && h < 23 ? 'Shift B (15-23)' : 'Shift C (23-07)';
     document.getElementById('shift').textContent = shift;
@@ -52,21 +69,28 @@
     // ticker
     const crit = act.filter((t) => t.priority === 'P1' || t.priority === 'P2').sort((a, b) => a.priority.localeCompare(b.priority) || b.createdAt - a.createdAt);
     const top = crit[0];
-    const tickerHtml = top ? `<div class="flex items-stretch rounded-xl overflow-hidden border ${top.priority === 'P1' ? 'border-rose-500/50 bg-rose-950/40' : 'border-orange-500/30 bg-orange-950/20'}">
-      <a href="/command-center/ticketing?id=${top.id}" class="flex items-center gap-2 px-4 py-2 ${top.priority === 'P1' ? 'bg-rose-600/30' : 'bg-orange-500/15'} shrink-0"><span class="w-2 h-2 rounded-md ${top.priority === 'P1' ? 'bg-rose-500 pulse-ring' : 'bg-orange-400'}"></span><span class="font-label-sm text-label-sm ${top.priority === 'P1' ? 'text-rose-200' : 'text-orange-200'}">Protokol insiden prioritas ${top.priority.slice(1)}</span></a>
-      <div class="ticker-wrap flex-1 py-2"><div class="ticker-move font-body-sm text-body-sm text-on-surface">${crit.slice(0, 6).map((t) => `<b class="${t.priority === 'P1' ? 'text-rose-300' : 'text-orange-300'}">${t.priority} ${t.id}:</b> ${esc(t.title)}, ${esc(t.location)} (${Store.STATUS_LABEL[t.status]}, SOP ${t.sop})`).join('<span class="mx-6 text-outline">◆</span>')}</div></div>
-      <a href="/command-center/sop?id=${top.sop}" class="flex items-center px-3 font-label-sm text-label-sm text-on-surface-variant hover:text-primary shrink-0">SOP ${top.sop}</a></div>` : '';
+    // Bilah insiden P1/P2 bergaya alarm parkir (.pk-alarm): P1 merah penuh dengan pita bahaya, hanya P2 oranye.
+    // Isinya insiden paling mendesak (prioritas lalu sisa SLA) dengan hitung mundur, plus satu tombol Lihat semua.
+    const hot = crit.slice().sort((a, b) => a.priority.localeCompare(b.priority) || Store.slaInfo(a).remain - Store.slaInfo(b).remain)[0];
+    const p1 = hot && hot.priority === 'P1';
+    const tickerHtml = hot ? `<div class="pk-alarm ${p1 ? 'full' : 'crit'}" role="${p1 ? 'alert' : 'status'}">${p1 ? '<i class="pk-hazard" aria-hidden="true"></i>' : ''}<span class="pk-ic hb-${p1 ? 'full' : 'crit'}">${icon(p1 ? 'emergency' : 'warning', 'text-[20px]')}</span><b>${p1 ? 'INSIDEN KRITIS' : 'INSIDEN PRIORITAS TINGGI'}</b>
+      <span class="pk-txt ticker-wrap"><span class="ticker-move">${crit.slice().sort((a, b) => a.priority.localeCompare(b.priority) || Store.slaInfo(a).remain - Store.slaInfo(b).remain).slice(0, 8).map((t) => `<a class="pk-tk-it" href="/command-center/ticketing?id=${t.id}">${t.priority} ${t.id} · <b>${esc(t.title)}</b>, ${esc(t.location)} · <b data-due="${Store.slaInfo(t).due}"></b></a>`).join('<span class="nb-sep" aria-hidden="true">•</span>')}</span></span>
+      <div class="pg-dd nb-dd"><button type="button" class="pk-btn" id="cc-alert-all" aria-haspopup="true" aria-expanded="false">${icon('list', 'text-[16px]')} Lihat semua (${crit.length})</button></div></div>` : '';
     // Tulis ulang hanya bila isinya berubah, supaya animasi geser tidak mulai lagi dari awal.
     // Alarm parkir penuh (views/parking.js): tampil di semua menu, ditulis ulang hanya bila isinya berubah.
     const pa = document.getElementById('park-alarm');
     if (window.ParkAlarm) { const lv = ParkAlarm.level(); document.body.classList.toggle('pk-page-full', lv === 'full'); document.body.classList.toggle('pk-page-ack', lv === 'ack'); }
     if (pa && window.ParkAlarm) { const ph = ParkAlarm.bar(); if (pa.dataset.html !== ph) { pa.innerHTML = ph; pa.dataset.html = ph; ParkAlarm.tick(); } }
-    const tk = document.getElementById('ticker');
-    if (tk.dataset.html !== tickerHtml) { tk.innerHTML = tickerHtml; tk.dataset.html = tickerHtml; }
+    // Parkir penuh lebih mendesak: selama alarm aktif, bilah protokol insiden disembunyikan dan digantikan bilah alarm parkir.
+    const tk = document.getElementById('ticker'), parkFull = !!(window.ParkAlarm && ParkAlarm.level());
+    const tkHtml = parkFull ? '' : tickerHtml;
+    tk.classList.toggle('hidden', parkFull);
+    if (tk.dataset.html !== tkHtml && !tk.querySelector('.pg-dd-panel')) { tk.innerHTML = tkHtml; tk.dataset.html = tkHtml; tick(); UI.marquee(tk); } // jangan gambar ulang saat daftar terbuka
   }
 
   function route() {
     current = parse();
+    drawer(false);
     const V = window.Views[current.route];
     const view = document.getElementById('view');
     view.innerHTML = V.render(current.params);
@@ -164,17 +188,51 @@
     f.addEventListener('submit', (e) => { e.preventDefault(); Store.broadcast(f.text.value, f.zone.value === 'ALL' ? '' : f.zone.value); UI.closeModal(); UI.toast('Siaran dikirim ke ' + (f.zone.value === 'ALL' ? 'semua zona' : 'zona ' + f.zone.value), 'P2'); });
   }
 
+  // "Lihat semua" di bilah insiden: daftar semua insiden P1/P2 aktif (prioritas lalu sisa SLA) di bawah tombol.
+  function alertList(btn) {
+    const wrap = btn.parentElement, old = wrap.querySelector('.pg-dd-panel');
+    const close = () => { const el = wrap.querySelector('.pg-dd-panel'); if (el) el.remove(); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey, true); const tk = document.getElementById('ticker'); if (tk) tk.dataset.html = ''; renderHeader(); };
+    const onDoc = (e) => { if (!wrap.contains(e.target)) close(); };
+    const onKey = (e) => { if (e.key === 'Escape') { e.preventDefault(); close(); btn.focus(); } };
+    if (old) return close();
+    const L = Store.activeTickets().filter((t) => t.priority === 'P1' || t.priority === 'P2').sort((a, b) => a.priority.localeCompare(b.priority) || Store.slaInfo(a).remain - Store.slaInfo(b).remain);
+    const el = document.createElement('div'); el.className = 'pg-dd-panel cc-alert-panel';
+    el.innerHTML = `<div class="nb-list">${L.map((t) => `<a class="nb-row ${t.priority === 'P1' ? 'bad' : 'warn'}" href="/command-center/ticketing?id=${t.id}">${icon(t.priority === 'P1' ? 'emergency' : 'warning', 'text-[20px]')}<span class="min-w-0 flex-1"><b>${t.priority} <code>${t.id}</code> ${esc(t.title)}</b><small>${esc(t.location)} · ${esc(Store.STATUS_LABEL[t.status])} · ${esc(t.team || 'belum ada tim')}</small></span><time data-due="${Store.slaInfo(t).due}"></time></a>`).join('') || '<p class="font-body-sm text-body-sm text-on-surface-variant p-3">Tidak ada insiden P1/P2 aktif.</p>'}</div>
+      <a class="cc-alert-foot" href="/command-center/ticketing">${icon('confirmation_number', 'text-[18px]')} Buka Tiket & Insiden</a>`;
+    wrap.appendChild(el); btn.setAttribute('aria-expanded', 'true'); tick();
+    el.addEventListener('click', (e) => { if (e.target.closest('a')) close(); });
+    setTimeout(() => document.addEventListener('mousedown', onDoc)); document.addEventListener('keydown', onKey, true);
+    const first = el.querySelector('a'); if (first) first.focus();
+  }
+  document.addEventListener('click', (e) => { const b = e.target.closest('#cc-alert-all'); if (b) alertList(b); });
+
   window.Shell = { newTicket, broadcast, rerender, tick, get current() { return current; } };
 
   document.getElementById('btn-broadcast').addEventListener('click', () => broadcast());
   document.getElementById('btn-reset').addEventListener('click', () => { if (confirm('Reset seluruh data demo ke kondisi awal?')) { Store.reset(); UI.toast('Data demo direset', 'P4'); } });
   Router.on(() => { route(); window.scrollTo(0, 0); });
   Store.subscribe(() => rerender());
-  setInterval(() => {
-    tick();
-    const l = 12 + Math.round(Math.random() * 5);
-    document.getElementById('tele-lat').textContent = l + 'ms';
-  }, 1000);
+  setInterval(tick, 1000);
+
+  // Laci navigasi di bawah 1024 px (AUDIT C1): tombol menu di header & "Lainnya" di bilah bawah membukanya.
+  const side = document.getElementById('sidebar'), scrim = document.getElementById('cc-scrim'), menuBtn = document.getElementById('cc-menu');
+  const narrow = () => window.matchMedia('(max-width: 1023px)').matches;
+  function drawer(open) {
+    if (!side) return;
+    const was = document.body.classList.contains('cc-open');
+    document.body.classList.toggle('cc-open', !!open);
+    if (scrim) scrim.hidden = !open;
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', String(!!open));
+    side.inert = narrow() && !open;
+    if (open) { const a = side.querySelector('.nav-item.active') || side.querySelector('a, button'); if (a) a.focus(); }
+    else if (was && menuBtn && narrow()) menuBtn.focus();
+  }
+  if (menuBtn) menuBtn.addEventListener('click', () => drawer(true));
+  document.getElementById('cc-close').addEventListener('click', () => drawer(false));
+  if (scrim) scrim.addEventListener('click', () => drawer(false));
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-cc-drawer]')) drawer(true); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('cc-open')) drawer(false); });
+  window.addEventListener('resize', () => { if (!narrow()) drawer(false); else if (!document.body.classList.contains('cc-open')) side.inert = true; });
   route();
 
   // Menu profil operator di header: buka/tutup, tutup saat klik di luar atau Esc. Keluar ditangani core/auth.js.

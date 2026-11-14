@@ -68,3 +68,22 @@ test('live: berhenti saat dijeda, saat simulasi use case berjalan, dan saat oper
   w.document.activeElement = { tagName: 'INPUT' };
   assert.equal(w.Live.step().kind, 'jeda');
 });
+
+test('live: hanya berjalan di halaman Tiket, Fasilitas & BMS, Tenant, CCTV, dan Energi', () => {
+  const w = load();
+  w.Shell = { current: { route: 'analytics' } };
+  assert.equal(w.Live.step().kind, 'jeda', 'halaman lain tidak berubah sendiri');
+  w.Shell.current.route = 'bms';
+  assert.equal(w.Live.step().kind, 'telemetri');
+  w.Shell.current.route = 'tenant';
+  assert.ok(['chat', 'maju', 'catat'].includes(w.Live.step().kind));
+});
+
+test('live: 50 skenario tiket berbeda, tidak berulang sebelum semua keluar', () => {
+  const w = load(5);
+  const all = w.Live.scenarios();
+  assert.ok(all.length >= 50 && new Set(all).size === all.length, 'skenario unik: ' + new Set(all).size);
+  const titles = [];
+  for (let i = 0; i < 400 && titles.length < 30; i++) { const r = w.Live.step(); if (r.kind === 'baru') titles.push(r.t.title); }
+  assert.equal(new Set(titles).size, titles.length, '30 tiket baru pertama tidak ada yang sama');
+});

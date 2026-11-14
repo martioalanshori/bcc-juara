@@ -53,7 +53,7 @@ UI changes still have to be checked by running `node server.js` and opening the 
 - `app/js/core/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=80`; `fonts.css`
+- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=105`; `fonts.css`
   has its own, `?v=5`). Assets are cached **1 year, immutable** (`assetCache` in `server/app.js`
   and the `/app/` header in `vercel.json`), so **bump it on every page (`app/pages/*.html`) whenever
   you change JS or CSS**, or browsers keep the old file. `npm run dev` (`--dev`) disables caching, so
@@ -92,13 +92,15 @@ data/                runtime secrets & state (gitignored)
 | `/masuk` | `app/pages/masuk.html` | staff login (email + password, demo account cards) |
 
 `event/admin.js` is shared. The Command Center mounts it read-only ("Event 360 Monitoring", tab bar), and
-the organizer console mounts it with full admin rights: sidebar (`sideHtml()`: one event picker whose default is "Semua acara" with cross-event menus `GTABS`
+the organizer console mounts it with full admin rights: sidebar (`sideHtml()`: one event picker at the top of the sidebar, above the menus, whose default is "Semua acara" with cross-event menus `GTABS`
 (`/pengelola/dasbor`, `/acara`, `/transaksi`, `/kehadiran`, `/keuangan`, plus an all-events PDF `reportAllPdf()`),
 and the 7 event menus `ETABS` once an event is picked; collapsible, drawer under 1024px, bottom bar under 768px). The console uses only
 Inter and one palette (primary blue tints, neutral, signal yellow, error red; `tc()`/`recolor()` map ticket-category
-colours to it) and neutral number colours (`.pg-body` overrides in `app.css`; section/KPI icon boxes hidden there), clean URLs (`fromUrl()`/`evUrl()`), a sticky event header with the status action, and a
+colours to it) and neutral number colours (`.pg-body` overrides in `app.css`; section/KPI icon boxes hidden there), clean URLs (`fromUrl()`/`evUrl()`), a header whose primary button is always "Acara baru" (`primaryHtml()`; under 768px it moves into `.pg-mhead` at the top of
+the content), an event card with the "Unduh" menu (`dlMenu()`: PDF report + backup manifest) and next to it the event's status
+action (`statusHtml()`: "Ajukan persetujuan" / "Publikasikan" / "Tutup penjualan" / "Buka lagi penjualan"), and a
 "Perlu tindakan" block whose items also feed the sidebar badges (`attention(e)`). Risky actions use `UI.confirm()`
-(`core/ui.js`, a themed promise dialog), never `confirm()`/`prompt()`. Demo tools (race, stress, 2-gate, reset) are commands in the Ctrl+K palette. The profile menu (top right:
+(`core/ui.js`, a themed promise dialog), never `confirm()`/`prompt()`. Demo tools (race, stress, 2-gate, reset) are commands in the Ctrl+K palette. The profile menu (top right: active role, light/dark mode,
 "Edit profil" saved per account in localStorage `smicc-pengelola-profil:<email>`, "Ubah peran", "Keluar") replaces the old account block.
 "Ubah peran" (`renderSwitch()` in `core/auth.js`, filled into `[data-demo-switch]`) is shared by the avatar menus of
 `/pengunjung`, `/pengelola` and `/command-center`: Pengunjung, Pengelola, Tenant, Command Center (current one marked
@@ -170,7 +172,12 @@ are intercepted automatically, so write in-app links as absolute paths with the 
 `#/...` URLs are converted on load. Asset tags use absolute `/app/...` paths so deep links work.
 
 **Command Center shell** (`app/js/command-center/app.js` → `window.Shell`): routes `/command-center/<route>?k=v` over
-`window.Views[route]`. Each `app/js/command-center/views/*.js` is an IIFE that registers
+`window.Views[route]`; the default route is `ticketing`. The shell is responsive (AUDIT_UI_UX C1):
+sidebar `.cc-side` is a drawer under 1024px (`drawer()` in `app.js`), bottom bar `#cc-bnav` under 768px. Nav badges (CC and
+pengelola sidebars, bottom bars) are always red for consistency; KPI numbers are neutral.
+`Tiket & Insiden` uses KPI cards like the other pages, a one-row `.tk-bar` toolbar and sorts by priority then SLA by
+default. `live.js` runs the demo every 2 s, only while one of `LIVE_ROUTES` (ticketing, bms, tenant, cctv, energy) is open, with a
+per-page step (moving numbers live in `Store.s.tele`); its `tidy()` catches up stale tickets on load (CC state is per browser, so open tickets otherwise age for hours). Each `app/js/command-center/views/*.js` is an IIFE that registers
 `window.Views.<name>`. The sidebar menu is the `NAV` array in `app.js`. `ui.js` (`window.UI`:
 `esc`, `icon`, badges, SVG charts, modals, toasts, relation panel) is shared by all views. `sim.js`
 runs use-case simulations step by step against `Store`.
