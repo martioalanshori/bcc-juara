@@ -18,7 +18,7 @@
   const GLOBAL_TABS = ['acara', 'portofolio']; // tab lintas acara (tanpa pemilih acara)
   const GTABS = GTABS_, ETABS = TABS.pengelola.slice(GTABS_.length); // menu lintas acara & menu per acara
   const isG = (tab) => GTABS.some((x) => x[0] === tab);
-  const ui = { ev: 'EVT-01', tab: null, seatMode: 'info', seatSel: null, q: '', st: 'ALL', gate: null, ch: 'ALL', aq: '', ast: 'ALL', gq: '', gst: 'ALL' };
+  const ui = { ev: 'EVT-01', tab: null, seatMode: 'info', seatSel: null, q: '', st: 'ALL', gate: null, ch: 'ALL', aq: '', ast: 'ALL', gq: '', gst: 'ALL', vf: 'ALL' };
   let unsub = null, host = null;
   const EV_ST = { DRAFT: ['Draft', 'bg-slate-500/20 text-slate-300'], PUBLISHED: ['Dipublikasikan', 'bg-emerald-500/15 text-emerald-300'], CLOSED: ['Penjualan ditutup', 'bg-amber-500/15 text-amber-300'], CANCELLED: ['Dibatalkan', 'bg-rose-500/15 text-rose-300'] };
   const evChip = (e) => UI.chip(EV_ST[e.status][0], EV_ST[e.status][1]);
@@ -436,8 +436,8 @@
     if (gq) gq.addEventListener('input', () => { ui.gq = gq.value; regt(); });
     el.querySelectorAll('[data-gst]').forEach((b) => b.addEventListener('click', () => { ui.gst = b.dataset.gst; el.querySelectorAll('[data-gst]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); regt(); }));
     const csv = el.querySelector('#g-csv'); if (csv) csv.addEventListener('click', () => {
-      const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Jumlah Tiket', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar']];
-      Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))).forEach((o) => rows.push([o.id, Evt.ev(o.ev).name, o.name, o.email, o.phone, o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
+      const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Jumlah Tiket', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar']];
+      Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev))).forEach((o) => rows.push([o.id, Evt.ev(o.ev).name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
       Evt.csv('transaksi_semua_acara.csv', rows);
     });
     const cf = el.querySelector('#g-csv-fin'); if (cf) cf.addEventListener('click', () => {
@@ -733,6 +733,11 @@
   const evName = (x) => `<a href="${href(x.id, 'ringkasan')}" class="pg-mlink">${esc(x.name)}</a>`;
   // Angka utama + konteks, lalu maksimal 3 angka pendukung.
   const qiHead = (big, sub, tiles) => `<div class="qi-head"><b>${big}</b><span>${sub}</span></div>${tiles && tiles.length ? `<div class="qi-tiles">${tiles.map(([l, v, tone]) => `<div class="${tone || ''}"><span>${l}</span><b>${v}</b></div>`).join('')}</div>` : ''}`;
+  // Kendaraan pemesan (o.veh): tanpa kunci = pesanan lama sebelum fitur ini, null = tidak bawa kendaraan.
+  const vehName = (o) => (!('veh' in o) ? '-' : o.veh ? Evt.VEH[o.veh.t] : 'Tidak bawa');
+  const vehPlate = (o) => (o.veh ? o.veh.p : '');
+  const vehCell = (o) => (!('veh' in o) ? '<span class="text-on-surface-variant">-</span>' : o.veh ? `<span class="whitespace-nowrap">${icon(o.veh.t === 'motor' ? 'two_wheeler' : 'directions_car', 'text-[16px] align-middle')} <b>${esc(o.veh.p)}</b></span>` : '<span class="text-on-surface-variant">Tidak bawa</span>');
+  const vehOk = (o) => ui.vf === 'ALL' || (ui.vf === 'none' ? !o.veh : !!o.veh && o.veh.t === ui.vf);
   const qiNote = (txt, tone) => `<p class="qi-note ${tone || ''}">${icon(tone === 'warn' ? 'warning' : tone === 'good' ? 'trending_up' : tone === 'bad' ? 'error' : 'schedule', 'text-[18px]')}<span>${txt}</span></p>`;
   const paidIn = (orders, from) => orders.filter((o) => o.paidAt >= from);
   const qtyOf = (orders) => orders.reduce((a, o) => a + o.items.length, 0);
@@ -830,6 +835,15 @@
         + (soon.length ? qiNote(soon.length + ' pesanan habis dalam 5 menit.', 'warn') : '')
         + mh('Menunggu bayar') + (pend.length ? `<ul class="pg-mlist">${pend.slice(0, 8).map((o) => `<li><button type="button" class="pg-mrow" data-order="${o.id}"><b>${o.id}</b><span>${esc(o.name)}, ${o.items.length} tiket, ${rp(o.total)}</span></button><small class="whitespace-nowrap ${o.until - t < 5 * 60000 ? 'qi-warn' : ''}">${dur(o.until - t)} lagi</small></li>`).join('')}</ul>` : '<p class="pg-mempty">Tidak ada pesanan yang menunggu bayar.</p>');
       links = [['peserta', 'Lihat semua pesanan', 'PENDING']];
+    } else if (e && key === 'ev:veh') {
+      const pd = Evt.parkDemand(e.id), pct = (x) => (x * 100).toFixed(0) + '%';
+      const list = Evt.stats(e.id).orders.filter((o) => o.veh && (o.status === 'PAID' || (o.status === 'PENDING' && o.until > t))).sort((a, b) => b.createdAt - a.createdAt);
+      title = 'Kendaraan & parkir';
+      html = qiHead(num(pd.mobil + pd.motor), 'kendaraan diperkirakan datang, puncak ' + Evt.fmtTime(pd.doors) + ' WIB', [['Mobil', num(pd.mobil)], ['Motor', num(pd.motor)], ['Sudah terdaftar', num(pd.declared.mobil + pd.declared.motor)]])
+        + qiNote(pd.basis === 'data' ? `Rasio dari ${num(pd.answered)} pesanan: ${pct(pd.ratio.mobil)} bawa mobil, ${pct(pd.ratio.motor)} bawa motor.` : `Baru ${num(pd.answered)} pesanan mengisi data kendaraan, jadi prediksi memakai asumsi ${pct(pd.ratio.mobil)} mobil dan ${pct(pd.ratio.motor)} motor per pesanan.`)
+        + (pd.usesParking ? qiNote('Acara memakai lahan Parkir Barat, kapasitas parkir mal berkurang selama acara.', 'warn') : '')
+        + mh('Kendaraan terdaftar') + (list.length ? `<ul class="pg-mlist">${list.slice(0, 10).map((o) => `<li><button type="button" class="pg-mrow" data-order="${o.id}"><b>${esc(o.veh.p)}</b><span>${esc(Evt.VEH[o.veh.t])}, ${esc(o.name)}, ${o.id}</span></button></li>`).join('')}</ul>` : '<p class="pg-mempty">Belum ada pemesan yang mendaftarkan kendaraan.</p>');
+      links = [['peserta', 'Lihat peserta']];
     } else if (e && key === 'fin:refund') {
       const list = Object.values(Evt.s.orders).filter((o) => o.ev === e.id && o.status === 'REFUNDED').sort((a, b) => (b.refundedAt || 0) - (a.refundedAt || 0));
       title = 'Refund';
@@ -861,7 +875,7 @@
     const evs = visEvs();
     evs.filter((x) => !words.length || hit(x.name + ' ' + x.id + ' ' + x.cat + ' ' + (x.org || '') + ' ' + place(x))).slice(0, words.length ? 8 : 5)
       .forEach((x) => out.push({ group: 'Acara', plate: plateOf(x), label: x.name, sub: x.id + ', ' + Evt.fmtShort(x.start) + ', ' + phaseTxt(x).toLowerCase(), run: () => goTab(isG(ui.tab) ? 'ringkasan' : ui.tab, x.id) }));
-    if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && hit([o.id, o.name, o.email].join(' '))).slice(0, 5)
+    if (q.trim().length >= 3) Object.values(Evt.s.orders).filter((o) => seen(Evt.ev(o.ev)) && hit([o.id, o.name, o.email, vehPlate(o)].join(' '))).slice(0, 5)
       .forEach((o) => out.push({ group: 'Pesanan', icon: 'receipt_long', label: o.id + ', ' + o.name, sub: Evt.ev(o.ev) ? Evt.ev(o.ev).name : o.ev, run: () => { goTab('peserta', o.ev); orderModal(o.id); } }));
     push('Perintah', { icon: 'add_circle', label: 'Buat acara baru', kw: 'tambah', run: newEventPanel });
     push('Perintah', { icon: 'picture_as_pdf', label: 'Unduh laporan PDF semua acara', kw: 'report cetak export', run: reportAllPdf });
@@ -958,12 +972,15 @@
     const perSlot = slots.map((s0) => ck.filter((x) => x.checkedInAt > s0 - 15 * 60000 && x.checkedInAt <= s0).length);
     const recent = s.orders.slice().sort((a, b) => b.createdAt - a.createdAt).slice(0, 6);
     const kAtt = UI.kpi({ key: K('ev:att'), label: 'Kehadiran', icon: 'how_to_reg', value: att.toFixed(0) + '%', unit: num(s.checkedIn) + '/' + num(s.tickets), bar: att, barcls: 'bg-secondary', foot: 'tiket sudah check-in' });
-    const kpis = isMgr() ? `<div id="evt-feed">${ticker(e.id)}</div>${attnBlock(e)}<div class="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
+    const pd = Evt.parkDemand(e.id);
+    const kVeh = UI.kpi({ key: K('ev:veh'), label: 'Kendaraan terdaftar', icon: 'directions_car', value: num(pd.declared.mobil + pd.declared.motor), unit: num(pd.declared.mobil) + ' mobil · ' + num(pd.declared.motor) + ' motor', foot: 'Prediksi ' + num(pd.mobil) + ' mobil, ' + num(pd.motor) + ' motor' });
+    const kpis = isMgr() ? `<div id="evt-feed">${ticker(e.id)}</div>${attnBlock(e)}<div class="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-5">
       ${isHariH(e) ? kAtt : ''}
       ${UI.kpi({ key: K('ev:sold'), label: 'Tiket terjual', icon: 'confirmation_number', value: num(s.sold), unit: '/ ' + num(cap), bar: cap ? (s.sold / cap) * 100 : 0, foot: (cap ? ((s.sold / cap) * 100).toFixed(1) : 0) + '% kapasitas jual' })}
       ${UI.kpi({ key: K('ev:rev'), label: 'Pendapatan', icon: 'payments', value: rpJt(s.revenue), unit: s.revenue >= 1e6 ? 'Jt' : '', foot: s.paid.length + ' transaksi lunas · ' + num(s.registrants) + ' pemesan unik' })}
       ${isHariH(e) ? '' : kAtt}
       ${UI.kpi({ key: K('ev:held'), label: 'Sedang dipesan', icon: 'lock_clock', value: num(s.held + s.pending), vcls: s.held + s.pending ? 'text-amber-300' : 'text-on-surface', foot: num(s.held) + ' di keranjang, ' + num(s.pending) + ' menunggu bayar' })}
+      ${kVeh}
     </div>` : '';
     return kpis + (isMgr() ? '' : `<div class="grid grid-cols-2 xl:grid-cols-6 gap-4 mb-5">
       ${UI.kpi({ label: 'Tiket terjual', icon: 'confirmation_number', value: num(s.sold), unit: '/ ' + num(cap), bar: cap ? (s.sold / cap) * 100 : 0, foot: (cap ? ((s.sold / cap) * 100).toFixed(1) : 0) + '% kapasitas jual' })}
@@ -1203,15 +1220,16 @@
   // ------------------------------------------------------------------ tab: peserta & transaksi
   function pesertaTable(e) {
     const q = ui.q.toLowerCase();
-    const list = Evt.stats(e.id).orders.filter((o) => { const st = o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status; return (ui.st === 'ALL' || st === ui.st) && (!q || [o.id, o.name, o.email, o.phone, ...o.items.map((i) => i.seat || '')].join(' ').toLowerCase().includes(q)); }).sort((a, b) => b.createdAt - a.createdAt);
-    return `<div class="font-label-md text-label-md text-on-surface-variant mb-2">${list.length} transaksi</div><div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Booking</th><th>Peserta</th><th>Tiket</th><th>Total</th><th>Metode</th><th>Status</th><th>Kehadiran</th><th>Dibuat</th></tr></thead><tbody>
-      ${list.slice(0, 120).map((o) => { const ck = o.tickets.filter((id) => Evt.s.tickets[id].checkedInAt).length; return `<tr class="row" data-order="${o.id}"><td class="font-label-lg text-label-lg">${o.id}</td><td><div class="font-body-sm text-body-sm">${esc(o.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.email)} · ${esc(o.phone)}</div></td><td class="font-label-md text-label-md">${o.items.map((i) => `<span class="inline-block mr-1"><span class="inline-block w-2 h-2 rounded-full" style="background:${tc(e, Evt.typeById(e, i.type))}"></span> ${i.seat || Evt.typeById(e, i.type).name}</span>`).join('')}</td><td class="font-label-md text-label-md whitespace-nowrap">${rp(o.total)}</td><td class="font-body-sm text-body-sm">${o.method || '-'}</td><td>${oChip(o)}</td><td class="font-label-md text-label-md">${o.tickets.length ? ck + '/' + o.tickets.length : '-'}</td><td class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">${Evt.fmtDT(o.createdAt)}</td></tr>`; }).join('')}
+    const list = Evt.stats(e.id).orders.filter((o) => { const st = o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status; return (ui.st === 'ALL' || st === ui.st) && vehOk(o) && (!q || [o.id, o.name, o.email, o.phone, vehPlate(o), ...o.items.map((i) => i.seat || '')].join(' ').toLowerCase().includes(q)); }).sort((a, b) => b.createdAt - a.createdAt);
+    return `<div class="font-label-md text-label-md text-on-surface-variant mb-2">${list.length} transaksi</div><div class="overflow-x-auto"><table class="tbl"><thead><tr><th>Booking</th><th>Peserta</th><th>Kendaraan</th><th>Tiket</th><th>Total</th><th>Metode</th><th>Status</th><th>Kehadiran</th><th>Dibuat</th></tr></thead><tbody>
+      ${list.slice(0, 120).map((o) => { const ck = o.tickets.filter((id) => Evt.s.tickets[id].checkedInAt).length; return `<tr class="row" data-order="${o.id}"><td class="font-label-lg text-label-lg">${o.id}</td><td><div class="font-body-sm text-body-sm">${esc(o.name)}</div><div class="font-label-sm text-label-sm text-on-surface-variant">${esc(o.email)} · ${esc(o.phone)}</div></td><td class="font-label-md text-label-md">${vehCell(o)}</td><td class="font-label-md text-label-md">${o.items.map((i) => `<span class="inline-block mr-1"><span class="inline-block w-2 h-2 rounded-full" style="background:${tc(e, Evt.typeById(e, i.type))}"></span> ${i.seat || Evt.typeById(e, i.type).name}</span>`).join('')}</td><td class="font-label-md text-label-md whitespace-nowrap">${rp(o.total)}</td><td class="font-body-sm text-body-sm">${o.method || '-'}</td><td>${oChip(o)}</td><td class="font-label-md text-label-md">${o.tickets.length ? ck + '/' + o.tickets.length : '-'}</td><td class="font-label-sm text-label-sm text-on-surface-variant whitespace-nowrap">${Evt.fmtDT(o.createdAt)}</td></tr>`; }).join('')}
       </tbody></table></div>${list.length > 120 ? '<div class="font-label-sm text-label-sm text-on-surface-variant mt-2">Menampilkan 120 transaksi terbaru. Gunakan pencarian atau ekspor CSV untuk data lengkap.</div>' : ''}`;
   }
   function peserta(e) {
     const sts = [['ALL', 'Semua'], ['PAID', 'Lunas'], ['PENDING', 'Menunggu bayar'], ['EXPIRED', 'Kedaluwarsa'], ['CANCELLED', 'Batal'], ['REFUNDED', 'Refund']];
     return `<section class="card p-5">${UI.h('Data peserta & status pembayaran', isMgr() ? 'Klik baris untuk mengubah data peserta, mengirim ulang e-ticket, atau refund' : 'Pemantauan transaksi, hanya baca (refund & perubahan data oleh pengelola acara)', `<div class="flex gap-2"><button class="btn-ghost" id="csv-p">${icon('download', 'text-[16px]')} Peserta (CSV)</button><button class="btn-ghost" id="csv-t">${icon('download', 'text-[16px]')} Transaksi (CSV)</button></div>`, 'groups')}
-      <div class="flex flex-wrap gap-2 items-center mb-4"><input class="inp !w-80" id="q" placeholder="Cari booking, nama, email, HP, kursi…" value="${esc(ui.q)}">${sts.map(([k, l]) => `<button class="chip-btn ${ui.st === k ? 'on' : ''}" data-st="${k}">${l}</button>`).join('')}</div>
+      <div class="flex flex-wrap gap-2 items-center mb-4"><input class="inp !w-80" id="q" placeholder="Cari booking, nama, email, HP, kursi, plat…" value="${esc(ui.q)}">${sts.map(([k, l]) => `<button class="chip-btn ${ui.st === k ? 'on' : ''}" data-st="${k}">${l}</button>`).join('')}</div>
+      <div class="flex flex-wrap gap-2 items-center mb-4"><span class="font-label-md text-label-md text-on-surface-variant">Kendaraan</span>${[['ALL', 'Semua'], ['mobil', 'Mobil'], ['motor', 'Motor'], ['none', 'Tanpa kendaraan']].map(([k, l]) => `<button class="chip-btn ${ui.vf === k ? 'on' : ''}" data-vf="${k}" aria-pressed="${ui.vf === k}">${l}</button>`).join('')}</div>
       <div id="evt-table">${pesertaTable(e)}</div></section>`;
   }
 
@@ -1292,14 +1310,17 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div class="flex flex-col gap-3"><div class="flex items-center gap-2">${oChip(o)}<span class="font-label-md text-label-md text-on-surface-variant">${o.method || ''}</span></div>
           ${isMgr() ? `<form id="f-contact" class="flex flex-col gap-3"><label class="f">Nama pemesan<input class="inp" name="name" value="${esc(o.name)}"></label><label class="f">Email<input class="inp" name="email" value="${esc(o.email)}"></label><label class="f">WhatsApp<input class="inp" name="phone" value="${esc(o.phone)}"></label>
+            <div class="grid grid-cols-2 gap-3"><label class="f">Kendaraan<select class="inp" name="vt">${!('veh' in o) ? '<option value="?" selected>Belum diisi</option>' : ''}${[['', 'Tidak bawa'], ['mobil', 'Mobil'], ['motor', 'Motor']].map(([k, l]) => `<option value="${k}" ${'veh' in o && (o.veh ? o.veh.t : '') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label><label class="f">Plat nomor<input class="inp uppercase" name="vp" value="${esc(vehPlate(o))}" placeholder="D 1234 ABC"></label></div>
             ${o.tickets.map((tid, i) => `<label class="f">Pemegang tiket ${i + 1} (${Evt.s.tickets[tid].seat || 'berdiri'})<input class="inp" name="h${i}" value="${esc(Evt.s.tickets[tid].holder)}"></label>`).join('')}
-            <button class="btn-ghost self-start">${icon('save', 'text-[16px]')} Simpan perubahan data</button></form>` : `<div class="inner p-3 flex flex-col gap-1 font-body-sm text-body-sm"><b>${esc(o.name)}</b><span class="text-on-surface-variant">${esc(o.email)} · ${esc(o.phone)}</span>${o.tickets.map((tid) => `<span>${esc(Evt.s.tickets[tid].seat || 'Berdiri')} · ${esc(Evt.s.tickets[tid].holder)}</span>`).join('')}</div><p class="font-label-sm text-label-sm text-on-surface-variant">${icon('visibility', 'text-[14px] align-middle')} Mode pemantauan Command Center. Perubahan data, refund, dan pembatalan dilakukan di Konsol Pengelola.</p>`}</div>
+            <button class="btn-ghost self-start">${icon('save', 'text-[16px]')} Simpan perubahan data</button></form>` : `<div class="inner p-3 flex flex-col gap-1 font-body-sm text-body-sm"><b>${esc(o.name)}</b><span class="text-on-surface-variant">${esc(o.email)} · ${esc(o.phone)}</span><span>Kendaraan: ${vehCell(o)}</span>${o.tickets.map((tid) => `<span>${esc(Evt.s.tickets[tid].seat || 'Berdiri')} · ${esc(Evt.s.tickets[tid].holder)}</span>`).join('')}</div><p class="font-label-sm text-label-sm text-on-surface-variant">${icon('visibility', 'text-[14px] align-middle')} Mode pemantauan Command Center. Perubahan data, refund, dan pembatalan dilakukan di Konsol Pengelola.</p>`}</div>
         <div class="flex flex-col gap-3"><div class="inner p-3 font-body-sm text-body-sm"><b>${esc(e.name)}</b><br>${o.items.map((i) => esc(Evt.typeById(e, i.type).name) + (i.seat ? ' · ' + i.seat : '')).join('<br>')}<div class="mt-2 flex justify-between"><span>Total</span><b>${rp(o.total)}</b></div></div>
           ${o.tickets.length ? `<div class="flex flex-col gap-2">${o.tickets.map((tid) => { const t = Evt.s.tickets[tid]; return `<div class="inner p-2 flex items-center gap-3"><div class="bg-white p-1 rounded">${Evt.qrSvg(Evt.qrText(t), 64)}</div><div class="font-label-md text-label-md">${t.id}<br><span class="${t.status === 'VOID' ? 'text-rose-300' : t.checkedInAt ? 'text-emerald-300' : 'text-on-surface-variant'}">${t.status === 'VOID' ? 'VOID' : t.checkedInAt ? 'Check-in ' + Evt.fmtTime(t.checkedInAt) + ' · ' + esc(t.gate) : 'Belum check-in'}</span></div></div>`; }).join('')}</div>` : ''}
           <div class="lbl mt-1">Riwayat</div><div class="flex flex-col gap-1 font-body-sm text-body-sm text-on-surface-variant">${(o.log || []).map((l) => `<div>${Evt.fmtDT(l.ts)} · ${esc(l.text)}</div>`).join('') || '-'}</div>
           <div class="flex flex-wrap gap-2 mt-2">${!isMgr() ? '' : o.status === 'PAID' ? `<button class="btn-ghost" id="o-resend">${icon('forward_to_inbox', 'text-[16px]')} Kirim ulang e-ticket</button>${can('refund') ? `<button class="btn-danger" id="o-refund">${icon('currency_exchange', 'text-[16px]')} Refund</button>` : ''}` : ''}${o.status === 'PENDING' && o.until > Evt.now() ? `<button class="btn-ghost" id="o-cancel">${icon('cancel', 'text-[16px]')} Batalkan pesanan</button>` : ''}</div></div></div>`, { wide: true });
     if (!isMgr()) return;
-    root.querySelector('#f-contact').addEventListener('submit', async (ev) => { ev.preventDefault(); const f = Object.fromEntries(new FormData(ev.target)); const holders = o.tickets.map((_, i) => f['h' + i]); if (await act(() => Evt.updateContact(id, { name: f.name, email: f.email, phone: f.phone, holders }), 'Data peserta ' + id + ' diperbarui')) UI.closeModal(); });
+    root.querySelector('#f-contact').addEventListener('submit', async (ev) => { ev.preventDefault(); const f = Object.fromEntries(new FormData(ev.target)); const holders = o.tickets.map((_, i) => f['h' + i]); const patch = { name: f.name, email: f.email, phone: f.phone, holders };
+      if (f.vt !== '?') { if (f.vt && !f.vp.trim()) return UI.toast('Isi plat nomor kendaraan.', 'P3'); patch.veh = f.vt ? { t: f.vt, p: f.vp } : null; }
+      if (await act(() => Evt.updateContact(id, patch), 'Data peserta ' + id + ' diperbarui')) UI.closeModal(); });
     const rs = root.querySelector('#o-resend'); if (rs) rs.addEventListener('click', () => act(() => Evt.resend(id), 'E-ticket dikirim ulang (simulasi)'));
     const rf = root.querySelector('#o-refund'); if (rf) rf.addEventListener('click', async () => {
       const seats = o.items.map((i) => i.seat).filter(Boolean).join(', ');
@@ -1588,14 +1609,15 @@
     // peserta
     const q = el.querySelector('#q'); if (q) q.addEventListener('input', () => { ui.q = q.value; el.querySelector('#evt-table').innerHTML = pesertaTable(e); bindRows(el); });
     el.querySelectorAll('button[data-st]:not([data-seat])').forEach((b) => b.addEventListener('click', () => { ui.st = b.dataset.st; redraw(); }));
+    el.querySelectorAll('button[data-vf]').forEach((b) => b.addEventListener('click', () => { ui.vf = b.dataset.vf; redraw(); }));
     const cp = el.querySelector('#csv-p'); if (cp) cp.addEventListener('click', () => {
-      const rows = [['Acara', 'ID Tiket', 'Booking', 'Kategori', 'Kursi', 'Pemegang', 'Pemesan', 'Email', 'WhatsApp', 'Status Tiket', 'Check-in', 'Gate']];
-      Object.values(Evt.s.tickets).filter((t) => t.ev === e.id).forEach((t) => { const o = Evt.s.orders[t.order]; rows.push([e.name, t.id, o.id, Evt.typeById(e, t.type).name, t.seat || 'Berdiri', t.holder, o.name, o.email, o.phone, t.status, t.checkedInAt ? Evt.fmtDT(t.checkedInAt) : '', t.gate || '']); });
+      const rows = [['Acara', 'ID Tiket', 'Booking', 'Kategori', 'Kursi', 'Pemegang', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Status Tiket', 'Check-in', 'Gate']];
+      Object.values(Evt.s.tickets).filter((t) => t.ev === e.id).forEach((t) => { const o = Evt.s.orders[t.order]; rows.push([e.name, t.id, o.id, Evt.typeById(e, t.type).name, t.seat || 'Berdiri', t.holder, o.name, o.email, o.phone, vehName(o), vehPlate(o), t.status, t.checkedInAt ? Evt.fmtDT(t.checkedInAt) : '', t.gate || '']); });
       Evt.csv('peserta_' + e.id + '.csv', rows);
     });
     const ct = el.querySelector('#csv-t'); if (ct) ct.addEventListener('click', () => {
-      const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Jumlah Tiket', 'Kursi', 'Subtotal', 'Biaya Layanan', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar', 'Catatan Refund']];
-      Evt.stats(e.id).orders.forEach((o) => rows.push([o.id, e.name, o.name, o.email, o.phone, o.items.length, o.items.map((i) => i.seat || Evt.typeById(e, i.type).name).join(' '), o.sub, o.fee, o.total, o.method || '', o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status, Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '', o.refundReason || '']));
+      const rows = [['Booking', 'Acara', 'Pemesan', 'Email', 'WhatsApp', 'Kendaraan', 'Plat Nomor', 'Jumlah Tiket', 'Kursi', 'Subtotal', 'Biaya Layanan', 'Total', 'Metode', 'Status', 'Dibuat', 'Dibayar', 'Catatan Refund']];
+      Evt.stats(e.id).orders.forEach((o) => rows.push([o.id, e.name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.items.map((i) => i.seat || Evt.typeById(e, i.type).name).join(' '), o.sub, o.fee, o.total, o.method || '', o.status === 'PENDING' && o.until < Evt.now() ? 'EXPIRED' : o.status, Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '', o.refundReason || '']));
       Evt.csv('transaksi_' + e.id + '.csv', rows);
     });
     // keuangan

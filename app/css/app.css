@@ -677,6 +677,18 @@ html[data-theme-lock="light"] {
 .lp-cc select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
 .lp-cc-code { font-variant-numeric: tabular-nums; }
 
+/* Kendaraan: pilihan berbentuk tombol (radio asli tetap ada, transparan, untuk keyboard & pembaca layar) */
+.lp-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.lp-opt { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; }
+.lp-opt:hover { border-color: var(--ink); }
+.lp-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.lp-opt:has(input:checked) { border-color: var(--primary-hex); box-shadow: 0 0 0 1px var(--primary-hex); color: var(--primary-hex); }
+.lp-opt:has(input:focus-visible) { outline: 2px solid var(--primary-hex); outline-offset: 2px; }
+.lp-seg.is-err .lp-opt { border-color: var(--bad-t); }
+.lp-veh-more { display: grid; gap: 16px; padding: 12px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); }
+.lp-veh-more[hidden] { display: none; }
+.lp-plate { text-transform: uppercase; letter-spacing: .04em; }
+
 /* Persetujuan */
 .lp-consents { display: grid; gap: 12px; padding: 4px 2px; }
 .lp-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 20px; color: var(--ink); cursor: pointer; }

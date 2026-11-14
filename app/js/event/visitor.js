@@ -467,6 +467,19 @@
   };
 
   const seatOf = (seat) => L(', kursi ', ', seat ') + '<b>' + seat + '</b>';
+  // Kendaraan: satu per pesanan, untuk prediksi parkir di Command Center (Evt.parkDemand).
+  function vehFields(saved, field) {
+    const yes = saved.veh === 'yes';
+    const opt = (name, v, icon, label, on) => `<label class="lp-opt"><input type="radio" name="${name}" value="${v}" ${on ? 'checked' : ''}>${ic(icon, 'text-[20px]')}<span>${label}</span></label>`;
+    const seg = (name, label, help, opts) => `<div class="lp-field" data-field="${name}"><span class="lp-label" id="l-${name}">${label}</span>
+      <div class="lp-seg" role="radiogroup" aria-labelledby="l-${name}" aria-describedby="h-${name}">${opts}</div><p class="lp-help" id="h-${name}" data-help="${esc(help)}">${help}</p></div>`;
+    return `${seg('veh', L('Bawa kendaraan ke acara?', 'Bringing a vehicle to the event?'), L('Untuk memperkirakan kebutuhan parkir saat acara.', 'Helps us estimate parking demand during the event.'),
+        opt('veh', 'no', 'directions_walk', L('Tidak', 'No'), saved.veh === 'no') + opt('veh', 'yes', 'local_parking', L('Ya', 'Yes'), yes))}
+      <div class="lp-veh-more" id="veh-more" ${yes ? '' : 'hidden'}>
+        ${seg('vtype', L('Jenis kendaraan', 'Vehicle type'), L('Pilih salah satu.', 'Choose one.'), opt('vtype', 'mobil', 'directions_car', L('Mobil', 'Car'), saved.vtype === 'mobil') + opt('vtype', 'motor', 'two_wheeler', L('Motor', 'Motorbike'), saved.vtype === 'motor'))}
+        ${field('plate', L('Plat nomor', 'Licence plate'), `<input id="f-plate" class="inp lp-plate" name="plate" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" value="${esc(saved.plate || '')}" placeholder="D 1234 ABC" aria-describedby="h-plate">`, L('Contoh D 1234 ABC.', 'For example D 1234 ABC.'))}
+      </div>`;
+  }
   V.data = (id) => {
     const e = E.ev(id); if (!e) return notFound();
     const h = E.cartHolds(id, cart);
@@ -488,6 +501,7 @@
           ${field('phone', L('Nomor WhatsApp', 'WhatsApp number'), `<div class="lp-phone"><div class="lp-cc"><span class="pv-flag" data-cc-flag aria-hidden="true">${cc.flag()}</span><span class="lp-cc-code" data-cc-code>+${cc.code}</span>${ic('expand_more', 'text-[18px]')}
               <select name="cc" aria-label="${L('Kode negara', 'Country code')}">${CC.map((x) => `<option value="${x.k}" ${x === cc ? 'selected' : ''}>${esc(tx2(x.name))} (+${x.code})</option>`).join('')}</select></div>
             <input id="f-phone" class="inp" name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" value="${esc(saved.phone || '')}" placeholder="812 3456 7890" aria-describedby="h-phone"></div>`, L('Pengingat acara dikirim lewat WhatsApp. Tanpa angka 0 di depan.', 'Event reminders are sent via WhatsApp. No leading 0.'))}
+          ${vehFields(saved, field)}
           ${h.items.length > 1 ? `<details><summary class="font-label-md text-label-md text-primary">${ic('group', 'text-[16px] align-middle')} ${L('Nama berbeda untuk tiap tiket (opsional)', 'A different name for each ticket (optional)')}</summary><div class="flex flex-col gap-2 mt-2">${h.items.map((it, i) => `<label class="f">${L('Tiket', 'Ticket')} ${i + 1}: ${esc(E.typeById(e, it.type).name)}${it.seat ? L(', kursi ', ', seat ') + it.seat : ''}<input class="inp" name="holder${i}" placeholder="${L('Sama dengan pemesan', 'Same as booker')}"></label>`).join('')}</div></details>` : ''}
           <p class="font-label-sm text-label-sm text-on-surface-variant">${L('Prototipe: gunakan data contoh, bukan data pribadi asli.', 'Prototype: use sample data, not real personal details.')}</p></section>
         <div class="lp-consents">
@@ -537,38 +551,47 @@
       if (d.length < cc.min || d.length > cc.max) return cc.min === cc.max ? L(`Nomor harus ${cc.min} angka (tanpa +${cc.code}).`, `The number must be ${cc.min} digits (without +${cc.code}).`) : L(`Nomor harus ${cc.min}-${cc.max} angka (tanpa 0 atau +${cc.code} di depan).`, `The number must be ${cc.min}-${cc.max} digits (without a leading 0 or +${cc.code}).`);
       return '';
     }
+    if (name === 'veh') return f.veh ? '' : L('Pilih Ya atau Tidak.', 'Choose Yes or No.');
+    if ((name === 'vtype' || name === 'plate') && f.veh !== 'yes') return '';
+    if (name === 'vtype') return f.vtype ? '' : L('Pilih mobil atau motor.', 'Choose car or motorbike.');
+    if (name === 'plate') {
+      if (!v) return L('Plat nomor wajib diisi.', 'Licence plate is required.');
+      if (!E.PLATE_RE.test(E.normPlate(v))) return L('Format plat tidak dikenali. Contoh: D 1234 ABC.', 'Plate format not recognised. For example: D 1234 ABC.');
+      return '';
+    }
     return '';
   }
   function showErr(form, name, msg) {
     const box = form.querySelector(`[data-field="${name}"]`); if (!box) return;
-    const inp = box.querySelector('.inp'); const help = box.querySelector('.lp-help');
+    const inp = box.querySelector('.inp') || box.querySelector('.lp-seg'); const help = box.querySelector('.lp-help');
     inp.classList.toggle('is-err', !!msg); inp.setAttribute('aria-invalid', String(!!msg));
     help.classList.toggle('lp-err', !!msg);
     help.innerHTML = msg ? ic('error', 'text-[16px]') + '<span>' + msg + '</span>' : help.dataset.help;
   }
+  const VFIELDS = ['name', 'email', 'phone', 'veh', 'vtype', 'plate'];
   function validateOrder(form) {
     const f = Object.fromEntries(new FormData(form));
     let first = null;
-    ['name', 'email', 'phone'].forEach((k) => { const m = checkField(k, f); showErr(form, k, m); if (m && !first) first = form.querySelector('#f-' + k); });
+    VFIELDS.forEach((k) => { const m = checkField(k, f); showErr(form, k, m); if (m && !first) first = form.querySelector('#f-' + k) || form.querySelector(`input[name=${k}]`); });
     const okC = form.accept_toc.checked && form.accept_consent.checked;
     const ce = form.querySelector('#h-consent');
     ce.hidden = okC; ce.innerHTML = okC ? '' : ic('error', 'text-[16px]') + '<span>' + L('Centang kedua persetujuan di atas untuk melanjutkan.', 'Tick both agreements above to continue.') + '</span>';
     if (!first && !okC) first = !form.accept_toc.checked ? form.accept_toc : form.accept_consent;
     if (first) { first.focus(); first.scrollIntoView({ block: 'center', behavior: 'smooth' }); return null; }
     const cc = CC.find((x) => x.k === f.cc) || CC[0];
-    return { name: f.name.trim().replace(/\s+/g, ' '), email: f.email.trim().toLowerCase(), phone: '+' + cc.code + ' ' + phoneDigits(f.phone, cc).replace(/^(\d{3})(\d{3,4})(\d+)$/, '$1-$2-$3'), holders: Object.keys(f).filter((k) => k.startsWith('holder')).map((k) => f[k].trim()) };
+    return { name: f.name.trim().replace(/\s+/g, ' '), email: f.email.trim().toLowerCase(), phone: '+' + cc.code + ' ' + phoneDigits(f.phone, cc).replace(/^(\d{3})(\d{3,4})(\d+)$/, '$1-$2-$3'), holders: Object.keys(f).filter((k) => k.startsWith('holder')).map((k) => f[k].trim()), vehicle: f.veh === 'yes' ? { t: f.vtype, p: E.normPlate(f.plate) } : null };
   }
   // Isi singkat kebijakan untuk prototipe (contoh, bukan dokumen hukum resmi).
   const POLICY = () => ({
     tnc: [L('Syarat & Ketentuan', 'Terms & Conditions'), [L('Satu e-ticket berlaku untuk satu orang dan satu kali masuk.', 'One e-ticket is valid for one person and one entry.'), L('Pesanan yang belum dibayar sampai batas waktu dibatalkan otomatis dan kursinya dilepas.', 'Orders not paid by the deadline are cancelled automatically and the seats released.'), L('Bila acara dibatalkan penyelenggara, dana dikembalikan penuh secara otomatis.', 'If the organiser cancels the event, you are refunded in full automatically.'), L('Tiket tidak dapat dipindahtangankan setelah check-in.', 'Tickets cannot be transferred after check-in.')]],
-    privacy: [L('Kebijakan Privasi', 'Privacy Policy'), [L('Kami menyimpan nama, email, dan nomor WhatsApp untuk menerbitkan dan mengirim e-ticket.', 'We store your name, email and WhatsApp number to issue and send your e-ticket.'), L('Data tidak dijual ke pihak lain.', 'Your data is never sold to third parties.'), L('Kamu dapat meminta data dihapus lewat Customer Service GF.', 'You can ask for your data to be deleted at Customer Service, GF.')]],
+    privacy: [L('Kebijakan Privasi', 'Privacy Policy'), [L('Kami menyimpan nama, email, dan nomor WhatsApp untuk menerbitkan dan mengirim e-ticket.', 'We store your name, email and WhatsApp number to issue and send your e-ticket.'), L('Jenis kendaraan dan plat nomor (bila diisi) dipakai untuk mengatur parkir saat acara.', 'Vehicle type and licence plate (if given) are used to manage parking during the event.'), L('Data tidak dijual ke pihak lain.', 'Your data is never sold to third parties.'), L('Kamu dapat meminta data dihapus lewat Customer Service GF.', 'You can ask for your data to be deleted at Customer Service, GF.')]],
     pii: [L('Kebijakan Pemrosesan Data Pribadi', 'Personal Data Processing Policy'), [L('Data diproses sesuai UU No. 27 Tahun 2022 tentang Pelindungan Data Pribadi.', 'Data is processed under Indonesian Law No. 27 of 2022 on Personal Data Protection.'), L('Data dibagikan ke penyelenggara acara hanya untuk check-in dan informasi acara.', 'Data is shared with the event organiser only for check-in and event information.'), L('Data pesanan disimpan paling lama 2 tahun setelah acara selesai.', 'Order data is kept for at most 2 years after the event.')]],
   });
   V.order = (oid) => {
     const o = E.s.orders[oid]; if (!o) return notFound(L('Pesanan tidak ditemukan.', 'Order not found.'));
     const e = E.ev(o.ev);
     const head = `${back('/pengunjung/tiket', L('Tiket saya', 'My tickets'))}<div class="flex items-center justify-between mb-3"><div><div class="font-label-md text-label-md text-on-surface-variant">${L('Kode booking', 'Booking code')}</div><div class="font-headline-md text-headline-md">${o.id}</div></div>${statusChip(o.status)}</div>`;
-    const summary = orderSummary(e, o.items, { fee: o.fee, total: o.total }, '', `<div class="pv-dash mt-2 pt-3 font-label-sm text-label-sm text-on-surface-variant">${ic('person', 'text-[16px] align-middle')} ${esc(o.name)} · ${esc(o.email)} · ${esc(o.phone)}</div>`);
+    const summary = orderSummary(e, o.items, { fee: o.fee, total: o.total }, '', `<div class="pv-dash mt-2 pt-3 font-label-sm text-label-sm text-on-surface-variant">${ic('person', 'text-[16px] align-middle')} ${esc(o.name)} · ${esc(o.email)} · ${esc(o.phone)}${'veh' in o ? `<br>${ic(o.veh ? (o.veh.t === 'motor' ? 'two_wheeler' : 'directions_car') : 'directions_walk', 'text-[16px] align-middle')} ${o.veh ? esc(L(E.VEH[o.veh.t], o.veh.t === 'motor' ? 'Motorbike' : 'Car') + ' ' + o.veh.p) : L('Tidak bawa kendaraan', 'No vehicle')}` : ''}</div>`);
     if (o.status === 'PENDING' && o.until > E.now()) return head.replace('</a>', '</a>' + steps('bayar', e)) + summary + payView(o);
     if (o.status === 'PAID') return head + summary + ticketsView(o, e);
     const payOver = L('Batas waktu pembayaran habis', 'Payment time limit reached');
@@ -852,7 +875,7 @@
     }));
     const fo = app.querySelector('#f-order');
     if (fo) {
-      const save = () => { const f = Object.fromEntries(new FormData(fo)); sessionStorage.setItem('smicc-evt-form', JSON.stringify({ name: f.name, email: f.email, phone: f.phone, cc: f.cc })); };
+      const save = () => { const f = Object.fromEntries(new FormData(fo)); sessionStorage.setItem('smicc-evt-form', JSON.stringify({ name: f.name, email: f.email, phone: f.phone, cc: f.cc, veh: f.veh, vtype: f.vtype, plate: f.plate })); };
       const phone = fo.querySelector('#f-phone');
       // Nomor: hanya angka & spasi; 0 di depan dibuang (kode negara sudah dipilih di kiri).
       phone.addEventListener('input', () => { const v = phone.value.replace(/[^\d ]/g, '').replace(/^0+/, ''); if (v !== phone.value) phone.value = v; });
@@ -862,7 +885,15 @@
         if (phone.value) showErr(fo, 'phone', checkField('phone', Object.fromEntries(new FormData(fo))));
       });
       // Galat muncul setelah kolom ditinggalkan; saat diketik ulang, hilang begitu isinya sudah benar.
-      ['name', 'email', 'phone'].forEach((k) => {
+      // Kendaraan: blok jenis & plat hanya muncul bila menjawab Ya; plat dirapikan saat kolom ditinggalkan.
+      const more = fo.querySelector('#veh-more'), plate = fo.querySelector('#f-plate');
+      fo.querySelectorAll('input[name=veh]').forEach((r) => r.addEventListener('change', () => {
+        more.hidden = r.value !== 'yes'; showErr(fo, 'veh', '');
+        if (more.hidden) { showErr(fo, 'vtype', ''); showErr(fo, 'plate', ''); } else if (!fo.querySelector('input[name=vtype]:checked')) fo.querySelector('input[name=vtype]').focus();
+      }));
+      fo.querySelectorAll('input[name=vtype]').forEach((r) => r.addEventListener('change', () => showErr(fo, 'vtype', '')));
+      plate.addEventListener('blur', () => { if (plate.value.trim()) plate.value = E.normPlate(plate.value); });
+      ['name', 'email', 'phone', 'plate'].forEach((k) => {
         const el = fo.querySelector('#f-' + k);
         el.addEventListener('blur', () => { if (el.value.trim()) showErr(fo, k, checkField(k, Object.fromEntries(new FormData(fo)))); });
         el.addEventListener('input', () => { if (el.classList.contains('is-err') && !checkField(k, Object.fromEntries(new FormData(fo)))) showErr(fo, k, ''); });

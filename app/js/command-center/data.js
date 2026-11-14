@@ -164,6 +164,7 @@
     { id: 'VIP', name: 'VIP & Valet Lobby', cap: 80, used: 74 },
     { id: 'EV', name: 'EV Charging Bay', cap: 24, used: 17 },
     { id: 'LADY', name: 'Ladies Parking', cap: 60, used: 52 },
+    { id: 'PB', name: 'Parkir Barat (outdoor)', cap: 350, used: 198 }, // ditutup bila dipakai acara (Evt area parkir-barat)
     { id: 'MTR', name: 'Motor B1 Timur', cap: 900, used: 612 },
   ];
   const AR = [

@@ -51,6 +51,8 @@
         { ts: now - 4 * 60000, from: 'Bambang S. (Duty Mgr Cinema XXI)', ch: 'Tenant App', tenant: 'L3-01', text: 'Formulir perpanjangan jam tayang malam minggu sudah kami submit via app, mohon persetujuan overtime AC & loading dock B2.' },
       ],
       sim: null,
+      parking: JSON.parse(JSON.stringify(S.PARKING)),
+      parkSim: null,
       settings: { follow: true, speed: 1 },
     };
   }
@@ -58,10 +60,16 @@
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) { state = JSON.parse(raw); state.sim = null; return; }
+      if (raw) { state = JSON.parse(raw); state.sim = null; migrate(); return; }
     } catch (e) { /* ignore */ }
     state = seed();
     save(true);
+  }
+  // State lama di localStorage: tambahkan okupansi parkir (zona baru dari SEED ikut ditambahkan).
+  function migrate() {
+    if (!Array.isArray(state.parking)) state.parking = [];
+    window.SEED.PARKING.forEach((z) => { if (!state.parking.some((x) => x.id === z.id)) state.parking.push(Object.assign({}, z)); });
+    if (state.parkSim === undefined) state.parkSim = null;
   }
   function save(now) {
     clearTimeout(saveT);
@@ -183,6 +191,9 @@
     },
     eventsFor(code, n) { return state.events.filter((e) => e.to === code || e.from === code).slice(0, n || 8); },
     setSim(sim) { state.sim = sim; emit('sim'); },
+    // Okupansi parkir per zona (sensor bay) dan simulasi parkir penuh (views/parking.js).
+    parkSet(id, used) { const z = state.parking.find((x) => x.id === id); if (!z) return; z.used = Math.max(0, Math.min(z.cap, Math.round(used))); emit('parking'); },
+    setParkSim(x) { state.parkSim = x; emit('parking'); },
     setting(k, v) { state.settings[k] = v; emit('settings'); },
   };
 

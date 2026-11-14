@@ -25,7 +25,7 @@ Akses: `/pengelola`, `/checkin` dan `/command-center` memakai login staf (email 
 ## 2. Alur pengunjung (mobile-first, `/pengunjung`)
 1. **Lihat acara**: jadwal, lokasi, kategori, harga, sisa tiket, status penjualan.
 2. **Pilih kategori dulu, baru kursi.** Langkah 1 (`/pengunjung/e/<id>/kategori`): daftar kategori tiket dengan harga dan sisa kuota; kategori tanpa nomor kursi (festival) diatur jumlahnya di sini. Langkah 2 (`/kursi?kat=<kategori>`): denah hanya untuk kategori yang dipilih, kursi kategori lain samar dan tidak bisa diketuk (kursi milikmu tetap bisa dilepas). Kursi yang sudah dipilih tetap tersimpan saat kembali menambah kategori lain; legenda membedakan *tersedia* (warna kategori + nomor), *pilihanmu* (✓), *sedang dipesan* (arsir oranye), *terjual* (abu-abu ×), *tidak dijual* (garis titik).
-3. **Isi data peserta**: nama, email, WhatsApp; nama pemegang per tiket bersifat opsional.
+3. **Isi data peserta**: nama, email, WhatsApp; nama pemegang per tiket bersifat opsional. Pertanyaan wajib "Bawa kendaraan ke acara?"; bila Ya, jenis (mobil/motor) dan plat nomor. Disimpan di pesanan sebagai `o.veh = { t, p }` (`null` = tidak bawa; pesanan lama tanpa kunci `veh`). Plat dirapikan `Evt.normPlate()` dan ditolak engine bila tidak cocok pola `D 1234 ABC`.
 4. **Ringkasan**: item, harga, biaya layanan, total, dan hitung mundur hold.
 5. **Pembayaran sandbox**: pilih metode, lalu simulasikan berhasil/gagal; pesanan juga bisa dibatalkan.
 6. **E-ticket QR** per kursi: status check-in, simpan ke kalender (.ics), kirim ulang.
@@ -134,6 +134,8 @@ Status kursi: `TERSEDIA → SEDANG DIPESAN (HELD, berbatas waktu) → TERJUAL (S
 - **Relasi EVT:**
   - Keluar ke TIC, CCTV, PARK, BMS, ANL, O360, TEN
   - Masuk dari TIC dan CCTV
+
+**Prediksi parkir** (`Evt.parkDemand(evId)`): kendaraan terdaftar dari pesanan lunas/menunggu bayar, ditambah proyeksi untuk tiket yang diperkirakan masih terjual (sampai 80% kapasitas sebelum acara mulai) dan pesanan lama tanpa data kendaraan. Rasio kendaraan per pesanan diambil dari data bila minimal 10 pesanan sudah menjawab, selain itu asumsi 0,45 mobil dan 0,30 motor per pesanan. Command Center (Parkir & Mobilitas) menambahkannya ke pola okupansi harian mal; acara di area Parkir Barat menutup zona itu (350 slot) selama acara.
 
 ## 7. Batasan prototype
 - Tidak terhubung ke payment gateway, sistem internal Summarecon, CRM, POS, atau layanan pesan sungguhan.

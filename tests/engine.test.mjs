@@ -500,3 +500,42 @@ test('area dikunci setelah diajukan', async () => {
   await Evt.submitApproval('EVT-28');
   await assert.rejects(Evt.saveEvent('EVT-28', { patch: { area: 'cileutik' } }), /dikunci setelah diajukan/);
 });
+
+// ------------------------------------------------------------------ Kendaraan pemesan & prediksi parkir
+test('plat nomor dirapikan ke format baku', async () => {
+  const { Evt } = await loadEvt();
+  assert.equal(Evt.normPlate('d1234abc'), 'D 1234 ABC');
+  assert.equal(Evt.normPlate(' b  12 '), 'B 12');
+  assert.equal(Evt.normPlate('D-5678-XY'), 'D 5678 XY');
+});
+
+test('pesanan menyimpan kendaraan, plat salah ditolak, panitia bisa mengubah', async () => {
+  const { Evt } = await loadEvt();
+  const ev = Evt.ev('EVT-01');
+  const seat = () => Evt.allSeats(ev).find((s) => Evt.seatStatus('EVT-01', s, null) === 'available');
+  await Evt.holdSeat('EVT-01', seat(), 'VEH1');
+  const id = await Evt.createOrder('EVT-01', 'VEH1', { name: 'A', email: 'a@example.com', phone: '0812', vehicle: { t: 'mobil', p: 'd 1234 abc' } });
+  assert.deepEqual({ ...Evt.s.orders[id].veh }, { t: 'mobil', p: 'D 1234 ABC' });
+  await Evt.holdSeat('EVT-01', seat(), 'VEH2');
+  const id2 = await Evt.createOrder('EVT-01', 'VEH2', { name: 'B', email: 'b@example.com', phone: '0812', vehicle: null });
+  assert.equal(Evt.s.orders[id2].veh, null);
+  await Evt.holdSeat('EVT-01', seat(), 'VEH3');
+  await assert.rejects(Evt.createOrder('EVT-01', 'VEH3', { name: 'C', email: 'c@example.com', phone: '0812', vehicle: { t: 'motor', p: '12345' } }), /Plat nomor tidak valid/);
+  await Evt.updateContact(id, { veh: { t: 'motor', p: 'D 9 Z' } });
+  assert.equal(Evt.s.orders[id].veh.t, 'motor');
+  assert.equal(Evt.vehTxt(Evt.s.orders[id].veh), 'Motor D 9 Z');
+});
+
+test('prediksi parkir: asumsi rasio tanpa data, pesanan berkendaraan ikut dihitung', async () => {
+  const { Evt } = await loadEvt();
+  const p0 = Evt.parkDemand('EVT-01');
+  assert.equal(p0.basis, 'asumsi');
+  assert.ok(p0.mobil > 0 && p0.motor > 0);
+  const ev = Evt.ev('EVT-01');
+  await Evt.holdSeat('EVT-01', Evt.allSeats(ev).find((s) => Evt.seatStatus('EVT-01', s, null) === 'available'), 'PK');
+  await Evt.createOrder('EVT-01', 'PK', { name: 'A', email: 'a@example.com', phone: '0812', vehicle: { t: 'mobil', p: 'D 1 A' } });
+  const p1 = Evt.parkDemand('EVT-01');
+  assert.equal(p1.declared.mobil, p0.declared.mobil + 1);
+  assert.equal(p1.answered, p0.answered + 1);
+  assert.equal(Evt.parkDemand('EVT-04').usesParking, true); // Bazar di Parkir Barat memakai lahan parkir
+});

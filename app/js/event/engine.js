@@ -403,6 +403,43 @@
     const sum = (k) => Object.values(per).reduce((a, p) => a + p[k], 0);
     return { per, total: sum('total'), sold: sum('sold'), held: sum('held'), blocked: sum('blocked'), available: sum('available'), checkedIn: tks.filter((x) => x.checkedInAt).length, tickets: tks.length, orders, paid, revenue: paid.reduce((a, o) => a + o.total, 0), registrants: new Set(paid.map((o) => o.email.toLowerCase())).size, pending: orders.filter((o) => o.status === 'PENDING' && o.until > t).length };
   }
+  // Kendaraan pemesan, satu per pesanan: o.veh = { t: 'mobil' | 'motor', p: 'D 1234 ABC' }, null = tidak bawa kendaraan.
+  // Pesanan lama (sebelum fitur ini) tidak punya kunci veh: dihitung dengan rasio pada prediksi parkir.
+  const VEH = { mobil: 'Mobil', motor: 'Motor' };
+  const PLATE_RE = /^[A-Z]{1,2} \d{1,4}( [A-Z]{1,3})?$/;
+  function normPlate(s) {
+    const raw = String(s || '').toUpperCase(), m = raw.replace(/[^A-Z0-9]/g, '').match(/^([A-Z]{1,2})(\d{1,4})([A-Z]{0,3})$/);
+    return m ? [m[1], m[2], m[3]].filter(Boolean).join(' ') : raw.trim().replace(/\s+/g, ' ');
+  }
+  function cleanVeh(v) {
+    if (!v || !v.t) return null;
+    if (!VEH[v.t]) fail('Jenis kendaraan tidak dikenal.');
+    const p = normPlate(v.p);
+    if (!PLATE_RE.test(p)) fail('Plat nomor tidak valid. Contoh: D 1234 ABC.');
+    return { t: v.t, p };
+  }
+  const vehTxt = (v) => (v ? VEH[v.t] + ' ' + v.p : 'Tidak bawa kendaraan');
+  // Prediksi kendaraan satu acara: yang sudah didaftarkan pemesan + proyeksi untuk tiket yang diperkirakan masih terjual.
+  // Rasio kendaraan per pesanan diambil dari data bila >= 10 pesanan sudah menjawab, selain itu PARK_RATIO.
+  const PARK_RATIO = { mobil: 0.45, motor: 0.3 }, PARK_FILL = 0.8;
+  function parkDemand(evId) {
+    const e = ev(evId); if (!e) return null;
+    const t = now(), st = stats(evId);
+    const os = Object.values(state.orders).filter((o) => o.ev === evId && (o.status === 'PAID' || (o.status === 'PENDING' && o.until > t)));
+    const known = os.filter((o) => 'veh' in o);
+    const declared = { mobil: 0, motor: 0 };
+    known.forEach((o) => { if (o.veh && declared[o.veh.t] != null) declared[o.veh.t]++; });
+    const fromData = known.length >= 10;
+    const ratio = fromData ? { mobil: declared.mobil / known.length, motor: declared.motor / known.length } : PARK_RATIO;
+    const tpo = os.length ? os.reduce((a, o) => a + o.items.length, 0) / os.length : 2; // tiket per pesanan
+    const taken = st.sold + st.held;
+    const restTickets = t < e.start ? Math.max(0, Math.round(st.total * PARK_FILL) - taken) : 0;
+    const restOrders = restTickets / tpo + (os.length - known.length);
+    const projected = { mobil: Math.round(restOrders * ratio.mobil), motor: Math.round(restOrders * ratio.motor) };
+    const A = areaById(e.area) || {};
+    return { ev: evId, mobil: declared.mobil + projected.mobil, motor: declared.motor + projected.motor, declared, projected, ratio, basis: fromData ? 'data' : 'asumsi',
+      orders: os.length, answered: known.length, start: e.start, doors: e.doors || e.start, end: evEnd(e), area: A.name || '', usesParking: !!A.parking };
+  }
   function cartHolds(evId, cart, t) {
     t = t || now();
     const seats = Object.entries(state.seats[evId] || {}).filter(([, x]) => x.st === 'HELD' && x.cart === cart && !x.order && x.until > t).map(([sid, x]) => ({ seat: sid, type: seatType(ev(evId), sid), until: x.until }));
@@ -753,7 +790,7 @@
         (info.holders || []).forEach((h, i) => { if (items[i] && h) items[i].holder = h; });
         const p = price(e, items);
         const id = 'BK-' + rand(6);
-        const o = { id, ev: evId, cart, name: info.name, email: info.email, phone: info.phone, items, ...p, status: 'PENDING', method: null, createdAt: t, paidAt: null, until: t + PAY_MIN * 60000, tickets: [], log: [{ ts: t, text: 'Pesanan dibuat, ' + items.length + ' tiket di-hold untuk pembayaran' }] };
+        const o = { id, ev: evId, cart, name: info.name, email: info.email, phone: info.phone, ...('vehicle' in info ? { veh: cleanVeh(info.vehicle) } : {}), items, ...p, status: 'PENDING', method: null, createdAt: t, paidAt: null, until: t + PAY_MIN * 60000, tickets: [], log: [{ ts: t, text: 'Pesanan dibuat, ' + items.length + ' tiket di-hold untuk pembayaran' }] };
         d.orders[id] = o;
         seats.forEach(([, x]) => { x.order = id; x.until = o.until; });
         q.forEach((h) => { h.order = id; h.until = o.until; });
@@ -790,7 +827,7 @@
         audit(d.events[o.ev], t, 'REFUND', 'Refund ' + o.id + ' ' + rp(o.total) + ', ' + o.tickets.length + ' e-ticket dinonaktifkan', { note: o.refundReason });
       });
     },
-    updateContact(orderId, patch) { return tx((d, t) => { const o = d.orders[orderId]; if (!o) fail('Pesanan tidak ditemukan.'); ['name', 'email', 'phone'].forEach((k) => { if (patch[k]) o[k] = patch[k]; }); (patch.holders || []).forEach((h, i) => { const tk = d.tickets[o.tickets[i]]; if (tk && h) tk.holder = h; }); o.log.push({ ts: t, text: 'Data peserta diperbarui panitia' }); }); },
+    updateContact(orderId, patch) { return tx((d, t) => { const o = d.orders[orderId]; if (!o) fail('Pesanan tidak ditemukan.'); ['name', 'email', 'phone'].forEach((k) => { if (patch[k]) o[k] = patch[k]; }); if ('veh' in patch) o.veh = cleanVeh(patch.veh); (patch.holders || []).forEach((h, i) => { const tk = d.tickets[o.tickets[i]]; if (tk && h) tk.holder = h; }); o.log.push({ ts: t, text: 'Data peserta diperbarui panitia' }); }); },
     resend(orderId) { return tx((d, t) => { const o = d.orders[orderId]; const e = d.events[o.ev]; notify(d, o, 'Kirim ulang e-ticket · ' + o.id, `Halo ${o.name}, berikut e-ticket ${e.name} (${o.tickets.length} tiket). Tunjukkan QR di gate.`, t); }); },
     checkIn(text, evId, gate, opts) {
       const test = !!(opts && opts.test); // pindaian uji: tidak dihitung sebagai anomali gate
@@ -1182,7 +1219,7 @@
     init, subscribe(fn) { subs.add(fn); return () => subs.delete(fn); },
     now, cartId, myOrders, rememberOrder, ev, typeById, seatType, allSeats, saleState, seatStatus, stats, cartHolds, price, finance, anomalies: (evId, mins) => anomaliesIn(state, evId, mins, now()), FIN_DEFAULT, demoStale, demoOld, modeBanner, parseCode, verify: (text, evId) => verify(state, text, evId), qrText, TEMPLATES, qrSvg, seatMap, legend, csv, csvText,
     rp, esc, fmtDate, fmtShort, fmtTime, fmtDT, mmss, EvtError, PAY_MIN, FEE, METHODS, STATUS_TXT,
-    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt, turn, ORG_MALL, AREAS, areaVenue, areaClash: (areaId, start, end, exceptId) => clashIn(state, areaId, start, end, exceptId),
+    APPROVERS, DOCS, AP_ST, verifyAudit, missingDocs, currentStep, needsApproval, durTxt, turn, ORG_MALL, AREAS, areaVenue, VEH, PLATE_RE, normPlate, vehTxt, parkDemand, PARK_RATIO, areaClash: (areaId, start, end, exceptId) => clashIn(state, areaId, start, end, exceptId),
   });
   Object.defineProperties(window.Evt, { s: { get: () => state }, mode: { get: () => mode }, version: { get: () => version } });
 })();

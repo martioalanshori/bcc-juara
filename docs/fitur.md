@@ -34,6 +34,8 @@ Tampilan mobile-first untuk membeli tiket.
   bila waktu penahanan habis.
 - **Kategori berdiri** (tanpa nomor kursi) dengan kuota.
 - **Data pemesan & data peserta** per tiket (nama pemegang tiket bisa berbeda dari pemesan).
+- **Kendaraan** (wajib dijawab): "Bawa kendaraan ke acara?" Tidak / Ya. Bila Ya, pilih mobil atau motor dan isi plat
+  nomor (dirapikan otomatis ke format `D 1234 ABC`). Satu kendaraan per pesanan, dipakai untuk prediksi parkir.
 - **Ringkasan pesanan**: subtotal, biaya layanan per tiket berbayar, total.
 - **Pembayaran sandbox** (QRIS, VA BCA, GoPay, OVO, DANA, kartu kredit/debit). Pesanan yang tidak dibayar akan kedaluwarsa
   dan kursinya dilepas.
@@ -49,11 +51,11 @@ Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi
 | Menu | Fitur |
 |---|---|
 | Daftar acara | Tambah acara baru, publikasikan, batalkan (refund otomatis ke semua pembeli), hapus |
-| Ringkasan | KPI penjualan, okupansi, kehadiran, blok **Perlu tindakan** (anomali gate, pesanan menunggu bayar, persetujuan tertunda), ticker aktivitas |
+| Ringkasan | KPI penjualan, okupansi, kehadiran, **kendaraan terdaftar** (klik: prediksi mobil/motor, jam puncak, daftar plat), blok **Perlu tindakan** (anomali gate, pesanan menunggu bayar, persetujuan tertunda), ticker aktivitas |
 | Denah kursi | Lihat status kursi langsung, blokir/buka kursi, uji rebutan kursi (2 pembeli memilih kursi yang sama) |
 | Pengaturan | Poster, jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan, asumsi keuangan. Satu tombol simpan |
 | Persetujuan | Unggah 7 dokumen (6 wajib, tiap dokumen menyebut divisi pemeriksanya), cek otomatis area & jadwal, ajukan, status "Giliran: …", waktu tunggu per divisi. Keputusan **Divisi Event** lalu **Operasional Mall** dilakukan di Command Center. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
-| Peserta & transaksi | Cari & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund). Detail pesanan: ubah data peserta, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
+| Peserta & transaksi | Cari (termasuk plat nomor) & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund) dan per kendaraan (mobil, motor, tanpa kendaraan). Kolom kendaraan & plat. Detail pesanan: ubah data peserta dan kendaraan, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
 | Keuangan & ROI | Bruto, refund, neto, biaya layanan, rekonsiliasi per metode pembayaran, deteksi selisih, penjualan per kategori, bagi hasil & ROI. **Unduh Rekonsiliasi (CSV)** |
 | Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
 | Kirim broadcast | Kirim pengingat ke semua pemesan, riwayat pesan email & WhatsApp, kabari daftar tunggu |
@@ -71,8 +73,8 @@ Lainnya: **Ctrl+K** untuk mencari menu, acara, kode booking, dan perintah (terma
 
 | File | Isi |
 |---|---|
-| `peserta_<acara>.csv` | Satu baris per tiket: acara, ID tiket, booking, kategori, kursi, pemegang, pemesan, email, WhatsApp, status tiket, waktu check-in, gate |
-| `transaksi_<acara>.csv` | Satu baris per pesanan: booking, pemesan, kontak, jumlah tiket, kursi, subtotal, biaya layanan, total, metode, status, waktu dibuat/dibayar, catatan refund |
+| `peserta_<acara>.csv` | Satu baris per tiket: acara, ID tiket, booking, kategori, kursi, pemegang, pemesan, email, WhatsApp, kendaraan, plat nomor, status tiket, waktu check-in, gate |
+| `transaksi_<acara>.csv` | Satu baris per pesanan: booking, pemesan, kontak, kendaraan, plat nomor, jumlah tiket, kursi, subtotal, biaya layanan, total, metode, status, waktu dibuat/dibayar, catatan refund |
 | `log_aktivitas_<acara>.csv` | Satu baris per entri log: waktu, pelaku, peran, aksi, keterangan, catatan, kode rantai |
 | `rekonsiliasi_<acara>.csv` | Pesanan lunas & refund: metode, status, subtotal, biaya layanan, total, jumlah tiket, waktu dibayar, waktu refund |
 
@@ -105,8 +107,12 @@ Sembilan dashboard dan dua alat SOP/simulasi.
 - **CCTV & Keamanan**: alert keamanan, kendali PTZ, regu patroli, bookmark & ekspor bukti.
 - **Energi & Utilitas**: profil beban 24 jam & tarif PLN, sub-metering tenant, PLTS & ESG,
   neraca air, anomali & mitigasi AI, simulasi tarif WBP/LWBP, ekspor audit ESG (CSV).
-- **Parkir & Mobilitas**: okupansi per zona, gate & ANPR, drop-off/valet, pengisian EV,
-  pendapatan per jam.
+- **Parkir & Mobilitas**: okupansi per zona (termasuk Parkir Barat, ditandai "Dipakai acara" saat jadi area acara), gate & ANPR
+  (plat peserta acara hari ini ditandai), drop-off/valet, pengisian EV, pendapatan per jam.
+  **Prediksi parkir**: grafik okupansi mobil per jam hari ini (pola mal + kendaraan acara) dan tabel acara 7 hari ke depan
+  (mobil/motor terdaftar + proyeksi, okupansi puncak Aman/Waspada/Penuh, rekomendasi, tombol tiket persiapan).
+  **Simulasi parkir penuh**: okupansi zona naik bertahap; peringatan di 90%, di 100% muncul banner merah, tiket P2
+  SOP-PRK-06 untuk Tim Parkir dan saran zona pengalihan. "Akhiri simulasi" mengembalikan data sensor.
 - **Pemantauan Event** (hanya baca): portofolio semua acara, detail acara, denah langsung,
   gate & keamanan, transaksi, keuangan & ROI. Unduh CSV peserta/transaksi/rekonsiliasi juga
   tersedia di sini.
