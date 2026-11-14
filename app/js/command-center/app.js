@@ -59,6 +59,7 @@
     // Tulis ulang hanya bila isinya berubah, supaya animasi geser tidak mulai lagi dari awal.
     // Alarm parkir penuh (views/parking.js): tampil di semua menu, ditulis ulang hanya bila isinya berubah.
     const pa = document.getElementById('park-alarm');
+    if (window.ParkAlarm) { const lv = ParkAlarm.level(); document.body.classList.toggle('pk-page-full', lv === 'full'); document.body.classList.toggle('pk-page-ack', lv === 'ack'); }
     if (pa && window.ParkAlarm) { const ph = ParkAlarm.bar(); if (pa.dataset.html !== ph) { pa.innerHTML = ph; pa.dataset.html = ph; ParkAlarm.tick(); } }
     const tk = document.getElementById('ticker');
     if (tk.dataset.html !== tickerHtml) { tk.innerHTML = tickerHtml; tk.dataset.html = tickerHtml; }

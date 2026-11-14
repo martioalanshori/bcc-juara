@@ -78,7 +78,7 @@ Pemilih acara di sidebar. **Semua acara** berisi Dasbor, Daftar acara, Transaksi
 | Ringkasan | KPI penjualan, okupansi, kehadiran, **kendaraan terdaftar** (klik: prediksi mobil/motor, jam puncak, daftar plat), blok **Perlu tindakan** (anomali gate, pesanan menunggu bayar, persetujuan tertunda), ticker aktivitas |
 | Denah kursi | Lihat status kursi langsung, blokir/buka kursi, uji rebutan kursi (2 pembeli memilih kursi yang sama) |
 | Pengaturan | Poster, jadwal, venue, periode jual, jenis tiket, harga, kuota, benefit, status dijual/undangan, asumsi keuangan. Satu tombol simpan |
-| Persetujuan | Unggah 7 dokumen (6 wajib, tiap dokumen menyebut divisi pemeriksanya), cek otomatis area & jadwal, ajukan, status "Giliran: …", waktu tunggu per divisi. Keputusan **Divisi Event** lalu **Operasional Mall** dilakukan di Command Center. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
+| Persetujuan | Unggah 7 dokumen (6 wajib, tiap dokumen menyebut divisi pemeriksanya; tombol **Isi dummy** mengisi semua dokumen yang belum ada dengan file contoh untuk demo), cek otomatis area & jadwal, ajukan, status "Giliran: …", waktu tunggu per divisi. Keputusan **Divisi Event** lalu **Operasional Mall** dilakukan di Command Center. Acara baru baru bisa dipublikasikan setelah disetujui. **Log aktivitas** acara (siapa, kapan, apa, nilai lama → baru) dengan rantai hash dan unduh CSV |
 | Peserta & transaksi | **Unduh Peserta (Excel)**. Cari (termasuk plat nomor) & saring per status (lunas, menunggu bayar, kedaluwarsa, batal, refund) dan per kendaraan (mobil, motor, tanpa kendaraan). Kolom kendaraan & plat. Detail pesanan: ubah data peserta dan kendaraan, kirim ulang e-ticket, batalkan, refund. **Unduh Peserta (CSV)** dan **Transaksi (CSV)** |
 | Keuangan & ROI | Bruto, refund, neto, biaya layanan, rekonsiliasi per metode pembayaran, deteksi selisih, penjualan per kategori, bagi hasil & ROI. **Unduh Rekonsiliasi (CSV)** |
 | Check-in & gate | Pemindai QR di dalam konsol, statistik masuk per gate, lapor anomali ke Command Center |
@@ -143,13 +143,14 @@ Sembilan dashboard dan dua alat SOP/simulasi.
   (plat peserta acara hari ini ditandai), drop-off/valet, pengisian EV, pendapatan per jam.
   **Prediksi parkir**: grafik okupansi mobil per jam hari ini (pola mal + kendaraan acara) dan tabel acara 7 hari ke depan
   (mobil/motor terdaftar + proyeksi, okupansi puncak Aman/Waspada/Penuh, rekomendasi, tombol tiket persiapan).
-  **Simulasi parkir penuh**: okupansi zona naik bertahap; peringatan di 90%, di 100% muncul banner merah, tiket P2
+  **Simulasi parkir penuh** (langsung semua zona mobil): okupansi naik bertahap; peringatan di 90%, di 100% muncul banner merah, tiket P2
   SOP-PRK-06 untuk Tim Parkir dan saran zona pengalihan. "Akhiri simulasi" mengembalikan data sensor.
   Alarm terasa nyata: tahap Waspada (85%) / Kritis (95%) / Penuh (100%) dengan **detak ganda lub-dub** yang makin cepat
-  (40 → 56 → 72 per menit) dan perkiraan "penuh dalam mm:ss"; saat penuh **bilah alarm merah di semua menu Command Center**,
-  badge "!" berdenyut di menu Parkir, **suara alarm** (aktif bawaan, bisa dibisukan), **papan VMS** gerbang (matriks LED
-  "PENUH ◀ B2"), **peta basement**, dan **log ANPR langsung**. **Akui alarm** mematikan suara dan mencatat operator & waktu
-  respons di tiket; **Arahkan** mengubah papan VMS & panah LED, zona penuh berangsur turun; di bawah 95% "Kembali normal".
+  (40 → 56 → 72 per menit) dan perkiraan "penuh dalam mm:ss"; saat penuh **latar seluruh halaman Command Center berdenyut
+  merah** (lub-dub), **bilah alarm merah di semua menu**, badge "!" berdenyut di menu Parkir, **suara alarm** (aktif bawaan,
+  bisa dibisukan), dan **log ANPR langsung**. **Akui alarm** mematikan suara, latar jadi merah tipis diam, dan operator & waktu
+  respons tercatat di tiket; **Arahkan** mengalihkan ke Parkir Barat (bila tidak dipakai acara) atau overflow, okupansi
+  berangsur turun; di bawah 95% "Kembali normal".
 - **Pemantauan Event** (hanya baca): pemilih acara (cari, dikelompokkan per status), portofolio semua acara dengan
   **Riwayat 12 bulan**, detail acara, denah langsung,
   gate & keamanan, transaksi, keuangan & ROI. Unduh CSV peserta/transaksi/rekonsiliasi juga

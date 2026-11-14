@@ -1757,8 +1757,6 @@ a.pg-sw-it:hover, button.pg-sw-it:hover, a.pg-sw-it:focus-visible, button.pg-sw-
 @keyframes hb-glow-amb { 0%, 100% { box-shadow: 0 0 0 0 rgb(245 158 11 / .5); } 20% { box-shadow: 0 0 0 8px rgb(245 158 11 / .18); } 60% { box-shadow: 0 0 0 14px rgb(245 158 11 / 0); } }
 @keyframes hb-bg { 0%, 100% { background-color: rgb(var(--error) / .1); } 12%, 36% { background-color: rgb(var(--error) / .2); } }
 @keyframes pk-stripe { to { background-position: 28px 0; } }
-@keyframes vms-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .15; } }
-@keyframes pm-flow { to { stroke-dashoffset: -24; } }
 .pk-ic { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 999px; }
 .hb-warn { color: #d97706; background: rgb(245 158 11 / .14); animation: hb 1.5s ease-in-out infinite, hb-glow-amb 1.5s ease-out infinite; }
 .hb-crit { color: #ea580c; background: rgb(234 88 12 / .16); animation: hb 1.07s ease-in-out infinite, hb-glow-amb 1.07s ease-out infinite; }
@@ -1796,27 +1794,7 @@ a.pg-sw-it:hover, button.pg-sw-it:hover, a.pg-sw-it:focus-visible, button.pg-sw-
 .pz-full { animation: hb-glow .833s ease-out infinite; border-color: rgb(var(--error)) !important; }
 .pz-full .pz-tag { background: rgb(var(--error)); color: #fff; }
 .pz-full .rounded-full > div { background-image: repeating-linear-gradient(45deg, rgb(255 255 255 / .35) 0 7px, transparent 7px 14px) !important; background-color: rgb(var(--error)) !important; background-size: 28px 100%; animation: pk-stripe .8s linear infinite; }
-/* papan VMS gerbang: matriks LED */
-.vms { display: grid; gap: 4px; padding: 14px 16px; border-radius: 10px; background: #0b0d10; border: 3px solid #2a2f36; box-shadow: inset 0 0 24px rgb(0 0 0 / .8); background-image: radial-gradient(rgb(255 255 255 / .05) 1px, transparent 1.3px); background-size: 5px 5px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
-.vms-l { font-size: 15px; line-height: 22px; color: #ffb020; text-shadow: 0 0 6px rgb(255 176 32 / .7); white-space: nowrap; overflow: hidden; }
-.vms-big { font-size: 28px; line-height: 36px; }
-.vms-red { color: #ff3b3b; text-shadow: 0 0 8px rgb(255 59 59 / .85); }
-.vms-amb { color: #ffb020; }
-.vms-grn { color: #38f27a; text-shadow: 0 0 6px rgb(56 242 122 / .7); }
-.vms-blink { animation: vms-blink 1s steps(1) infinite; }
-/* peta basement */
-.pm-map { width: 100%; max-width: 560px; height: auto; display: block; }
-.pm-z rect { stroke-width: 1.5; fill: rgb(34 197 94 / .16); stroke: rgb(34 197 94 / .55); }
-.pm-warn rect { fill: rgb(245 158 11 / .18); stroke: rgb(245 158 11 / .7); }
-.pm-crit rect { fill: rgb(234 88 12 / .22); stroke: rgb(234 88 12 / .8); }
-.pm-full rect { fill: rgb(244 63 94 / .3); stroke: rgb(244 63 94); }
-.pm-alarm { transform-box: fill-box; transform-origin: center; animation: hb .833s ease-in-out infinite; }
-.pm-to rect { stroke: rgb(56 189 248); stroke-width: 2.5; }
-.pm-t { font-size: 12px; font-weight: 700; fill: rgb(var(--on-surface)); }
-.pm-n { font-size: 15px; font-weight: 600; fill: rgb(var(--on-surface-variant)); }
-.pm-arrow { fill: none; stroke: rgb(56 189 248); stroke-width: 3; stroke-dasharray: 8 4; animation: pm-flow .6s linear infinite; }
-.pm-head { fill: rgb(56 189 248); }
-@media (max-width: 767px) { .cc-park-alarm { top: 64px; } .pk-alarm .pk-txt { min-width: 100%; order: 5; } .vms-big { font-size: 22px; } }
+@media (max-width: 767px) { .cc-park-alarm { top: 64px; } .pk-alarm .pk-txt { min-width: 100%; order: 5; } }
 
 /* ================================================================ riwayat 12 bulan (arsip edisi sebelumnya) */
 .pg-hist-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
@@ -1839,3 +1817,11 @@ a.pg-sw-it:hover, button.pg-sw-it:hover, a.pg-sw-it:focus-visible, button.pg-sw-
 .lp-card-past .lp-card-img img { filter: grayscale(.35); }
 .lp-past-tag { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: rgb(20 33 61 / .85); color: #fff; font-size: 12px; font-weight: 600; }
 .lp-card-past .lp-more { align-self: flex-end; }
+/* Latar halaman Command Center saat parkir penuh: berdenyut merah "lub-dub" 72/menit (belum diakui), merah tipis diam
+   setelah diakui. Hanya warna latar & cahaya tepi (bukan kedipan terang), < 3 kali/detik; reduced motion: diam. */
+@keyframes hb-page { 0%, 55%, 100% { background-color: rgb(var(--surface)); } 12% { background-color: color-mix(in srgb, rgb(244 63 94) 16%, rgb(var(--surface))); } 24% { background-color: color-mix(in srgb, rgb(244 63 94) 5%, rgb(var(--surface))); } 36% { background-color: color-mix(in srgb, rgb(244 63 94) 12%, rgb(var(--surface))); } }
+@keyframes hb-edge { 0%, 55%, 100% { opacity: .25; } 12% { opacity: 1; } 24% { opacity: .45; } 36% { opacity: .85; } }
+body.pk-page-full { animation: hb-page .833s ease-in-out infinite; }
+body.pk-page-full::after { content: ''; position: fixed; inset: 0; z-index: 25; pointer-events: none; box-shadow: inset 0 0 140px 20px rgb(244 63 94 / .45); animation: hb-edge .833s ease-in-out infinite; }
+body.pk-page-ack { background-color: color-mix(in srgb, rgb(244 63 94) 6%, rgb(var(--surface))); }
+body.pk-page-ack::after { content: ''; position: fixed; inset: 0; z-index: 25; pointer-events: none; box-shadow: inset 0 0 120px 10px rgb(244 63 94 / .2); }

@@ -517,6 +517,17 @@
       gtrxAll().forEach((o) => rows.push([o.id, evOf(o.ev).name, o.name, o.email, o.phone, vehName(o), vehPlate(o), o.items.length, o.total, o.method || '', gStOf(o), Evt.fmtDT(o.createdAt), o.paidAt ? Evt.fmtDT(o.paidAt) : '']));
       Evt.csv('transaksi_semua_acara.csv', rows);
     });
+    // Demo: isi semua dokumen persetujuan yang belum ada dengan nama file contoh (tercatat di log seperti unggahan biasa).
+    const DUMMY = { proposal: 'Proposal_Rundown', layout: 'Denah_Area_Dekorasi', legal: 'Legalitas_NIB_KTP_PIC', teknis: 'Kebutuhan_Teknis_Listrik_Sound', k3: 'Rencana_Keamanan_K3', izin: 'Surat_Izin_Keramaian_Polsek', khusus: 'Izin_Khusus_Pajak_Hiburan' };
+    el.querySelectorAll('[data-doc-dummy]').forEach((b) => b.addEventListener('click', async () => {
+      const x = Evt.ev(b.dataset.docDummy), ap = x && x.approval; if (!ap) return;
+      b.disabled = true; let n = 0;
+      for (const d of Evt.DOCS.filter((d) => !ap.docs[d.id])) {
+        const ext = d.id === 'teknis' ? '.xlsx' : '.pdf';
+        if (await act(() => Evt.uploadDoc(x.id, d.id, { name: (DUMMY[d.id] || d.id) + '_' + x.id + ext, size: 180000 + Math.floor(Math.random() * 2200000) })) !== null) n++;
+      }
+      UI.toast(n + ' dokumen contoh dicatat', 'P4'); redraw();
+    }));
     const ca = el.querySelector('#g-csv-arc'); if (ca) ca.addEventListener('click', () => {
       const rows = [['ID', 'Edisi', 'Acara', 'Tanggal', 'Tiket terjual', 'Kapasitas', 'Kehadiran', 'Transaksi', 'Refund', 'Bruto', 'Neto', 'Biaya Layanan']];
       arcVis().forEach((ed) => { const s = Evt.arcStats(ed.id); rows.push([ed.id, ed.edition, ed.name, Evt.fmtDT(ed.start), s.sold, s.cap, Math.round(s.attendance * 100) + '%', s.orders, s.refunds, s.gross, s.net, s.fee]); });
@@ -1649,7 +1660,7 @@
     return `<div class="grid grid-cols-1 2xl:grid-cols-12 gap-5">
       <div class="2xl:col-span-5 flex flex-col gap-5">
         <section class="card p-5">${UI.h('Alur persetujuan', 'Penyelenggara mengajukan, Divisi Event lalu Operasional Mall memutuskan di Command Center', '', 'approval')}${flow}</section>
-        ${ap ? `<section class="card p-5">${UI.h('Dokumen persyaratan', miss ? miss + ' dokumen wajib belum diunggah' : 'Semua dokumen wajib sudah ada', '', 'folder_open')}${A.docs(e, { editable: isMgr() })}</section>` : ''}
+        ${ap ? `<section class="card p-5">${UI.h('Dokumen persyaratan', miss ? miss + ' dokumen wajib belum diunggah' : 'Semua dokumen wajib sudah ada', isMgr() && Evt.DOCS.some((d) => !ap.docs[d.id]) && !['DIAJUKAN', 'DISETUJUI'].includes(ap.st) ? `<button type="button" class="btn-ghost" data-doc-dummy="${e.id}" title="Isi semua dokumen yang belum ada dengan file contoh (demo)">${icon('auto_fix_high', 'text-[16px]')} Isi dummy</button>` : '', 'folder_open')}${A.docs(e, { editable: isMgr() })}</section>` : ''}
       </div>
       <section class="card p-5 2xl:col-span-7">${UI.h('Log aktivitas acara', 'Siapa melakukan apa dan kapan. Entri hanya bisa ditambah, tidak bisa diubah atau dihapus', A.integrity(e), 'history')}${A.log(e)}</section></div>`;
   }

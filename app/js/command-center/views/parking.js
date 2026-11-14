@@ -119,8 +119,8 @@
     if (!s.warned && o.pct >= 0.9) { UI.toast(esc(name) + ' sudah 90%. Siapkan pengalihan.', 'P3', 'SOP-PRK-06'); simPatch({ hist, warned: true }); } else simPatch({ hist });
     if (o.used < o.cap) return;
     clearInterval(simT); simT = null;
-    const ids = simIds(s), alt = zones().filter((z) => isCar(z) && z.id !== 'PB' && !ids.includes(z.id) && z.cap - z.used > 0).sort((a, b) => (b.cap - b.used) - (a.cap - a.used))[0];
-    const to = alt ? alt.name + ' (' + num(alt.cap - alt.used) + ' slot kosong)' : 'parkir overflow';
+    const ids = simIds(s), pbBusy = evList(Date.now() - DAY, Date.now() + DAY).some((e) => { const pd = pdOf(e.id); return pd.usesParking && Date.now() >= pd.doors - 2 * HOUR && Date.now() < pd.end; }), alt = zones().filter((z) => isCar(z) && !ids.includes(z.id) && !(pbBusy && z.id === 'PB') && z.cap - z.used > 0).sort((a, b) => (b.cap - b.used) - (a.cap - a.used))[0];
+    const to = alt ? alt.name + ' (' + num(alt.cap - alt.used) + ' slot kosong)' : pbBusy ? 'parkir overflow luar (Parkir Barat dipakai acara)' : 'parkir overflow';
     const tk = Store.createTicket({ title: name + ' penuh (100%)', desc: 'Sensor bay melaporkan ' + name + ' penuh. Arahkan LED panduan dan petugas ke ' + to + '. Simulasi dari Parkir & Mobilitas.', priority: 'P2', category: 'Keamanan, Parkir & Crowd', zone: 'BASEMENT', location: name, source: 'Simulasi sensor bay (Parkir & Mobilitas)', sop: 'SOP-PRK-06', cam: 'CAM-42', team: 'Tim Parkir', fromDb: 'PARK' });
     Store.addEvent({ from: 'PARK', to: 'TIC', code: 'EVT-PARK-FULL', title: name + ' penuh', detail: 'Alihkan ke ' + to, sev: 'P2', ticketId: tk.id });
     simPatch({ full: true, at: Date.now(), ticketId: tk.id, to, toId: alt ? alt.id : null, name, ack: false, anpr: [] });
@@ -137,7 +137,7 @@
     if (!s.recovered) {
       const plate = PLATES[beatN % PLATES.length] + ' ' + (1000 + Math.floor(Math.random() * 8999)) + ' ' + SUF[Math.floor(Math.random() * SUF.length)] + SUF[Math.floor(Math.random() * SUF.length)];
       const toZ = s.toId && zoneById(s.toId);
-      p.anpr = [[clock(Date.now()), plate, 'Gate P1', s.redirect && toZ ? 'Dialihkan ke ' + short(toZ.name) : 'Tertahan, ' + short(s.name) + ' penuh']].concat(s.anpr || []).slice(0, 6);
+      p.anpr = [[clock(Date.now()), plate, 'Gate P1', s.redirect ? 'Dialihkan ke ' + (toZ ? short(toZ.name) : 'parkir overflow') : 'Tertahan, ' + short(s.name) + ' penuh']].concat(s.anpr || []).slice(0, 6);
     }
     if (s.redirect && !s.recovered) {
       simIds(s).forEach((id) => { const z = zoneById(id); Store.parkSet(id, z.used - Math.ceil(z.cap * 0.012)); });
@@ -217,25 +217,11 @@
     if (!s.ack) return `<div class="pk-alarm full" role="alert"><span class="pk-ic hb-full">${icon('e911_emergency', 'text-[22px]')}</span><b>PARKIR PENUH</b><span class="pk-txt">${name} · <b data-pk-since="${s.at}"></b> sejak penuh · tiket ${esc(s.ticketId)}</span><button type="button" class="pk-btn main" data-pk="ack">${icon('done_all', 'text-[16px]')} Akui alarm</button><button type="button" class="pk-btn" data-pk="redirect">${icon('alt_route', 'text-[16px]')} Arahkan ke ${to}</button>${open}${sound}</div>`;
     return `<div class="pk-alarm full ack" role="status"><span class="pk-ic hb-ack">${icon('e911_emergency', 'text-[22px]')}</span><b>PARKIR PENUH</b><span class="pk-txt">${name} · <b data-pk-since="${s.at}"></b> · diakui ${esc(s.ackBy)} ${clock(s.ackAt).slice(0, 5)}${s.redirect ? ' · dialihkan ke ' + to : ''}</span>${s.redirect ? '' : `<button type="button" class="pk-btn main" data-pk="redirect">${icon('alt_route', 'text-[16px]')} Arahkan ke ${to}</button>`}${open}</div>`;
   }
-  window.ParkAlarm = { bar, tick, count: () => { const s = Store.s.parkSim; return s && s.full && !s.recovered ? 1 : 0; } };
+  // Tingkat alarm untuk latar halaman: 'full' = berdenyut (belum diakui), 'ack' = merah tipis diam, '' = normal.
+  const level = () => { const s = Store.s.parkSim; return s && s.full && !s.recovered ? (s.ack ? 'ack' : 'full') : ''; };
+  window.ParkAlarm = { bar, tick, level, count: () => { const s = Store.s.parkSim; return s && s.full && !s.recovered ? 1 : 0; } };
 
-  // Papan VMS gerbang + peta basement + log ANPR langsung (halaman Parkir & Mobilitas, selama simulasi).
-  function vms(s) {
-    const o = simOcc(s), full = s.full && !s.recovered, toZ = s.toId && zoneById(s.toId);
-    const head = s.zone === 'ALL' ? 'PARKIR MOBIL' : short(simName(s)).toUpperCase();
-    const l2 = full ? '<span class="vms-red vms-blink">PENUH</span>' : `<span class="vms-amb">${num(Math.max(0, o.cap - o.used))} SLOT</span>`;
-    const l3 = full ? (toZ ? `<span class="vms-grn">${s.redirect ? '➜' : '◀'} ${esc(short(toZ.name).toUpperCase())} ${num(toZ.cap - toZ.used)}</span>` : '<span class="vms-amb">KE OVERFLOW</span>') : '<span class="vms-grn">SILAKAN MASUK</span>';
-    return `<div class="vms" role="img" aria-label="Papan petunjuk gerbang: ${esc(head)}, ${full ? 'penuh' : 'tersedia'}"><div class="vms-l">${esc(head)}</div><div class="vms-l vms-big">${l2}</div><div class="vms-l">${l3}</div></div>`;
-  }
-  const MAP = [['B1-A', 10, 10], ['B1-C', 130, 10], ['VIP', 250, 10], ['LADY', 370, 10], ['EV', 10, 80], ['B2-R', 130, 80], ['MTR', 250, 80], ['PB', 370, 80]];
-  function basementMap(s) {
-    const ids = simIds(s), W = 110, Hh = 58;
-    const cell = MAP.map(([id, x, y]) => { const z = zoneById(id); if (!z) return ''; const st = stageOf(z.used / z.cap); return `<g class="pm-z pm-${st}${ids.includes(id) && s.full && !s.recovered ? ' pm-alarm' : ''}${id === s.toId && s.redirect ? ' pm-to' : ''}"><rect x="${x}" y="${y}" width="${W}" height="${Hh}" rx="8"/><text x="${x + 10}" y="${y + 22}" class="pm-t">${esc(id)}</text><text x="${x + 10}" y="${y + 44}" class="pm-n">${Math.floor(z.used / z.cap * 100)}%</text></g>`; }).join('');
-    const pos = (id) => { const m = MAP.find((x) => x[0] === id); return m ? [m[1] + W / 2, m[2] + Hh / 2] : null; };
-    const a = s.redirect && s.toId && ids.length === 1 ? [pos(ids[0]), pos(s.toId)] : null;
-    const arrow = a && a[0] && a[1] ? `<path class="pm-arrow" d="M${a[0][0]},${a[0][1]} C${a[0][0]},${(a[0][1] + a[1][1]) / 2 + 40} ${a[1][0]},${(a[0][1] + a[1][1]) / 2 + 40} ${a[1][0]},${a[1][1]}" marker-end="url(#pm-head)"/>` : '';
-    return `<svg viewBox="0 0 490 148" class="pm-map" role="img" aria-label="Peta okupansi basement"><defs><marker id="pm-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="pm-head"/></marker></defs>${cell}${arrow}</svg>`;
-  }
+  // Panel simulasi di halaman Parkir: status, tombol penanganan, dan log ANPR langsung.
   function simPanel() {
     const s = Store.s.parkSim; if (!s) return '';
     const o = simOcc(s), st = s.full && !s.recovered ? 'full' : s.recovered ? 'ok' : stageOf(o.pct), name = esc(simName(s));
@@ -248,9 +234,7 @@
     const anpr = (s.anpr || []).map((a) => `<div class="pk-anpr"><span class="text-outline">${a[0]}</span><span class="pk-plate">${esc(a[1])}</span><span class="text-on-surface-variant flex-1">${esc(a[2])}</span><span class="${/Dialihkan/.test(a[3]) ? 'text-secondary' : 'text-rose-300'}">${esc(a[3])}</span></div>`).join('');
     return `<section class="card p-5 mb-5 pk-panel pk-${st}" ${st === 'full' ? 'role="alert"' : ''}>
       <div class="flex flex-wrap items-center gap-3 mb-4"><span class="pk-ic hb-${s.ack && st === 'full' ? 'ack' : st}">${icon(st === 'full' ? 'e911_emergency' : st === 'ok' ? 'check_circle' : 'directions_car', 'text-[22px]')}</span><div class="flex-1 min-w-0 font-body-md text-body-md">${head}</div>${acts}${s.full && !s.recovered ? `<button class="btn-ghost !px-2" data-pk="mute" aria-label="${s.muted ? 'Nyalakan suara alarm' : 'Bisukan suara alarm'}">${icon(s.muted ? 'volume_off' : 'volume_up', 'text-[18px]')}</button>` : ''}<button class="btn-ghost" data-pk="end">${icon('restart_alt', 'text-[16px]')} Akhiri simulasi</button></div>
-      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start"><div class="xl:col-span-5"><div class="lbl mb-2">Papan petunjuk gerbang (VMS)</div>${vms(s)}</div>
-        <div class="xl:col-span-7"><div class="lbl mb-2">Peta okupansi basement${s.redirect ? ' · LED panduan aktif' : ''}</div>${basementMap(s)}</div></div>
-      ${anpr ? `<div class="mt-4"><div class="lbl mb-1">ANPR langsung, Gate P1</div>${anpr}</div>` : ''}</section>`;
+      ${anpr ? `<div class="mt-2"><div class="lbl mb-1">ANPR langsung, Gate P1</div>${anpr}</div>` : ''}</section>`;
   }
 
   window.Views.parking = {
@@ -332,11 +316,7 @@
     mount(root) {
       tick();
       root.querySelector('#newpark').addEventListener('click', () => Shell.newTicket({ sop: 'SOP-PRK-01', priority: 'P3', category: 'Keamanan, Parkir & Crowd', zone: 'BASEMENT', team: 'Tim Parkir', source: 'Parkir & Mobilitas', cam: 'CAM-61', fromDb: 'PARK' }));
-      root.querySelector('#simpark').addEventListener('click', () => {
-        const opts = [['ALL', 'Semua zona mobil']].concat(zones().filter((z) => z.id !== 'PB').map((z) => [z.id, z.name]));
-        UI.modal(icon('car_crash', 'text-primary text-[22px] align-middle') + ' Simulasi parkir penuh', `<p class="font-body-sm text-body-sm text-on-surface-variant mb-3">Okupansi zona dinaikkan bertahap sampai penuh. Di 90% muncul peringatan, di 100% Command Center membuat peringatan parkir penuh dan tiket P2 untuk Tim Parkir (SOP-PRK-06). Data sensor dikembalikan saat simulasi diakhiri.</p><div class="flex flex-wrap gap-2">${opts.map(([k, l]) => `<button class="chip-btn" data-simz="${k}">${esc(l)}</button>`).join('')}</div>`);
-        document.querySelectorAll('[data-simz]').forEach((b) => b.addEventListener('click', () => { UI.closeModal(); startSim(b.dataset.simz); }));
-      });
+      root.querySelector('#simpark').addEventListener('click', () => startSim('ALL')); // semua zona mobil sekaligus
       root.querySelectorAll('[data-prep]').forEach((b) => b.addEventListener('click', () => {
         pdCache = {};
         const r = predRows().find((x) => x.e.id === b.dataset.prep); if (!r) return;
