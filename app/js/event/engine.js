@@ -789,6 +789,19 @@
   let actor = { name: 'Pengelola acara', role: 'Penyelenggara' };
   const newApproval = () => ({ st: 'DRAFT', round: 0, steps: {}, docs: {} });
   const auditHash = (prev, x) => hash([prev, x.ts, x.by, x.role, x.act, x.text, x.note || ''].join('|'));
+  // Pilah hasil centang manifest offline: ok = [[id tiket, waktu]] yang akan dicatat, lainnya hanya jumlah.
+  function ckImport(d, evId, items) {
+    const r = { ok: [], used: 0, void: 0, other: 0 }, seen = new Set();
+    (items || []).forEach((x) => {
+      const id = String((x && x.id) || '').trim(); if (!id || seen.has(id)) return; seen.add(id);
+      const tk = d.tickets[id];
+      if (!tk || tk.ev !== evId) r.other++;
+      else if (tk.status !== 'ACTIVE') r.void++;
+      else if (tk.checkedInAt) r.used++;
+      else r.ok.push([id, Number(x.ts) || 0]);
+    });
+    return r;
+  }
   function audit(e, t, act, text, opts) {
     const w = (opts && opts.who) || actor, log = e.audit || (e.audit = []);
     const x = { ts: t, by: w.name, role: w.role, act, text };
@@ -934,6 +947,22 @@
         return res;
       });
     },
+    // Hasil centang manifest offline (SOP-EVT-05) dicocokkan ke sistem setelah server pulih. items = [{id, ts}].
+    // Hanya tiket aktif acara ini yang belum check-in yang dicatat; sisanya dihitung (sudah tercatat, batal, lain).
+    importCheckins(evId, items, gate) {
+      return tx((d, t) => {
+        if (!d.events[evId]) fail('Acara tidak ditemukan.');
+        const r = ckImport(d, evId, items), g = gate || 'Manifest offline';
+        r.ok.forEach(([id, ts]) => {
+          const tk = d.tickets[id], at = ts && ts <= t && ts > t - 7 * 86400000 ? ts : t;
+          tk.checkedInAt = at; tk.gate = g;
+          d.scans.unshift({ ts: at, ev: evId, gate: g, result: 'VALID', ticket: id, reason: 'Check-in dari manifest offline, dicocokkan setelah server pulih' });
+        });
+        d.scans = d.scans.slice(0, 500);
+        return { ok: r.ok.length, used: r.used, void: r.void, other: r.other };
+      });
+    },
+    importPreview(evId, items) { const r = ckImport(state, evId, items); return { ok: r.ok.length, used: r.used, void: r.void, other: r.other }; },
     updateEvent(evId, patch) {
       return tx((d, t) => {
         const e = d.events[evId]; if (!e) fail('Acara tidak ditemukan.');

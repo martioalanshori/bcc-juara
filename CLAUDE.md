@@ -42,6 +42,21 @@ node --test --test-name-pattern="hold" "tests/*.test.mjs"   # tests matching a n
 
 UI changes still have to be checked by running `node server.js` and opening the pages in a browser.
 
+Browser tests per role (Playwright) live in `tests/e2e/` with their **own** `package.json` (the root one must stay
+dependency-free; `tests/` is in `.vercelignore`). They use the installed Google Chrome (`channel: 'chrome'`) and start
+`tests/e2e/server.cjs` (same `server/app.js`, state in a temp folder, demo mode), so `data/` is never touched:
+
+```sh
+cd tests/e2e && npm install            # once
+npm test                               # headless
+npm run lihat                          # visible Chrome window, every action slowed 400 ms (LIHAT=800 for slower)
+npm run ui                             # Playwright UI mode: pick and watch tests step by step
+```
+
+`specs/01-akses.spec.mjs` = login and portal access per role; `specs/02-alur-peran.spec.mjs` = one serial cross-role
+flow (visitor buys → gate checks in → pengelola offline manifest + upload → tenant submits → Divisi Event & Ops approve
+→ tenant publishes).
+
 - Rebuild `app/vendor/tailwind.css` whenever you use a Tailwind class that isn't already in it.
   The content globs are `app/pages/*.html` and `app/js/**/*.js`. Theme "Papan Petunjuk":
   colour values are CSS variables in `app/css/tokens.css` (dark and light), mapped to Tailwind
@@ -53,7 +68,7 @@ UI changes still have to be checked by running `node server.js` and opening the 
 - `app/js/core/theme.js` (loaded in `<head>` of every page) sets `data-theme` on `<html>`; any button
   with `data-theme-toggle` switches mode. QR codes sit on `.paper`, dialog backdrops on `.scrim`.
 - UI copy follows `docs/PANDUAN_Teks_UI.md` (menu names, sentence case, no em dashes).
-- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=105`; `fonts.css`
+- Every `/app/...` script and stylesheet tag carries a cache-buster (currently `?v=107`; `fonts.css`
   has its own, `?v=5`). Assets are cached **1 year, immutable** (`assetCache` in `server/app.js`
   and the `/app/` header in `vercel.json`), so **bump it on every page (`app/pages/*.html`) whenever
   you change JS or CSS**, or browsers keep the old file. `npm run dev` (`--dev`) disables caching, so

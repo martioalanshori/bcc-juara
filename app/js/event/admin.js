@@ -381,7 +381,52 @@
       ${mf ? `<div class="mf-menu-h">Manifest cadangan kalau sistem mati · <b class="mf-${tone}">${label}</b></div>
       <button type="button" data-mf-off="${e.id}">${icon('offline_pin', 'text-[18px]')} Manifest offline<small>Dibuka tanpa server: cari & centang hadir</small></button>
       <button type="button" data-mf-xlsx="${e.id}">${icon('table_view', 'text-[18px]')} Manifest Excel (.xlsx)</button>
-      <button type="button" data-mf-csv="${e.id}">${icon('download', 'text-[18px]')} Manifest CSV</button>` : ''}</div></details>`;
+      <button type="button" data-mf-csv="${e.id}">${icon('download', 'text-[18px]')} Manifest CSV</button>
+      ${isMgr() ? `<button type="button" data-mf-up="${e.id}">${icon('upload_file', 'text-[18px]')} Unggah hasil centang<small>CSV dari manifest offline, dicocokkan ke sistem</small></button>` : ''}` : ''}</div></details>`;
+  }
+  // Unggah hasil centang manifest offline setelah server pulih (SOP-EVT-05): pratinjau dulu, lalu catat sebagai check-in.
+  function uploadManifest(evId) {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv';
+    inp.addEventListener('change', async () => {
+      const f = inp.files && inp.files[0]; if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { UI.toast('File terlalu besar (maks. 5 MB).', 'P2'); return; }
+      const p = EvtCheckin.backup.parseUpload(await f.text()), e = Evt.ev(evId);
+      if (p.error) { UI.toast(esc(p.error), 'P2'); return; }
+      const pv = Evt.importPreview(evId, p.items), other = p.ev && p.ev !== evId ? Evt.ev(p.ev) : null;
+      const impact = [['Akan dicatat hadir', num(pv.ok)], ['Sudah check-in di sistem', num(pv.used)], ['Tiket batal (diabaikan)', num(pv.void)], ['Bukan tiket acara ini', num(pv.other)]];
+      if (!pv.ok) { await UI.confirm({ title: 'Tidak ada yang perlu dicatat', body: esc(f.name) + ': semua centang sudah tercatat atau bukan tiket aktif ' + esc(e.name) + '.' + (other ? ' File ini sepertinya untuk ' + esc(other.id + ' ' + other.name) + '.' : ''), impact, confirmText: 'Tutup' }); return; }
+      if (!(await UI.confirm({ title: 'Cocokkan hasil centang ke sistem?', body: esc(f.name) + ' · ' + esc(e.name) + '. Peserta yang dicentang di manifest offline dicatat check-in dengan gate "Manifest offline" dan waktu centangnya.', impact, confirmText: 'Catat ' + num(pv.ok) + ' check-in' }))) return;
+      const r = await act(() => Evt.importCheckins(evId, p.items));
+      if (r) { UI.toast(num(r.ok) + ' check-in dari manifest offline dicatat', 'P4'); redraw(); }
+    });
+    inp.click();
+  }
+  // Unggah massal (menu Unduh "Semua acara"): banyak file CSV sekaligus, acara dari semua manifest offline. Tiap tiket
+  // dikelompokkan ke acaranya sendiri, jadi file dari beberapa acara boleh dicampur; pratinjau per acara lalu catat.
+  function uploadManifestAll() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.csv,text/csv'; inp.multiple = true;
+    inp.addEventListener('change', async () => {
+      const files = [...(inp.files || [])]; if (!files.length) return;
+      const bad = [], by = {}; let unknown = 0;
+      for (const f of files) {
+        if (f.size > 5 * 1024 * 1024) { bad.push([f.name, 'terlalu besar (maks. 5 MB)']); continue; }
+        const p = EvtCheckin.backup.parseUpload(await f.text());
+        if (p.error) { bad.push([f.name, p.error]); continue; }
+        p.items.forEach((x) => { const t = Evt.s.tickets[x.id]; if (!t || !Evt.ev(t.ev)) unknown++; else (by[t.ev] = by[t.ev] || []).push(x); });
+      }
+      const evs = Object.keys(by).map((id) => ({ e: Evt.ev(id), items: by[id], pv: Evt.importPreview(id, by[id]) })).sort((a, b) => a.e.start - b.e.start);
+      const total = evs.reduce((n, x) => n + x.pv.ok, 0);
+      const impact = evs.map((x) => [esc(x.e.id + ' ' + x.e.name), num(x.pv.ok) + ' dicatat' + (x.pv.used ? ' · ' + num(x.pv.used) + ' sudah' : '') + (x.pv.void ? ' · ' + num(x.pv.void) + ' batal' : '')])
+        .concat(unknown ? [['Tiket tidak dikenal', num(unknown)]] : [], bad.map(([n, why]) => [esc(n), 'Dilewati: ' + esc(why)]));
+      const body = num(files.length) + ' file, ' + num(evs.length) + ' acara.';
+      if (!total) { await UI.confirm({ title: 'Tidak ada yang perlu dicatat', body: body + ' Semua centang sudah tercatat atau bukan tiket aktif.', impact, confirmText: 'Tutup' }); return; }
+      if (!(await UI.confirm({ title: 'Cocokkan hasil centang semua acara?', body: body + ' Peserta yang dicentang dicatat check-in dengan gate "Manifest offline" dan waktu centangnya.', impact, confirmText: 'Catat ' + num(total) + ' check-in' }))) return;
+      let done = 0;
+      for (const x of evs.filter((y) => y.pv.ok)) { const r = await act(() => Evt.importCheckins(x.e.id, x.items)); if (r) done += r.ok; }
+      if (done) UI.toast(num(done) + ' check-in dari ' + num(evs.filter((y) => y.pv.ok).length) + ' acara dicatat', 'P4');
+      redraw();
+    });
+    inp.click();
   }
   // Panel Dasbor: cadangan manifest acara yang berjalan atau mulai dalam 48 jam, status per acara di perangkat ini.
   function manifestPanel() {
@@ -395,7 +440,7 @@
       const sub = tone === 'warn' ? 'Manifest offline belum diunduh di perangkat ini' : tone === 'bad' ? 'Server terputus, data per ' + Evt.fmtTime(m.savedAt) : 'Diperbarui ' + Evt.fmtTime(m ? m.savedAt : t) + (dl ? ' · diunduh ' + (dl < d0.getTime() ? Evt.fmtShort(dl) + ' ' : '') + Evt.fmtTime(dl) : '');
       return `<li class="mf-row" style="--c:${esc(e.color)}">${plate(e)}<div class="min-w-0 flex-1"><b>${esc(e.name)}</b><small>${day(e.start)} · gate ${Evt.fmtTime(e.doors)} · ${(() => { const st = Evt.stats(e.id); return num(st.sold) + ' / ' + num(st.total - st.blocked) + ' terjual'; })()} · ${sub}</small></div>
         <span class="mf-st ${tone}"><i></i>${label}</span>
-        <span class="mf-act"><button type="button" class="btn-ghost" data-mf-off="${e.id}" title="Manifest offline">${icon('offline_pin', 'text-[16px]')}<span>Offline</span></button><button type="button" class="btn-ghost" data-mf-xlsx="${e.id}" title="Excel">${icon('table_view', 'text-[16px]')}<span>Excel</span></button><button type="button" class="btn-ghost" data-mf-csv="${e.id}" title="CSV">${icon('download', 'text-[16px]')}<span>CSV</span></button></span></li>`;
+        <span class="mf-act"><button type="button" class="btn-ghost" data-mf-off="${e.id}" title="Manifest offline">${icon('offline_pin', 'text-[16px]')}<span>Offline</span></button><button type="button" class="btn-ghost" data-mf-xlsx="${e.id}" title="Excel">${icon('table_view', 'text-[16px]')}<span>Excel</span></button><button type="button" class="btn-ghost" data-mf-csv="${e.id}" title="CSV">${icon('download', 'text-[16px]')}<span>CSV</span></button><button type="button" class="btn-ghost" data-mf-up="${e.id}" title="Unggah hasil centang manifest offline">${icon('upload_file', 'text-[16px]')}<span>Unggah</span></button></span></li>`;
     }).join('');
     return `<section class="card p-5 mb-5 pg-mf-panel">${UI.h('Hari ini & besok', 'Acara 48 jam ke depan dengan status cadangan manifest di perangkat ini (SOP-EVT-05). Semua acara sekaligus: menu Unduh di atas.', '', 'today')}
       ${Evt.offline ? `<p class="mf-warn">${icon('wifi_off', 'text-[18px]')} Server tidak terhubung. Unduhan memakai data terakhir yang diterima perangkat ini.</p>` : ''}
@@ -456,7 +501,8 @@
     return `<div class="pg-pagehead"><p><span><b>${all.length}</b> acara</span><span><b>${all.filter((e) => phaseTxt(e) === 'Dijual').length}</b> sedang dijual</span><span><b>${all.filter((e) => e.status === 'DRAFT').length}</b> draft</span></p>
       <details class="pg-more"><summary class="pg-dl-btn" title="Unduh laporan & manifest semua acara">${icon('download', 'text-[18px]')}<span>Unduh</span>${icon('expand_more', 'text-[18px]')}</summary><div class="pg-menu">
         <button type="button" data-report-all>${icon('picture_as_pdf', 'text-[18px]')} Laporan PDF semua acara</button>
-        <button type="button" data-mf-zip>${icon('folder_zip', 'text-[18px]')} Manifest semua acara (ZIP)<small>Cadangan kalau sistem mati (SOP-EVT-05)</small></button></div></details></div>`;
+        <button type="button" data-mf-zip>${icon('folder_zip', 'text-[18px]')} Manifest semua acara (ZIP)<small>Cadangan kalau sistem mati (SOP-EVT-05)</small></button>
+        ${isMgr() ? `<button type="button" data-mf-up-all>${icon('upload_file', 'text-[18px]')} Unggah hasil centang<small>Banyak file CSV sekaligus, semua acara</small></button>` : ''}</div></details></div>`;
   }
   function gdash() {
     const all = visEvs(), t = Evt.now(), D = 86400000;
@@ -1812,6 +1858,8 @@
     root.querySelectorAll('[data-mf-off]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.offline(b.dataset.mfOff); mfDone('Manifest offline ' + b.dataset.mfOff + ' diunduh'); }));
     root.querySelectorAll('[data-mf-xlsx]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.xlsx(b.dataset.mfXlsx); mfDone('Manifest Excel ' + b.dataset.mfXlsx + ' diunduh'); }));
     root.querySelectorAll('[data-mf-csv]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.download(b.dataset.mfCsv); mfDone('Manifest CSV ' + b.dataset.mfCsv + ' diunduh'); }));
+    root.querySelectorAll('[data-mf-up-all]').forEach((b) => b.addEventListener('click', () => { closeMenus(); uploadManifestAll(); }));
+    root.querySelectorAll('[data-mf-up]').forEach((b) => b.addEventListener('click', () => { closeMenus(); uploadManifest(b.dataset.mfUp); }));
     root.querySelectorAll('[data-mf-zip]').forEach((b) => b.addEventListener('click', () => { EvtCheckin.backup.zip(); mfDone('Manifest semua acara (ZIP) diunduh'); }));
     root.querySelectorAll('[data-new-ev]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); newEventPanel(b); }));
     root.querySelectorAll('[data-report-ev]').forEach((b) => b.addEventListener('click', () => { closeMenus(); const x = Evt.ev(b.dataset.reportEv); if (x) reportPdf(x); }));

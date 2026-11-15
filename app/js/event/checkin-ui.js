@@ -198,8 +198,38 @@
         '- <ID acara>/manifest_offline_<ID>.html: buka di browser tanpa server atau internet. Cari nama, booking, plat, atau kursi, lalu centang hadir.',
         '- <ID acara>/manifest_<ID>_<tanggal>.xlsx: daftar peserta untuk dicetak atau dicentang manual (kolom Hadir).',
         '- <ID acara>/manifest_<ID>_<tanggal>.csv: data yang sama dalam CSV.', '',
-        'Tiket berstatus "Batal, tolak" tidak boleh masuk. Setelah server pulih, unduh hasil centang dari manifest offline dan cocokkan ke sistem.'].join(String.fromCharCode(13, 10));
+        'Tiket berstatus "Batal, tolak" tidak boleh masuk. Setelah server pulih, unduh hasil centang dari manifest offline lalu unggah di konsol pengelola (menu Unduh acara, "Unggah hasil centang").'].join(String.fromCharCode(13, 10));
       return [['BACA_SAYA.txt', readme], ['SEMUA_PESERTA.xlsx', E.xlsxBytes(outRows(everyone), { sheet: 'Semua peserta', widths: [10, 32, 18].concat(WIDTHS) })], ['DAFTAR_ACARA.xlsx', E.xlsxBytes(idx, { sheet: 'Daftar acara', widths: [10, 44, 18, 26, 12, 15, 10] })]].concat(files);
+    },
+    // Baca CSV hasil centang manifest offline (ID Tiket, Booking, Pemegang, Waktu centang[, Waktu ISO]) atau manifest
+    // CSV yang kolom Hadir-nya diisi manual. Hasil: { items: [{id, ts}], ev: ID acara dari tiket pertama } atau error.
+    parseUpload(text) {
+      const src = String(text || '').replace(/^﻿/, ''), first = src.split(/\r?\n/, 1)[0] || '';
+      const sep = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ';' : ',';
+      const rows = []; let row = [], cell = '', q = false;
+      for (let i = 0; i < src.length; i++) {
+        const c = src[i];
+        if (q) { if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+        else if (c === '"') q = true;
+        else if (c === sep) { row.push(cell); cell = ''; }
+        else if (c === '\n' || c === '\r') { if (c === '\r' && src[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+        else cell += c;
+      }
+      if (cell || row.length) { row.push(cell); rows.push(row); }
+      const clean = (v) => String(v == null ? '' : v).trim().replace(/^'(?=[=+\-@\t\r])/, '');
+      const hi = rows.findIndex((r) => r.map(clean).includes('ID Tiket'));
+      if (hi < 0) return { error: 'Kolom "ID Tiket" tidak ditemukan. Pakai file hasil_centang_<ID>.csv dari manifest offline atau manifest CSV.' };
+      const head = rows[hi].map(clean), col = (n) => head.indexOf(n);
+      const iId = col('ID Tiket'), iHadir = col('Hadir'), iIso = col('Waktu ISO'), iTs = col('Waktu centang');
+      const when = (r) => {
+        const iso = iIso >= 0 ? Date.parse(clean(r[iIso])) : NaN; if (!isNaN(iso)) return iso;
+        const m = iTs >= 0 && clean(r[iTs]).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})\D+(\d{1,2})[.:](\d{2})(?:[.:](\d{2}))?/);
+        return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)).getTime() : 0;
+      };
+      const items = rows.slice(hi + 1).filter((r) => clean(r[iId]) && (iHadir < 0 || clean(r[iHadir]))).map((r) => ({ id: clean(r[iId]), ts: when(r) }));
+      if (!items.length) return { error: 'Tidak ada peserta yang dicentang hadir di file ini.' };
+      const tk = items.map((x) => E.s && E.s.tickets[x.id]).find(Boolean);
+      return { items, ev: tk ? tk.ev : null };
     },
     zip() { const f = backup.allFiles(); E.download('manifest_semua_acara_' + ymd(E.now()) + '.zip', E.zipBytes(f), 'application/zip'); backup.markDl([...new Set(f.map(([n]) => n.split('/')[0]).filter((x) => /^EVT-/.test(x)))]); },
     // Manifest offline: satu file HTML tanpa server & internet. Cari nama/booking/plat/kursi, centang hadir (tersimpan di
@@ -228,7 +258,7 @@ if(out.length<300)out.push('<li class="'+(v?'void':on?'on':'')+'"><input type="c
 L.innerHTML=out.join('')||'<li class="empty">Tidak ada yang cocok.</li>';N.textContent='Hadir '+in_+' / '+act;}
 L.addEventListener('change',function(e){var id=e.target.getAttribute('data-id');if(!id)return;if(e.target.checked)C[id]=Date.now();else delete C[id];save();draw()});
 q.addEventListener('input',draw);
-document.getElementById('exp').addEventListener('click',function(){var rows=[['ID Tiket','Booking','Pemegang','Waktu centang']];D.rows.forEach(function(r){if(C[r[2]])rows.push([r[2],r[1],r[3],new Date(C[r[2]]).toLocaleString('id-ID')])});
+document.getElementById('exp').addEventListener('click',function(){var rows=[['ID Tiket','Booking','Pemegang','Waktu centang','Waktu ISO']];D.rows.forEach(function(r){if(C[r[2]])rows.push([r[2],r[1],r[3],new Date(C[r[2]]).toLocaleString('id-ID'),new Date(C[r[2]]).toISOString()])});
 var csv='\\ufeff'+rows.map(function(r){return r.map(function(v){v=String(v);if(/^[=+\\-@\\t\\r]/.test(v))v="'"+v;return/[";,\\r\\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(';')}).join('\\r\\n');
 var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='hasil_centang_'+D.ev+'.csv';document.body.appendChild(a);a.click();a.remove()});
 draw();q.focus()})();</script></body></html>`;

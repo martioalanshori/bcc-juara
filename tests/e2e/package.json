@@ -1,0 +1,14 @@
+{
+  "name": "smicc-ts-e2e",
+  "private": true,
+  "description": "Uji browser (Playwright) per peran. Terpisah dari package.json utama yang wajib tanpa dependensi.",
+  "scripts": {
+    "test": "playwright test",
+    "lihat": "node lihat.mjs",
+    "report": "playwright show-report",
+    "ui": "playwright test --ui"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0"
+  }
+}

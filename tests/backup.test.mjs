@@ -98,3 +98,39 @@ test('cadangan: semua acara dalam satu ZIP (folder per acara + daftar acara + pe
   for (const e of evs) for (const ext of ['.xlsx', '.csv', '.html']) assert.ok(names.some((n) => n.startsWith(e.id + '/') && n.endsWith(ext)), e.id + ext);
   assert.ok(!names.some((n) => n.startsWith('EVT-28/')), 'draft tidak ikut');
 });
+
+test('cadangan: unggah hasil centang manifest offline mencatat check-in yang belum ada', async () => {
+  const { Evt, ctx } = await load();
+  const B = ctx.EvtCheckin.backup;
+  const tks = Object.values(Evt.s.tickets).filter((t) => t.ev === 'EVT-01');
+  const fresh = tks.filter((t) => t.status === 'ACTIVE' && !t.checkedInAt).slice(0, 2);
+  const used = tks.find((t) => t.checkedInAt);
+  const other = Object.values(Evt.s.tickets).find((t) => t.ev !== 'EVT-01');
+  assert.ok(fresh.length === 2 && used && other);
+  const at = Evt.now() - 30 * 60000, iso = new Date(at).toISOString();
+  const csv = '﻿ID Tiket;Booking;Pemegang;Waktu centang;Waktu ISO\r\n' +
+    [fresh[0], fresh[1], used, other, fresh[0]].map((t) => [t.id, t.order, '"' + t.holder + '"', '15/11/2026, 14.30.05', iso].join(';')).join('\r\n');
+  const p = B.parseUpload(csv);
+  assert.equal(p.ev, 'EVT-01');
+  assert.equal(p.items.length, 5);
+  const pv = Evt.importPreview('EVT-01', p.items);
+  assert.deepEqual({ ...pv }, { ok: 2, used: 1, void: 0, other: 1 }, 'duplikat dihitung sekali');
+  const r = await Evt.importCheckins('EVT-01', p.items);
+  assert.equal(r.ok, 2);
+  assert.equal(Evt.s.tickets[fresh[0].id].checkedInAt, at, 'waktu centang dipakai');
+  assert.equal(Evt.s.tickets[fresh[0].id].gate, 'Manifest offline');
+  assert.equal(Evt.s.tickets[used.id].checkedInAt, used.checkedInAt, 'check-in lama tidak ditimpa');
+  assert.equal(Evt.importPreview('EVT-01', p.items).ok, 0, 'unggah ulang tidak mencatat dua kali');
+});
+
+test('cadangan: manifest CSV dengan kolom Hadir diisi manual juga bisa diunggah', async () => {
+  const { Evt, ctx } = await load();
+  const B = ctx.EvtCheckin.backup;
+  const rows = B.latest('EVT-01').rows.map((r) => r.slice());
+  const i = rows.findIndex((r, k) => k > 0 && r[0] === '' && r[11] === 'Aktif');
+  rows[i][0] = 'v';
+  const p = B.parseUpload(Evt.csvText(rows));
+  assert.equal(p.items.length, rows.slice(1).filter((r) => r[0]).length, 'hanya baris yang dicentang');
+  assert.ok(p.items.some((x) => x.id === rows[i][2]));
+  assert.ok(B.parseUpload('a;b\r\n1;2').error, 'tanpa kolom ID Tiket ditolak');
+});
