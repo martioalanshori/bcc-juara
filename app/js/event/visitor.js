@@ -424,7 +424,7 @@
   // Langkah 1: pilih kategori. Kategori bernomor kursi -> lanjut ke denah kategori itu; tanpa nomor kursi -> atur jumlah di sini.
   V.cats = (id) => {
     const e = E.ev(id); if (!e) return notFound();
-    const s = E.stats(id); const sale = E.saleState(e); const h = E.cartHolds(id, cart);
+    const s = E.stats(id); const sale = E.saleState(e); const h = holdsView(id);
     const held = (tid) => h.items.filter((i) => i.type === tid).length;
     const card = (t) => {
       const p = s.per[t.id]; const n = held(t.id); const soldOut = p.available === 0 && !n;
@@ -453,7 +453,7 @@
   V.seats = (id, kat) => {
     const e = E.ev(id); if (!e) return notFound();
     const t = E.typeById(e, kat);
-    const s = E.stats(id); const sale = E.saleState(e); const h = E.cartHolds(id, cart); const p = s.per[t.id];
+    const s = E.stats(id); const sale = E.saleState(e); const h = holdsView(id); const p = s.per[t.id];
     const n = h.items.filter((i) => i.type === t.id).length;
     const more = e.types.some((x) => x.onSale && x.id !== t.id);
     const price = t.price ? rp(t.price) : free();
@@ -936,6 +936,79 @@
       b.addEventListener('pointerenter', show); b.addEventListener('focus', show);
     });
   }
+  // ---------------------------------------------------------------- keranjang optimistis (pilih kursi & jumlah tiket)
+  // Setiap ketukan langsung tampil (kursi ✓, angka jumlah), lalu disimpan ke server berurutan di belakang layar.
+  // Dulu tiap ketukan menunggu satu transaksi penuh (di Vercel 1-3 detik) dan ketukan selama menunggu dibuang oleh
+  // act(). Kini tidak ada ketukan yang hilang; ketukan + beruntun digabung jadi satu simpan; bila server menolak
+  // (kursi diambil orang lain, kuota habis), tampilan kembali ke data server dan muncul pesan.
+  const pend = { seat: {}, qty: {} }; // pend.seat[ev][kursi] = {op:'add'|'del', n}; pend.qty[ev][jenis] = {q, n}
+  let pendN = 0, queue = Promise.resolve(), inflight = 0;
+  const pendOf = (k, id) => (pend[k][id] = pend[k][id] || {});
+  const pending = (id) => inflight > 0 || Object.keys(pendOf('seat', id)).length > 0 || Object.keys(pendOf('qty', id)).length > 0;
+  function enqueue(fn) { inflight++; const p = queue.then(fn).catch(() => {}).finally(() => { inflight--; }); queue = p; return p; }
+  // Keranjang seperti yang dilihat pengguna: data server + perubahan yang belum tersimpan.
+  function holdsView(id) {
+    const h = E.cartHolds(id, cart), e = E.ev(id), ps = pendOf('seat', id), pq = pendOf('qty', id);
+    if (!e || (!Object.keys(ps).length && !Object.keys(pq).length)) return h;
+    let items = h.items.filter((i) => !(i.seat && ps[i.seat] && ps[i.seat].op === 'del'));
+    Object.keys(ps).forEach((s) => { if (ps[s].op === 'add' && !items.some((i) => i.seat === s)) items.push({ type: E.seatType(e, s), seat: s }); });
+    Object.keys(pq).forEach((ty) => { items = items.filter((i) => !(i.type === ty && !i.seat)).concat(Array.from({ length: pq[ty].q }, () => ({ type: ty, seat: null }))); });
+    return { items, until: h.until || E.now() + e.holdMin * 60000 };
+  }
+  const failMsg = (err) => toast(ic('error', 'text-[18px] align-middle text-rose-300') + ' ' + esc(errText(err.message)), 'err');
+  const redrawSoon = () => { if (cur.name === 'cats' || cur.name === 'seats') render(true); };
+  function tapSeat(id, seat, op) {
+    const e = E.ev(id); if (!e) return;
+    if (op === 'add' && holdsView(id).items.length >= e.maxPerOrder) { toast(L(`Maksimal ${e.maxPerOrder} tiket per pesanan.`, `Maximum ${e.maxPerOrder} tickets per order.`), 'err'); return; }
+    const n = ++pendN, ps = pendOf('seat', id); ps[seat] = { op, n };
+    redrawSoon();
+    enqueue(async () => {
+      try {
+        if (op === 'add') { await E.holdSeat(id, seat, cart); }
+        else await E.releaseSeat(id, seat, cart);
+      } catch (err) { failMsg(err); }
+      finally { if (ps[seat] && ps[seat].n === n) delete ps[seat]; redrawSoon(); }
+    });
+  }
+  function tapQty(id, ty, d) {
+    const e = E.ev(id); if (!e) return;
+    const hv = holdsView(id), cur0 = hv.items.filter((i) => i.type === ty && !i.seat).length, next = Math.max(0, cur0 + d);
+    if (d > 0 && hv.items.length >= e.maxPerOrder) { toast(L(`Maksimal ${e.maxPerOrder} tiket per pesanan.`, `Maximum ${e.maxPerOrder} tickets per order.`), 'err'); return; }
+    const pq = pendOf('qty', id), first = !pq[ty];
+    pq[ty] = { q: next, n: ++pendN };
+    redrawSoon();
+    if (!first) return; // simpan yang sudah antre akan memakai angka terakhir
+    enqueue(async () => {
+      for (;;) { // ulangi bila angka berubah lagi selama menyimpan; hanya angka terakhir yang dikirim
+        const x = pq[ty]; if (!x) return;
+        try { await E.setQty(id, ty, x.q, cart); } catch (err) { failMsg(err); delete pq[ty]; break; }
+        if (pq[ty] && pq[ty].n === x.n) { delete pq[ty]; break; }
+      }
+      redrawSoon();
+    });
+  }
+  // "Lanjut" ke data pemesan: tunggu semua simpan selesai dulu agar halaman berikutnya membaca keranjang yang benar.
+  async function goNext(a, id, ev) {
+    if (!pending(id)) return;
+    ev.preventDefault(); ev.stopPropagation();
+    if (a.dataset.wait) return; a.dataset.wait = '1'; a.classList.add('is-busy');
+    const lbl = a.innerHTML; a.innerHTML = ic('progress_activity', 'text-[18px] pv-spin') + ' ' + L('Menyimpan…', 'Saving…');
+    while (pending(id)) await queue;
+    delete a.dataset.wait; a.innerHTML = lbl; a.classList.remove('is-busy');
+    if (holdsView(id).items.length) a.click();
+  }
+  // Setelah render: kursi yang sedang disimpan langsung tampil sebagai pilihanmu (atau dilepas), dengan tanda berdenyut.
+  function paintPending(id) {
+    const ps = pendOf('seat', id);
+    Object.keys(ps).forEach((s) => {
+      const b = app.querySelector(`[data-seat="${CSS.escape(s)}"]`); if (!b) return;
+      const add = ps[s].op === 'add';
+      b.className = b.className.replace(/\b(available|mine|held|sold|blocked)\b/g, '').trim() + ' ' + (add ? 'mine' : 'available') + ' pending';
+      b.dataset.st = add ? 'mine' : 'available';
+      b.textContent = add ? '✓' : s.replace(/^\D+/, '');
+    });
+  }
+
   function render(keepScroll) {
     const y = window.scrollY;
     const rails = {}; app.querySelectorAll('[data-rail]').forEach((r) => (rails[r.dataset.rail] = r.scrollLeft));
@@ -958,16 +1031,19 @@
     const id = cur.args[0];
     bindLogin();
     const sm = app.querySelector('.seatmap-wrap'); if (sm) sm.addEventListener('scroll', () => (render.sx = sm.scrollLeft));
-    app.querySelectorAll('[data-seat]').forEach((b) => b.addEventListener('click', async () => {
+    if (cur.name === 'seats') paintPending(id);
+    app.querySelectorAll('[data-seat]').forEach((b) => b.addEventListener('click', () => {
       const st = b.dataset.st, seat = b.dataset.seat;
-      if (st === 'available') { const r = await act(() => E.holdSeat(id, seat, cart)); if (r) toast(L(`Kursi <b>${seat}</b> ditahan untukmu.`, `Seat <b>${seat}</b> is held for you.`), 'ok'); }
-      else if (st === 'mine') await act(() => E.releaseSeat(id, seat, cart));
+      if (st === 'available') tapSeat(id, seat, 'add');
+      else if (st === 'mine') tapSeat(id, seat, 'del');
       else if (st === 'held') toast(L(`Kursi <b>${seat}</b> sedang dipesan pengunjung lain.`, `Seat <b>${seat}</b> is being booked by another visitor.`), 'err');
       else if (st === 'sold') toast(L(`Kursi <b>${seat}</b> sudah terjual.`, `Seat <b>${seat}</b> is already sold.`), 'err');
       else toast(L(`Kursi <b>${seat}</b> tidak dijual.`, `Seat <b>${seat}</b> is not for sale.`), 'err');
     }));
-    app.querySelectorAll('[data-qty]').forEach((b) => b.addEventListener('click', () => { const h = E.cartHolds(id, cart); const q = h.items.filter((i) => i.type === b.dataset.qty && !i.seat).length; act(() => E.setQty(id, b.dataset.qty, Math.max(0, q + +b.dataset.d), cart)); }));
-    const clr = app.querySelector('#clear'); if (clr) clr.addEventListener('click', () => act(() => E.releaseCart(id, cart), L('Semua kursi dilepas.', 'All seats released.')));
+    app.querySelectorAll('[data-qty]').forEach((b) => b.addEventListener('click', () => tapQty(id, b.dataset.qty, +b.dataset.d)));
+    if (cur.name === 'cats' || cur.name === 'seats') app.querySelectorAll(`a[href="/pengunjung/e/${id}/data"]`).forEach((a) => a.addEventListener('click', (ev) => goNext(a, id, ev), true));
+    // Lepas semua: ikut antrean keranjang agar tidak balapan dengan ketukan yang belum tersimpan.
+    const clr = app.querySelector('#clear'); if (clr) clr.addEventListener('click', () => { pend.seat[id] = {}; pend.qty[id] = {}; enqueue(() => E.releaseCart(id, cart).then(() => toast(L('Semua kursi dilepas.', 'All seats released.'), 'ok'), failMsg).finally(redrawSoon)); });
     app.querySelectorAll('[data-wl]').forEach((b) => b.addEventListener('click', () => {
       const r = modal(L('Daftar tunggu ', 'Waiting list: ') + esc(E.typeById(E.ev(id), b.dataset.wl).name), `<form id="f-wl" class="flex flex-col gap-3"><p class="font-body-sm text-body-sm text-on-surface-variant">${L('Kami kabari bila ada kursi yang tersedia lagi karena refund atau pesanan kedaluwarsa.', 'We will let you know if seats free up again through refunds or expired orders.')}</p><label class="f">${L('Nama', 'Name')}<input class="inp" name="name" required></label><label class="f">${L('Email atau WhatsApp', 'Email or WhatsApp')}<input class="inp" name="contact" required></label><label class="f">${L('Jumlah tiket', 'Number of tickets')}<input class="inp" name="qty" type="number" min="1" max="4" value="1"></label><button class="btn justify-center">${L('Gabung daftar tunggu', 'Join the waiting list')}</button></form>`);
       r.querySelector('#f-wl').addEventListener('submit', async (ev) => { ev.preventDefault(); const f = Object.fromEntries(new FormData(ev.target)); if (await act(() => E.joinWaitlist(id, b.dataset.wl, { name: f.name, contact: f.contact, qty: +f.qty }))) { closeModal(); toast(L('Kamu masuk daftar tunggu.', 'You are on the waiting list.'), 'ok'); } });

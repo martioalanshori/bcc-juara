@@ -159,6 +159,12 @@ details > summary::-webkit-details-marker { display: none; }
 .seat.available { background: color-mix(in srgb, var(--c) 22%, transparent); border: 1.5px solid var(--c); color: rgb(var(--on-surface)); cursor: pointer; }
 .seat.available:hover { transform: scale(1.1); background: color-mix(in srgb, var(--c) 45%, transparent); }
 .seat.mine { background: rgb(var(--primary-container)); border: 1.5px solid rgb(var(--on-surface)); color: #fff; cursor: pointer; font-size: 14px; }
+/* Kursi yang sedang disimpan ke server (keranjang optimistis di visitor.js): sudah tampil, berdenyut pelan. */
+.seat.pending { animation: seat-pend 1s ease-in-out infinite; }
+@keyframes seat-pend { 50% { opacity: .55; } }
+.pv-spin { animation: pv-spin .8s linear infinite; display: inline-block; }
+@keyframes pv-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .seat.pending, .pv-spin { animation: none; } .seat.pending { opacity: .7; } }
 .seat.held { background: repeating-linear-gradient(45deg, rgb(var(--orange-400) / .6) 0 3px, rgb(var(--orange-400) / .12) 3px 6px); border: 1.5px dashed rgb(var(--orange-400)); cursor: not-allowed; }
 .seat.sold { background: rgb(var(--surface-container-highest)); border: 1.5px solid rgb(var(--surface-container-highest)); color: rgb(var(--outline)); cursor: not-allowed; }
 .seat.blocked { background: transparent; border: 1.5px dotted rgb(var(--outline)); cursor: not-allowed; opacity: .55; }

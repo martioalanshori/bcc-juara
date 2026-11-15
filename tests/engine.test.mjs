@@ -54,9 +54,20 @@ test('tanpa tiket belum check-in: ditolak dengan pesan jelas', async () => {
 // ------------------------------------------------------------------ Task 3: daftar tunggu otomatis
 const paidWith = (Evt, ev, type) => Object.values(Evt.s.orders).find((o) => o.ev === ev && o.status === 'PAID' && o.items.every((i) => i.type === type) && !o.tickets.some((t) => Evt.s.tickets[t].checkedInAt));
 
+// Pesanan lunas satu tiket jenis tertentu yang belum check-in. Data contoh bisa tidak punya (setelah acara mulai, sebagian
+// tiket contoh sudah check-in secara acak), jadi bila tidak ada, beli satu lewat jalur pengunjung.
+async function paidFresh(Evt, ev, type) {
+  const found = paidWith(Evt, ev, type); if (found) return found;
+  const e = Evt.ev(ev), seat = Evt.allSeats(e).find((s) => Evt.seatType(e, s) === type && Evt.seatStatus(ev, s, null) === 'available');
+  await Evt.holdSeat(ev, seat, 'CART-FRESH');
+  const id = await Evt.createOrder(ev, 'CART-FRESH', { name: 'Uji', email: 'fresh@example.com', phone: '0812' });
+  await Evt.pay(id, 'QRIS', true);
+  return Evt.s.orders[id];
+}
+
 test('refund mengabari daftar tunggu jenis yang sama, FIFO, sekali saja', async () => {
   const { Evt, clock } = await loadEvt();
-  const o = paidWith(Evt, 'EVT-01', 'VIP');
+  const o = await paidFresh(Evt, 'EVT-01', 'VIP');
   await Evt.joinWaitlist('EVT-01', 'VIP', { name: 'A', contact: 'a@example.com', qty: 1 });
   clock.now += 1000;
   await Evt.joinWaitlist('EVT-01', 'GLD', { name: 'B', contact: 'b@example.com', qty: 1 });
@@ -264,7 +275,7 @@ test('cc-bridge: penautan gagal tidak membuat tiket insiden kedua', async () => 
 // ------------------------------------------------------------------ perbaikan catatan minor
 test('penjualan sudah ditutup: refund tidak mengabari daftar tunggu', async () => {
   const { Evt, clock } = await loadEvt();
-  const o = paidWith(Evt, 'EVT-01', 'VIP');
+  const o = await paidFresh(Evt, 'EVT-01', 'VIP');
   await Evt.joinWaitlist('EVT-01', 'VIP', { name: 'Z', contact: 'z@example.com', qty: 1 });
   await Evt.updateEvent('EVT-01', { saleEnd: clock.now - 1000 });
   await Evt.refund(o.id, 'uji');

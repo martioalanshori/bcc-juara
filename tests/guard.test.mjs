@@ -35,7 +35,9 @@ test('guard + engine: pengunjung pilih kursi, pesan, bayar, gabung antrean tanpa
 });
 
 test('guard + engine: pesanan gratis (EVT-02) tanpa login', async () => {
-  const { Evt } = await loadEvt();
+  const { Evt, clock } = await loadEvt();
+  // EVT-02 bertanggal tetap (penjualan sampai 15 Nov 2026 12.00): jam uji dipasang sebelum itu agar tidak gagal sesudahnya.
+  clock.now = Math.min(clock.now, Evt.ev('EVT-02').saleEnd - 3600000);
   const seat = Evt.allSeats(Evt.ev('EVT-02')).find((s) => Evt.seatStatus('EVT-02', s, null) === 'available' && Evt.typeById(Evt.ev('EVT-02'), Evt.seatType(Evt.ev('EVT-02'), s)).onSale);
   const [a0, b0] = await step(Evt, () => Evt.holdSeat('EVT-02', seat, 'CART-G'));
   assert.equal(guard(a0, b0, []), null);
@@ -94,7 +96,8 @@ test('mode server tanpa login: refund ditolak 403 dengan pesan jelas, tidak diul
   const srv = fakeServer([]);
   const { Evt } = await loadEvt({ globals: { location: { protocol: 'http:' }, fetch: srv.fetch, AbortController } });
   assert.equal(Evt.mode, 'server');
-  const paid = Object.values(Evt.s.orders).find((x) => x.status === 'PAID');
+  // Tiket yang sudah check-in ditolak engine lebih dulu ("sudah dipakai"), jadi pilih pesanan yang belum check-in.
+  const paid = Object.values(Evt.s.orders).find((x) => x.status === 'PAID' && !x.tickets.some((t) => Evt.s.tickets[t].checkedInAt));
   const n = srv.posts();
   await assert.rejects(Evt.refund(paid.id, 'uji'), /pengelola/);
   assert.equal(srv.posts() - n, 1);
